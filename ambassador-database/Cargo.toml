@@ -1,0 +1,27 @@
+[package]
+name = "ambassador-database"
+version = "0.0.0"
+authors = ["you"]
+edition = "2021"
+publish = false
+
+[lib]
+path = "src/ambassador_database.rs"
+
+[dependencies.multiversx-sc]
+version = "0.48.0"
+
+[dev-dependencies]
+num-bigint = "0.4"
+
+[dev-dependencies.multiversx-sc-scenario]
+version = "0.48.0"
+
+[dependencies.permissions_module]
+path = "../modules/permissions_module"
+
+[dependencies.pausable]
+path = "../modules/pausable"
+
+[workspace]
+members = [".", "meta"]

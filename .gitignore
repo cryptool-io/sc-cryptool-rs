@@ -1,0 +1,4 @@
+**/output/**
+**/target/
+/node_modules/
+**/interaction/
