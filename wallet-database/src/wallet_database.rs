@@ -21,35 +21,48 @@ pub trait WalletDatabase {
     }
 
     #[endpoint(registerWallet)]
-    fn register_wallet(&self, user_signature: ManagedBuffer , signer_signature: ManagedBuffer) {
+    fn register_wallet(&self, user_signature: ManagedBuffer, signer_signature: ManagedBuffer) {
         let caller = self.blockchain().get_caller();
-        require!(!self.whitelisted_wallets().contains(&caller), "Wallet is already registered");
+        require!(
+            !self.whitelisted_wallets().contains(&caller),
+            "Wallet is already registered"
+        );
 
         let signer = self.signer_address().get();
 
-        self.crypto()
-            .verify_ed25519(&caller.as_managed_buffer(), &caller.as_managed_buffer(), &user_signature);
+        self.crypto().verify_ed25519(
+            &caller.as_managed_buffer(),
+            &caller.as_managed_buffer(),
+            &user_signature,
+        );
 
-        self.crypto()
-            .verify_ed25519(signer.as_managed_buffer(), &signer.as_managed_buffer(), &signer_signature);
+        self.crypto().verify_ed25519(
+            signer.as_managed_buffer(),
+            &signer.as_managed_buffer(),
+            &signer_signature,
+        );
 
         self.whitelisted_wallets().add(&caller);
         self.registered_wallets().insert(caller);
-
     }
 
     #[endpoint(removeWallet)]
-    fn remove_wallet(&self, signer_signature: ManagedBuffer ) {
+    fn remove_wallet(&self, signer_signature: ManagedBuffer) {
         let caller = self.blockchain().get_caller();
-        require!(self.whitelisted_wallets().contains(&caller), "Wallet is not registered");
+        require!(
+            self.whitelisted_wallets().contains(&caller),
+            "Wallet is not registered"
+        );
         let signer = self.signer_address().get();
 
-        self.crypto()
-            .verify_ed25519(signer.as_managed_buffer(), &caller.as_managed_buffer(), &signer_signature);
+        self.crypto().verify_ed25519(
+            signer.as_managed_buffer(),
+            &caller.as_managed_buffer(),
+            &signer_signature,
+        );
 
         self.whitelisted_wallets().remove(&caller);
         self.registered_wallets().swap_remove(&caller);
-
     }
 
     #[view(getSignerAddress)]
@@ -62,5 +75,4 @@ pub trait WalletDatabase {
 
     #[storage_mapper("whitelisted_wallets")]
     fn whitelisted_wallets(&self) -> WhitelistMapper<ManagedAddress>;
-
 }
