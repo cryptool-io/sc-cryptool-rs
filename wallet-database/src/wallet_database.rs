@@ -3,9 +3,8 @@
 #[allow(unused_imports)]
 use multiversx_sc::imports::*;
 
-/// An empty contract. To be used as a template when starting a new contract from scratch.
 #[multiversx_sc::contract]
-pub trait WalletDatabase {
+pub trait WalletDatabase: permissions_module::PermissionsModule + pausable::PausableModule {
     #[init]
     fn init(&self, signer: ManagedAddress) {
         self.signer_address().set(signer);
@@ -14,9 +13,9 @@ pub trait WalletDatabase {
     #[upgrade]
     fn upgrade(&self) {}
 
-    #[only_owner]
     #[endpoint(updateSigner)]
     fn update_signer(&self, new_signer: ManagedAddress) {
+        self.require_caller_has_owner_or_admin_permissions();
         self.signer_address().set(new_signer);
     }
 

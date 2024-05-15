@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                            6
+// Endpoints:                           15
 // Async Callback (empty):               1
-// Total number of exported functions:   8
+// Total number of exported functions:  17
 
 #![no_std]
 #![allow(internal_features)]
@@ -26,6 +26,15 @@ multiversx_sc_wasm_adapter::endpoints! {
         removeWallet => remove_wallet
         getSignerAddress => signer_address
         getRegisteredWallets => registered_wallets
+        addAdmin => add_admin_endpoint
+        removeAdmin => remove_admin_endpoint
+        updateOwnerOrAdmin => update_owner_or_admin_endpoint
+        getPermissions => permissions
+        addToPauseWhitelist => add_to_pause_whitelist
+        removeFromPauseWhitelist => remove_from_pause_whitelist
+        pause => pause
+        resume => resume
+        getState => state
     )
 }
 
