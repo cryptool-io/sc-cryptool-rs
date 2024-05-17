@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                           21
+// Endpoints:                           22
 // Async Callback (empty):               1
-// Total number of exported functions:  23
+// Total number of exported functions:  24
 
 #![no_std]
 #![allow(internal_features)]
@@ -32,6 +32,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         getReferralCodes => referral_codes
         getReferralCodePercentage => referral_code_percentage
         getReferralEarnedTokens => referral_earned_tokens
+        getEarnedEgldAmount => referral_earned_egld_amount
         addAdmin => add_admin_endpoint
         removeAdmin => remove_admin_endpoint
         updateOwnerOrAdmin => update_owner_or_admin_endpoint

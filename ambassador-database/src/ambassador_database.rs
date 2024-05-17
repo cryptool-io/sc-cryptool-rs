@@ -57,6 +57,7 @@ pub trait AmbassadorDatabase:
         self.user_referral_code(&owner).clear();
         self.referral_code_user(&referral_code).clear();
         self.referral_codes().swap_remove(&referral_code);
+        self.referral_code_percentage(&referral_code).clear();
     }
 
     #[endpoint(setReferralPercentage)]
@@ -129,18 +130,15 @@ pub trait AmbassadorDatabase:
         }
 
         let tokens_gained = self.referral_earned_tokens(&referral);
-        let mut payments = ManagedVec::new();
-        for token in tokens_gained.iter() {
-            let amount = self.referral_earned_esdt_amount(&referral, &token).take();
-            payments.push(EsdtTokenPayment::new(
-                token,
-                0,
-                amount,
-            ));
-
+        if !tokens_gained.is_empty() {
+            let mut payments = ManagedVec::new();
+            for token in tokens_gained.iter() {
+                let amount = self.referral_earned_esdt_amount(&referral, &token).take();
+                payments.push(EsdtTokenPayment::new(token, 0, amount));
+            }
+            self.send().direct_multi(address, &payments);
+            self.referral_earned_tokens(&referral).clear()
         }
-        self.send().direct_multi(address, &payments);
-        self.referral_earned_tokens(&referral).clear()
     }
 
     // STORAGE
@@ -182,6 +180,7 @@ pub trait AmbassadorDatabase:
         token: &TokenIdentifier,
     ) -> SingleValueMapper<BigUint>;
 
+    #[view(getEarnedEgldAmount)]
     #[storage_mapper("referral_earned_egld_amount")]
     fn referral_earned_egld_amount(
         &self,
