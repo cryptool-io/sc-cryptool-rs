@@ -28,14 +28,35 @@ pub trait AmbassadorDatabase:
     #[endpoint(registerReferralCode)]
     fn register_referral_code(&self, referral_code: ManagedBuffer) {
         self.require_state_active();
-        let caller = self.blockchain().get_caller();
+        require!(
+            self.referral_code_user(&referral_code).is_empty(),
+            "Referral is already registered"
+        );
 
+        let caller = self.blockchain().get_caller();
         self.user_referral_code(&caller).set(referral_code.clone());
         self.referral_code_user(&referral_code).set(caller);
         let default_percentage = self.default_referral_percentage().get();
         self.referral_code_percentage(&referral_code)
             .set(default_percentage);
         self.referral_codes().insert(referral_code);
+    }
+
+    #[endpoint(removeReferralCode)]
+    fn remove_referral_code(&self, referral_code: ManagedBuffer) {
+        self.require_state_active();
+        self.require_caller_has_admin_permissions();
+
+        require!(
+            !self.referral_code_user(&referral_code).is_empty(),
+            "Referral is not registered"
+        );
+
+        let owner = self.referral_code_user(&referral_code).get();
+        self.claim_referral_earning_by_address(&owner);
+        self.user_referral_code(&owner).clear();
+        self.referral_code_user(&referral_code).clear();
+        self.referral_codes().swap_remove(&referral_code);
     }
 
     #[endpoint(setReferralPercentage)]
@@ -46,9 +67,10 @@ pub trait AmbassadorDatabase:
             new_percentage < MAX_PERCENTAGE,
             "Invalid referral percentage"
         );
-
-        let referral_percentage = self.referral_code_percentage(&referral_code).get();
-        require!(referral_percentage > 0, "Referral not registered");
+        require!(
+            !self.referral_code_user(&referral_code).is_empty(),
+            "Referral is not registered"
+        );
 
         self.referral_code_percentage(&referral_code)
             .set(new_percentage);
@@ -64,23 +86,64 @@ pub trait AmbassadorDatabase:
             "Only smart contracts can apply referral codes"
         );
 
-        let payments = self.call_value().all_esdt_transfers();
-        require!(payments.len() == 1, "Incorrect payment");
-
-        let mut payment = payments.get(0);
+        let mut payment = self.call_value().egld_or_single_esdt();
         let referral_percentage =
             BigUint::from(self.referral_code_percentage(&referral_code).get());
         let discount_amount = (&payment.amount * &referral_percentage) / MAX_PERCENTAGE;
         payment.amount -= &discount_amount;
-        self.send().direct_esdt(
+        self.send().direct(
             &caller,
             &payment.token_identifier,
             payment.token_nonce,
             &payment.amount,
         );
-        self.referral_earning(&referral_code)
-            .update(|current| *current += discount_amount);
+        if payment.token_identifier.is_egld() {
+            self.referral_earned_egld_amount(&referral_code)
+                .update(|current| *current += discount_amount);
+        } else {
+            let esdt_token = payment.token_identifier.as_esdt_option().unwrap();
+            self.referral_earned_esdt_amount(&referral_code, &esdt_token)
+                .update(|current| *current += discount_amount);
+            self.referral_earned_tokens(&referral_code)
+                .insert(esdt_token.clone_value());
+        }
     }
+
+    #[endpoint(claimReferralEarning)]
+    fn claim_referral_earning(&self) {
+        self.require_state_active();
+        let caller = self.blockchain().get_caller();
+        self.claim_referral_earning_by_address(&caller);
+    }
+
+    fn claim_referral_earning_by_address(&self, address: &ManagedAddress) {
+        let referral = self.user_referral_code(address).get();
+        require!(
+            !referral.is_empty(),
+            "Address does not have a referral code associated"
+        );
+
+        let egld_gained = self.referral_earned_egld_amount(&referral).take();
+        if egld_gained > 0 {
+            self.send().direct_egld(address, &egld_gained);
+        }
+
+        let tokens_gained = self.referral_earned_tokens(&referral);
+        let mut payments = ManagedVec::new();
+        for token in tokens_gained.iter() {
+            let amount = self.referral_earned_esdt_amount(&referral, &token).take();
+            payments.push(EsdtTokenPayment::new(
+                token,
+                0,
+                amount,
+            ));
+
+        }
+        self.send().direct_multi(address, &payments);
+        self.referral_earned_tokens(&referral).clear()
+    }
+
+    // STORAGE
 
     #[view(getDefaultReferralPercentage)]
     #[storage_mapper("default_referral_percentage")]
@@ -105,7 +168,23 @@ pub trait AmbassadorDatabase:
     #[storage_mapper("referral_code_percentage")]
     fn referral_code_percentage(&self, referral_code: &ManagedBuffer) -> SingleValueMapper<u64>;
 
-    #[view(getReferralEarning)]
-    #[storage_mapper("referral_earning")]
-    fn referral_earning(&self, referral_code: &ManagedBuffer) -> SingleValueMapper<BigUint>;
+    #[view(getReferralEarnedTokens)]
+    #[storage_mapper("referral_earned_tokens")]
+    fn referral_earned_tokens(
+        &self,
+        referral_code: &ManagedBuffer,
+    ) -> UnorderedSetMapper<TokenIdentifier>;
+
+    #[storage_mapper("referral_earned_esdt_amount")]
+    fn referral_earned_esdt_amount(
+        &self,
+        referral_code: &ManagedBuffer,
+        token: &TokenIdentifier,
+    ) -> SingleValueMapper<BigUint>;
+
+    #[storage_mapper("referral_earned_egld_amount")]
+    fn referral_earned_egld_amount(
+        &self,
+        referral_code: &ManagedBuffer,
+    ) -> SingleValueMapper<BigUint>;
 }
