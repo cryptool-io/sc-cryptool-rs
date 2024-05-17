@@ -1,0 +1,99 @@
+{
+    "buildInfo": {
+        "rustc": {
+            "version": "1.76.0-nightly",
+            "commitHash": "d86d65bbc19b928387f68427fcc3a0da498d8a19",
+            "commitDate": "2023-12-10",
+            "channel": "Nightly",
+            "short": "rustc 1.76.0-nightly (d86d65bbc 2023-12-10)"
+        },
+        "contractCrate": {
+            "name": "caller-cryptool",
+            "version": "0.0.0"
+        },
+        "framework": {
+            "name": "multiversx-sc",
+            "version": "0.48.1"
+        }
+    },
+    "name": "CallerCryptool",
+    "constructor": {
+        "inputs": [],
+        "outputs": []
+    },
+    "endpoints": [
+        {
+            "name": "upgrade",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "applyReferralCodeEsdt",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "callee_sc_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "referral_code",
+                    "type": "bytes"
+                },
+                {
+                    "name": "token",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "amount",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "applyReferralCodeEgld",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "callee_sc_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "referral_code",
+                    "type": "bytes"
+                },
+                {
+                    "name": "amount",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "issueFungibleToken",
+            "mutability": "mutable",
+            "payableInTokens": [
+                "EGLD"
+            ],
+            "inputs": [
+                {
+                    "name": "token_display_name",
+                    "type": "bytes"
+                },
+                {
+                    "name": "token_ticker",
+                    "type": "bytes"
+                },
+                {
+                    "name": "initial_supply",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
+        }
+    ],
+    "esdtAttributes": [],
+    "hasCallback": true,
+    "types": {}
+}
