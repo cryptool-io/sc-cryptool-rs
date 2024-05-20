@@ -13,7 +13,7 @@ import {
   EGLD_AMOUNT,
   MAX_PERCENTAGE,
   baseKvs,
-} from "./helpers";
+} from "./helpers/helpers";
 
 let world: SWorld;
 let deployer: SWallet;
@@ -130,7 +130,16 @@ test("Set new referral percentage", async () => {
 
   assertAccount(await contract.getAccountWithKvs(), {
     balance: 0n,
-    hasKvs: [
+    kvs: [
+      ...baseKvs,
+      e.kvs.Mapper("permissions", e.Addr(deployer)).Value(e.U64(7)),
+      e.kvs.Mapper("state").Value(e.U64(1)),
+      e.kvs
+        .Mapper("user_referral_code", e.Addr(alice))
+        .Value(e.Str(REFERRAL_CODE1)),
+      e.kvs
+        .Mapper("referral_code_user", e.Str(REFERRAL_CODE1))
+        .Value(e.Addr(alice)),
       e.kvs
         .Mapper("referral_code_percentage", e.Str(REFERRAL_CODE1))
         .Value(e.U64(NEW_REFERRAL_PERCENTEAGE)),
@@ -188,10 +197,25 @@ test("Register two referral codes and modify one", async () => {
 
   assertAccount(await contract.getAccountWithKvs(), {
     balance: 0n,
-    hasKvs: [
+    kvs: [
+      ...baseKvs,
+      e.kvs.Mapper("permissions", e.Addr(deployer)).Value(e.U64(7)),
+      e.kvs.Mapper("state").Value(e.U64(1)),
+      e.kvs
+        .Mapper("user_referral_code", e.Addr(alice))
+        .Value(e.Str(REFERRAL_CODE1)),
+      e.kvs
+        .Mapper("referral_code_user", e.Str(REFERRAL_CODE1))
+        .Value(e.Addr(alice)),
       e.kvs
         .Mapper("referral_code_percentage", e.Str(REFERRAL_CODE1))
         .Value(e.U64(DEFAULT_REFERRAL_PERCENTAGE)),
+      e.kvs
+        .Mapper("user_referral_code", e.Addr(bob))
+        .Value(e.Str(REFERRAL_CODE2)),
+      e.kvs
+        .Mapper("referral_code_user", e.Str(REFERRAL_CODE2))
+        .Value(e.Addr(bob)),
       e.kvs
         .Mapper("referral_code_percentage", e.Str(REFERRAL_CODE2))
         .Value(e.U64(NEW_REFERRAL_PERCENTEAGE)),
@@ -224,6 +248,33 @@ test("Double register referral code", async () => {
       funcArgs: [e.Str(REFERRAL_CODE1)],
     })
     .assertFail({ code: 4, message: "Referral is already registered" });
+});
+
+test("Register two referral codes from same address", async () => {
+  await deployer.callContract({
+    callee: contract,
+    gasLimit: 5_000_000,
+    funcName: "resume",
+  });
+
+  await alice.callContract({
+    callee: contract,
+    gasLimit: 50_000_000,
+    funcName: "registerReferralCode",
+    funcArgs: [e.Str(REFERRAL_CODE1)],
+  });
+
+  await alice
+    .callContract({
+      callee: contract,
+      gasLimit: 50_000_000,
+      funcName: "registerReferralCode",
+      funcArgs: [e.Str(REFERRAL_CODE2)],
+    })
+    .assertFail({
+      code: 4,
+      message: "Address already has a referral code registered",
+    });
 });
 
 test("Remove referral code", async () => {
@@ -327,7 +378,7 @@ test("Apply referral code from non sc address", async () => {
 
 test("Apply referral code with egld", async () => {
   ({ contract: caller } = await deployer.deployContract({
-    code: "file:tests/caller-cryptool.wasm",
+    code: "file:tests/helpers/caller-cryptool.wasm",
     codeMetadata: [],
     gasLimit: 10_000_000,
   }));
@@ -361,12 +412,25 @@ test("Apply referral code with egld", async () => {
   const contractAccount = await contract.getAccountWithKvs();
   assertAccount(contractAccount, {
     balance: (EGLD_AMOUNT * DEFAULT_REFERRAL_PERCENTAGE) / MAX_PERCENTAGE,
-    hasKvs: [
+    kvs: [
+      ...baseKvs,
+      e.kvs.Mapper("permissions", e.Addr(deployer)).Value(e.U64(7)),
+      e.kvs.Mapper("state").Value(e.U64(1)),
       e.kvs
         .Mapper("referral_earned_egld_amount", e.Str(REFERRAL_CODE1))
         .Value(
           e.U((EGLD_AMOUNT * DEFAULT_REFERRAL_PERCENTAGE) / MAX_PERCENTAGE),
         ),
+      e.kvs
+        .Mapper("user_referral_code", e.Addr(alice))
+        .Value(e.Str(REFERRAL_CODE1)),
+      e.kvs
+        .Mapper("referral_code_user", e.Str(REFERRAL_CODE1))
+        .Value(e.Addr(alice)),
+      e.kvs
+        .Mapper("referral_code_percentage", e.Str(REFERRAL_CODE1))
+        .Value(e.U64(DEFAULT_REFERRAL_PERCENTAGE)),
+      e.kvs.Mapper("referral_codes").UnorderedSet([e.Str(REFERRAL_CODE1)]),
     ],
   });
 
@@ -380,7 +444,7 @@ test("Apply referral code with egld", async () => {
 
 test("Apply referral code with esdt ", async () => {
   ({ contract: caller } = await deployer.deployContract({
-    code: "file:tests/caller-cryptool.wasm",
+    code: "file:tests/helpers/caller-cryptool.wasm",
     codeMetadata: [],
     gasLimit: 10_000_000,
   }));
@@ -418,7 +482,10 @@ test("Apply referral code with esdt ", async () => {
 
   const contractAccount = await contract.getAccountWithKvs();
   assertAccount(contractAccount, {
-    hasKvs: [
+    kvs: [
+      ...baseKvs,
+      e.kvs.Mapper("permissions", e.Addr(deployer)).Value(e.U64(7)),
+      e.kvs.Mapper("state").Value(e.U64(1)),
       e.kvs.Esdts([
         {
           id: ESDT_TOKEN1,
@@ -440,12 +507,22 @@ test("Apply referral code with esdt ", async () => {
       e.kvs
         .Mapper("referral_earned_tokens", e.Str(REFERRAL_CODE1))
         .UnorderedSet([e.Str(ESDT_TOKEN1)]),
+      e.kvs
+        .Mapper("user_referral_code", e.Addr(alice))
+        .Value(e.Str(REFERRAL_CODE1)),
+      e.kvs
+        .Mapper("referral_code_user", e.Str(REFERRAL_CODE1))
+        .Value(e.Addr(alice)),
+      e.kvs
+        .Mapper("referral_code_percentage", e.Str(REFERRAL_CODE1))
+        .Value(e.U64(DEFAULT_REFERRAL_PERCENTAGE)),
+      e.kvs.Mapper("referral_codes").UnorderedSet([e.Str(REFERRAL_CODE1)]),
     ],
   });
 
   const callerAccount = await caller.getAccountWithKvs();
   assertAccount(callerAccount, {
-    hasKvs: [
+    kvs: [
       e.kvs.Esdts([
         {
           id: ESDT_TOKEN1,
@@ -460,7 +537,7 @@ test("Apply referral code with esdt ", async () => {
 
 test("Apply referral code with egld and esdt ", async () => {
   ({ contract: caller } = await deployer.deployContract({
-    code: "file:tests/caller-cryptool.wasm",
+    code: "file:tests/helpers/caller-cryptool.wasm",
     codeMetadata: [],
     gasLimit: 10_000_000,
   }));
@@ -507,7 +584,10 @@ test("Apply referral code with egld and esdt ", async () => {
   const contractAccount = await contract.getAccountWithKvs();
   assertAccount(contractAccount, {
     balance: (EGLD_AMOUNT * DEFAULT_REFERRAL_PERCENTAGE) / MAX_PERCENTAGE,
-    hasKvs: [
+    kvs: [
+      ...baseKvs,
+      e.kvs.Mapper("permissions", e.Addr(deployer)).Value(e.U64(7)),
+      e.kvs.Mapper("state").Value(e.U64(1)),
       e.kvs
         .Mapper("referral_earned_egld_amount", e.Str(REFERRAL_CODE1))
         .Value(
@@ -534,6 +614,16 @@ test("Apply referral code with egld and esdt ", async () => {
       e.kvs
         .Mapper("referral_earned_tokens", e.Str(REFERRAL_CODE1))
         .UnorderedSet([e.Str(ESDT_TOKEN1)]),
+      e.kvs
+        .Mapper("user_referral_code", e.Addr(alice))
+        .Value(e.Str(REFERRAL_CODE1)),
+      e.kvs
+        .Mapper("referral_code_user", e.Str(REFERRAL_CODE1))
+        .Value(e.Addr(alice)),
+      e.kvs
+        .Mapper("referral_code_percentage", e.Str(REFERRAL_CODE1))
+        .Value(e.U64(DEFAULT_REFERRAL_PERCENTAGE)),
+      e.kvs.Mapper("referral_codes").UnorderedSet([e.Str(REFERRAL_CODE1)]),
     ],
   });
 
@@ -542,7 +632,7 @@ test("Apply referral code with egld and esdt ", async () => {
     balance:
       EGLD_AMOUNT -
       (EGLD_AMOUNT * DEFAULT_REFERRAL_PERCENTAGE) / MAX_PERCENTAGE,
-    hasKvs: [
+    kvs: [
       e.kvs.Esdts([
         {
           id: ESDT_TOKEN1,
@@ -557,7 +647,7 @@ test("Apply referral code with egld and esdt ", async () => {
 
 test("Apply referral code with egld and two esdts", async () => {
   ({ contract: caller } = await deployer.deployContract({
-    code: "file:tests/caller-cryptool.wasm",
+    code: "file:tests/helpers/caller-cryptool.wasm",
     codeMetadata: [],
     gasLimit: 10_000_000,
   }));
@@ -619,7 +709,10 @@ test("Apply referral code with egld and two esdts", async () => {
   const contractAccount = await contract.getAccountWithKvs();
   assertAccount(contractAccount, {
     balance: (EGLD_AMOUNT * DEFAULT_REFERRAL_PERCENTAGE) / MAX_PERCENTAGE,
-    hasKvs: [
+    kvs: [
+      ...baseKvs,
+      e.kvs.Mapper("permissions", e.Addr(deployer)).Value(e.U64(7)),
+      e.kvs.Mapper("state").Value(e.U64(1)),
       e.kvs
         .Mapper("referral_earned_egld_amount", e.Str(REFERRAL_CODE1))
         .Value(
@@ -664,6 +757,16 @@ test("Apply referral code with egld and two esdts", async () => {
       e.kvs
         .Mapper("referral_earned_tokens", e.Str(REFERRAL_CODE1))
         .UnorderedSet([e.Str(ESDT_TOKEN1), e.Str(ESDT_TOKEN2)]),
+      e.kvs
+        .Mapper("user_referral_code", e.Addr(alice))
+        .Value(e.Str(REFERRAL_CODE1)),
+      e.kvs
+        .Mapper("referral_code_user", e.Str(REFERRAL_CODE1))
+        .Value(e.Addr(alice)),
+      e.kvs
+        .Mapper("referral_code_percentage", e.Str(REFERRAL_CODE1))
+        .Value(e.U64(DEFAULT_REFERRAL_PERCENTAGE)),
+      e.kvs.Mapper("referral_codes").UnorderedSet([e.Str(REFERRAL_CODE1)]),
     ],
   });
 
@@ -672,7 +775,7 @@ test("Apply referral code with egld and two esdts", async () => {
     balance:
       EGLD_AMOUNT -
       (EGLD_AMOUNT * DEFAULT_REFERRAL_PERCENTAGE) / MAX_PERCENTAGE,
-    hasKvs: [
+    kvs: [
       e.kvs.Esdts([
         {
           id: ESDT_TOKEN1,

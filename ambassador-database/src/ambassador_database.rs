@@ -32,6 +32,11 @@ pub trait AmbassadorDatabase:
             self.referral_code_user(&referral_code).is_empty(),
             "Referral is already registered"
         );
+        let caller = self.blockchain().get_caller();
+        require!(
+            self.user_referral_code(&caller).is_empty(),
+            "Address already has a referral code registered"
+        );
 
         let caller = self.blockchain().get_caller();
         self.user_referral_code(&caller).set(referral_code.clone());
@@ -52,10 +57,9 @@ pub trait AmbassadorDatabase:
             "Referral is not registered"
         );
 
-        let owner = self.referral_code_user(&referral_code).get();
+        let owner = self.referral_code_user(&referral_code).take();
         self.claim_referral_earning_by_address(&owner);
         self.user_referral_code(&owner).clear();
-        self.referral_code_user(&referral_code).clear();
         self.referral_codes().swap_remove(&referral_code);
         self.referral_code_percentage(&referral_code).clear();
     }

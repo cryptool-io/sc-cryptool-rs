@@ -13,7 +13,7 @@
         },
         "framework": {
             "name": "multiversx-sc",
-            "version": "0.48.1"
+            "version": "0.50.1"
         }
     },
     "name": "CallerCryptool",
@@ -21,13 +21,11 @@
         "inputs": [],
         "outputs": []
     },
+    "upgradeConstructor": {
+        "inputs": [],
+        "outputs": []
+    },
     "endpoints": [
-        {
-            "name": "upgrade",
-            "mutability": "mutable",
-            "inputs": [],
-            "outputs": []
-        },
         {
             "name": "applyReferralCodeEsdt",
             "mutability": "mutable",
