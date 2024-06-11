@@ -3,6 +3,8 @@
 #[allow(unused_imports)]
 use multiversx_sc::imports::*;
 
+pub const MAX_PERCENTAGE: u64 = 10_000;
+
 /// An empty contract. To be used as a template when starting a new contract from scratch.
 #[multiversx_sc::contract]
 pub trait RaisePool {
@@ -66,6 +68,80 @@ pub trait RaisePool {
     #[upgrade]
     fn upgrade(&self) {}
 
+    #[payable("*")]
+    #[endpoint(deposit)]
+    fn deposit(
+        &self,
+        platform_fee_percentage: BigUint,
+        group_fee_percentage: BigUint,
+        ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>,
+    ) {
+        let payment = self.call_value().single_esdt();
+        require!(
+            self.payment_currencies()
+                .contains(&payment.token_identifier),
+            "Invalid token payment"
+        );
+
+        let timestamp = self.blockchain().get_block_timestamp();
+        require!(timestamp > self.start_date().get(), "Deposits not open yet");
+        require!(timestamp < self.end_date().get(), "Deposits closed");
+
+        require!(
+            self.total_amount().get() + &payment.amount <= self.hard_cap().get(),
+            "Hard cap threshold would be exceeded"
+        );
+
+        require!(
+            self.min_deposit().get() <= payment.amount,
+            "Payment amount too low"
+        );
+
+        require!(
+            payment.amount <= self.max_deposit().get(),
+            "Payment amount too high"
+        );
+
+        require!(
+            &payment.amount % &self.deposit_increments().get() == 0,
+            "Payment amount is not a multiple of the deposit increment"
+        );
+
+        let caller = self.blockchain().get_caller();
+        self.addresses().insert(caller.clone());
+
+        self.address_amount(&caller)
+            .update(|current| *current += &payment.amount);
+        self.total_amount()
+            .update(|current| *current += &payment.amount);
+
+        let platform_fee_amount = (&payment.amount * &platform_fee_percentage) / MAX_PERCENTAGE;
+        self.address_platform_fee(&caller)
+            .update(|current| *current += &platform_fee_amount);
+        self.total_platform_fee()
+            .update(|current| *current += &platform_fee_amount);
+
+        let group_fee_amount = (&payment.amount * &group_fee_percentage) / MAX_PERCENTAGE;
+        self.address_group_fee(&caller)
+            .update(|current| *current += &group_fee_amount);
+        self.total_group_fee()
+            .update(|current| *current += &group_fee_amount);
+
+        match ambassador.into_option() {
+            Some(ambassador) => {
+                let (amount, wallet) = ambassador.into_tuple();
+                let ambassador_amount = (&payment.amount * &amount)  / MAX_PERCENTAGE;
+                self.address_ambassador_fee(&caller)
+                    .update(|current| *current += &ambassador_amount);
+                self.total_ambassador_fee()
+                    .update(|current| *current += &ambassador_amount);
+                self.ambassador_fee(&wallet)
+                    .update(|current| *current += &ambassador_amount);
+            }
+            None => {}
+        }
+    }
+
     // STORAGE
 
     #[view(getSoftCap)]
@@ -112,6 +188,50 @@ pub trait RaisePool {
     #[storage_mapper("signer_address")]
     fn signer_address(&self) -> SingleValueMapper<ManagedAddress>;
 
+    #[view(getPaymentCurrencies)]
     #[storage_mapper("payment_currencies")]
     fn payment_currencies(&self) -> UnorderedSetMapper<TokenIdentifier>;
+
+    //
+
+    #[view(getAddresses)]
+    #[storage_mapper("addresses")]
+    fn addresses(&self) -> UnorderedSetMapper<ManagedAddress>;
+
+    #[view(getAddressAmount)]
+    #[storage_mapper("address_amount")]
+    fn address_amount(&self, address: &ManagedAddress) -> SingleValueMapper<BigUint>;
+
+    #[view(getTotalAmount)]
+    #[storage_mapper("total_amount")]
+    fn total_amount(&self) -> SingleValueMapper<BigUint>;
+
+    #[view(getAddressPlatformFee)]
+    #[storage_mapper("address_platform_fee")]
+    fn address_platform_fee(&self, address: &ManagedAddress) -> SingleValueMapper<BigUint>;
+
+    #[view(getTotalPlatformFee)]
+    #[storage_mapper("total_platform_fee")]
+    fn total_platform_fee(&self) -> SingleValueMapper<BigUint>;   
+
+    #[view(getAddressGroupFee)]
+    #[storage_mapper("address_group_fee")]
+    fn address_group_fee(&self, address: &ManagedAddress) -> SingleValueMapper<BigUint>;
+
+    #[view(getTotalGroupFee)]
+    #[storage_mapper("total_group_fee")]
+    fn total_group_fee(&self) -> SingleValueMapper<BigUint>;
+
+    #[view(getAddressAmbassadorFee)]
+    #[storage_mapper("address_ambassador_fee")]
+    fn address_ambassador_fee(&self, address: &ManagedAddress) -> SingleValueMapper<BigUint>;
+
+    #[view(getTotalAmbassadorFee)]
+    #[storage_mapper("total_ambassador_fee")]
+    fn total_ambassador_fee(&self) -> SingleValueMapper<BigUint>;
+
+    #[view(getAmbassadorFee)]
+    #[storage_mapper("ambassador_fee")]
+    fn ambassador_fee(&self, ambassador_fee: &ManagedAddress) -> SingleValueMapper<BigUint>;
+
 }
