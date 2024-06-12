@@ -1,13 +1,15 @@
 #![no_std]
 
-#[allow(unused_imports)]
 use multiversx_sc::imports::*;
+mod storage;
 
 pub const MAX_PERCENTAGE: u64 = 10_000;
+pub const DEFAULT_DECIMALS: u32 = 18;
+pub const REFUND_BATCH: usize = 100;
 
 /// An empty contract. To be used as a template when starting a new contract from scratch.
 #[multiversx_sc::contract]
-pub trait RaisePool {
+pub trait RaisePool: crate::storage::StorageModule {
     #[init]
     fn init(
         &self,
@@ -22,7 +24,7 @@ pub trait RaisePool {
         platform_fee_wallet: ManagedAddress,
         group_fee_wallet: ManagedAddress,
         signer_address: ManagedAddress,
-        payment_currencies: MultiValueEncoded<TokenIdentifier>,
+        payment_currencies: MultiValueEncoded<MultiValue2<TokenIdentifier, u32>>,
     ) {
         require!(
             soft_cap <= hard_cap,
@@ -44,11 +46,6 @@ pub trait RaisePool {
             "End date timestamp must be greater than sale end timestamp"
         );
 
-        require!(
-            payment_currencies.len() >= 1,
-            "Need to provide at least one currency"
-        );
-
         self.soft_cap().set(soft_cap);
         self.hard_cap().set(hard_cap);
         self.min_deposit().set(min_deposit);
@@ -61,7 +58,9 @@ pub trait RaisePool {
         self.group_fee_wallet().set(group_fee_wallet);
         self.signer_address().set(signer_address);
         for payment_currency in payment_currencies {
-            self.payment_currencies().insert(payment_currency);
+            let (currency, decimals) = payment_currency.into_tuple();
+            self.payment_currencies().insert(currency.clone());
+            self.currency_decimals(&currency).set(decimals);
         }
     }
 
@@ -108,12 +107,19 @@ pub trait RaisePool {
         );
 
         let caller = self.blockchain().get_caller();
-        self.addresses().insert(caller.clone());
-
-        self.address_amount(&caller)
+        self.addresses().push(&caller.clone());
+        self.deposited_currencies(&caller)
+            .insert(payment.token_identifier.clone());
+        self.deposited_amount(&caller, &payment.token_identifier)
             .update(|current| *current += &payment.amount);
+        let payment_denomination = match self.currency_decimals(&payment.token_identifier).get() {
+            decimals if decimals != DEFAULT_DECIMALS => {
+                &payment.amount * 10_u64.pow(DEFAULT_DECIMALS - decimals)
+            }
+            _ => payment.amount.clone(),
+        };
         self.total_amount()
-            .update(|current| *current += &payment.amount);
+            .update(|current| *current += &payment_denomination);
 
         let platform_fee_amount = (&payment.amount * &platform_fee_percentage) / MAX_PERCENTAGE;
         self.address_platform_fee(&caller)
@@ -129,8 +135,8 @@ pub trait RaisePool {
 
         match ambassador.into_option() {
             Some(ambassador) => {
-                let (amount, wallet) = ambassador.into_tuple();
-                let ambassador_amount = (&payment.amount * &amount)  / MAX_PERCENTAGE;
+                let (percentage, wallet) = ambassador.into_tuple();
+                let ambassador_amount = (&payment.amount * &percentage) / MAX_PERCENTAGE;
                 self.address_ambassador_fee(&caller)
                     .update(|current| *current += &ambassador_amount);
                 self.total_ambassador_fee()
@@ -142,96 +148,40 @@ pub trait RaisePool {
         }
     }
 
-    // STORAGE
+    #[only_owner]
+    #[endpoint(refund)]
+    fn refund(&self) {
+        require!(self.refund_enabled().get(), "Refunds are not enabled");
+        require!(
+            self.blockchain().get_block_timestamp() > self.end_date().get(),
+            "Refunds are not open"
+        );
+        require!(
+            self.total_amount().get() < self.hard_cap().get(),
+            "Soft cap exceeded"
+        );
 
-    #[view(getSoftCap)]
-    #[storage_mapper("soft_cap")]
-    fn soft_cap(&self) -> SingleValueMapper<BigUint>;
+        let addresses_len = self.addresses().len();
+        let mut refund_index = self.refund_index().get();
+        while refund_index < addresses_len {
+            let start_index = refund_index + 1;
+            let end_index = (start_index + REFUND_BATCH).min(addresses_len + 1);
+            for idx in start_index..end_index {
+                let address = self.addresses().get(idx);
+                let mut payments = ManagedVec::new();
+                for token_identifier in self.deposited_currencies(&address).iter() {
+                    let amount = self.deposited_amount(&address, &token_identifier).get();
+                    payments.push(EsdtTokenPayment::new(token_identifier, 0, amount));
+                }
+                self.send().direct_multi(&address, &payments);
+            }
+            refund_index = end_index;
+            self.refund_index().set(refund_index);
+        }
+    }
 
-    #[view(getHardCap)]
-    #[storage_mapper("hard_cap")]
-    fn hard_cap(&self) -> SingleValueMapper<BigUint>;
-
-    #[view(getMinDeposit)]
-    #[storage_mapper("min_deposit")]
-    fn min_deposit(&self) -> SingleValueMapper<BigUint>;
-
-    #[view(getMaxDeposit)]
-    #[storage_mapper("max_deposit")]
-    fn max_deposit(&self) -> SingleValueMapper<BigUint>;
-
-    #[view(getDepositIncrements)]
-    #[storage_mapper("deposit_increments")]
-    fn deposit_increments(&self) -> SingleValueMapper<BigUint>;
-
-    #[view(getStartDate)]
-    #[storage_mapper("start_date")]
-    fn start_date(&self) -> SingleValueMapper<u64>;
-
-    #[view(getEndDate)]
-    #[storage_mapper("end_date")]
-    fn end_date(&self) -> SingleValueMapper<u64>;
-
-    #[view(getRefundEnabled)]
-    #[storage_mapper("refund_enabled")]
-    fn refund_enabled(&self) -> SingleValueMapper<bool>;
-
-    #[view(getPlatfromFeeWallet)]
-    #[storage_mapper("platform_fee_wallet")]
-    fn platform_fee_wallet(&self) -> SingleValueMapper<ManagedAddress>;
-
-    #[view(getGroupFeeWallet)]
-    #[storage_mapper("group_fee_wallet")]
-    fn group_fee_wallet(&self) -> SingleValueMapper<ManagedAddress>;
-
-    #[view(getSignerAddress)]
-    #[storage_mapper("signer_address")]
-    fn signer_address(&self) -> SingleValueMapper<ManagedAddress>;
-
-    #[view(getPaymentCurrencies)]
-    #[storage_mapper("payment_currencies")]
-    fn payment_currencies(&self) -> UnorderedSetMapper<TokenIdentifier>;
-
-    //
-
-    #[view(getAddresses)]
-    #[storage_mapper("addresses")]
-    fn addresses(&self) -> UnorderedSetMapper<ManagedAddress>;
-
-    #[view(getAddressAmount)]
-    #[storage_mapper("address_amount")]
-    fn address_amount(&self, address: &ManagedAddress) -> SingleValueMapper<BigUint>;
-
-    #[view(getTotalAmount)]
-    #[storage_mapper("total_amount")]
-    fn total_amount(&self) -> SingleValueMapper<BigUint>;
-
-    #[view(getAddressPlatformFee)]
-    #[storage_mapper("address_platform_fee")]
-    fn address_platform_fee(&self, address: &ManagedAddress) -> SingleValueMapper<BigUint>;
-
-    #[view(getTotalPlatformFee)]
-    #[storage_mapper("total_platform_fee")]
-    fn total_platform_fee(&self) -> SingleValueMapper<BigUint>;   
-
-    #[view(getAddressGroupFee)]
-    #[storage_mapper("address_group_fee")]
-    fn address_group_fee(&self, address: &ManagedAddress) -> SingleValueMapper<BigUint>;
-
-    #[view(getTotalGroupFee)]
-    #[storage_mapper("total_group_fee")]
-    fn total_group_fee(&self) -> SingleValueMapper<BigUint>;
-
-    #[view(getAddressAmbassadorFee)]
-    #[storage_mapper("address_ambassador_fee")]
-    fn address_ambassador_fee(&self, address: &ManagedAddress) -> SingleValueMapper<BigUint>;
-
-    #[view(getTotalAmbassadorFee)]
-    #[storage_mapper("total_ambassador_fee")]
-    fn total_ambassador_fee(&self) -> SingleValueMapper<BigUint>;
-
-    #[view(getAmbassadorFee)]
-    #[storage_mapper("ambassador_fee")]
-    fn ambassador_fee(&self, ambassador_fee: &ManagedAddress) -> SingleValueMapper<BigUint>;
-
+    #[only_owner]
+    #[endpoint(release)]
+    fn release(&self) {
+    }
 }
