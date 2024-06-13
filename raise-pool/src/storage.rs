@@ -84,7 +84,15 @@ pub trait StorageModule {
 
     #[view(getAddressPlatformFee)]
     #[storage_mapper("address_platform_fee")]
-    fn address_platform_fee(&self, address: &ManagedAddress) -> SingleValueMapper<BigUint>;
+    fn address_platform_fee(
+        &self,
+        address: &ManagedAddress,
+        token: &TokenIdentifier,
+    ) -> SingleValueMapper<BigUint>;
+
+    #[view(getPlatformFee)]
+    #[storage_mapper("platform_fee")]
+    fn platform_fee(&self, token: &TokenIdentifier) -> SingleValueMapper<BigUint>;
 
     #[view(getTotalPlatformFee)]
     #[storage_mapper("total_platform_fee")]
@@ -92,21 +100,57 @@ pub trait StorageModule {
 
     #[view(getAddressGroupFee)]
     #[storage_mapper("address_group_fee")]
-    fn address_group_fee(&self, address: &ManagedAddress) -> SingleValueMapper<BigUint>;
+    fn address_group_fee(
+        &self,
+        address: &ManagedAddress,
+        token: &TokenIdentifier,
+    ) -> SingleValueMapper<BigUint>;
+
+    #[view(getGroupFee)]
+    #[storage_mapper("group_fee")]
+    fn group_fee(&self, token: &TokenIdentifier) -> SingleValueMapper<BigUint>;
 
     #[view(getTotalGroupFee)]
     #[storage_mapper("total_group_fee")]
     fn total_group_fee(&self) -> SingleValueMapper<BigUint>;
 
+    #[view(getAmbassadors)]
+    #[storage_mapper("ambassadors")]
+    fn ambassadors(&self) -> VecMapper<ManagedAddress>;
+
+    #[view(getReleaseIndex)]
+    #[storage_mapper("release_index")]
+    fn release_index(&self) -> SingleValueMapper<usize>;
+
     #[view(getAddressAmbassadorFee)]
     #[storage_mapper("address_ambassador_fee")]
-    fn address_ambassador_fee(&self, address: &ManagedAddress) -> SingleValueMapper<BigUint>;
+    fn address_ambassador_fee(
+        &self,
+        address: &ManagedAddress,
+        token: &TokenIdentifier,
+    ) -> SingleValueMapper<BigUint>;
+
+    #[view(getAmbassadorFee)]
+    #[storage_mapper("ambassador_fee")]
+    fn ambassador_fee(&self, token: &TokenIdentifier) -> SingleValueMapper<BigUint>;
 
     #[view(getTotalAmbassadorFee)]
     #[storage_mapper("total_ambassador_fee")]
     fn total_ambassador_fee(&self) -> SingleValueMapper<BigUint>;
 
-    #[view(getAmbassadorFee)]
-    #[storage_mapper("ambassador_fee")]
-    fn ambassador_fee(&self, ambassador: &ManagedAddress) -> SingleValueMapper<BigUint>;
+    #[view(getAmbassadorCurrencies)]
+    #[storage_mapper("ambassador_currencies")]
+    fn ambassador_currencies(
+        &self,
+        ambassador: &ManagedAddress,
+    ) -> UnorderedSetMapper<TokenIdentifier>;
+
+    #[view(getReferralAmbassadorFee)]
+    #[storage_mapper("referral_ambassador_fee")]
+    fn referral_ambassador_fee(
+        &self,
+        ambassador: &ManagedAddress,
+        token: &TokenIdentifier,
+    ) -> SingleValueMapper<BigUint>;
+
 }

@@ -5,7 +5,7 @@ mod storage;
 
 pub const MAX_PERCENTAGE: u64 = 10_000;
 pub const DEFAULT_DECIMALS: u32 = 18;
-pub const REFUND_BATCH: usize = 100;
+pub const BULK_BATCH: usize = 100;
 
 /// An empty contract. To be used as a template when starting a new contract from scratch.
 #[multiversx_sc::contract]
@@ -122,27 +122,43 @@ pub trait RaisePool: crate::storage::StorageModule {
             .update(|current| *current += &payment_denomination);
 
         let platform_fee_amount = (&payment.amount * &platform_fee_percentage) / MAX_PERCENTAGE;
-        self.address_platform_fee(&caller)
+        let denominated_platform_fee_amount =
+            (&payment_denomination * &platform_fee_percentage) / MAX_PERCENTAGE;
+
+        self.address_platform_fee(&caller, &payment.token_identifier)
+            .update(|current| *current += &platform_fee_amount);
+        self.platform_fee(&payment.token_identifier)
             .update(|current| *current += &platform_fee_amount);
         self.total_platform_fee()
-            .update(|current| *current += &platform_fee_amount);
+            .update(|current| *current += &denominated_platform_fee_amount);
 
         let group_fee_amount = (&payment.amount * &group_fee_percentage) / MAX_PERCENTAGE;
-        self.address_group_fee(&caller)
+        let denominated_group_fee_amount =
+            (&payment_denomination * &group_fee_percentage) / MAX_PERCENTAGE;
+        self.address_group_fee(&caller, &payment.token_identifier)
+            .update(|current| *current += &group_fee_amount);
+        self.group_fee(&payment.token_identifier)
             .update(|current| *current += &group_fee_amount);
         self.total_group_fee()
-            .update(|current| *current += &group_fee_amount);
+            .update(|current| *current += &denominated_group_fee_amount);
 
         match ambassador.into_option() {
             Some(ambassador) => {
-                let (percentage, wallet) = ambassador.into_tuple();
-                let ambassador_amount = (&payment.amount * &percentage) / MAX_PERCENTAGE;
-                self.address_ambassador_fee(&caller)
+                let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
+                self.ambassadors().push(&ambassador_wallet);
+                let ambassador_amount = (&payment.amount * &ambassador_percentage) / MAX_PERCENTAGE;
+                let denominated_ambassador_amount =
+                    (&payment_denomination * &ambassador_percentage) / MAX_PERCENTAGE;
+                self.address_ambassador_fee(&caller, &payment.token_identifier)
+                    .update(|current| *current += &ambassador_amount);
+                self.ambassador_fee(&payment.token_identifier)
                     .update(|current| *current += &ambassador_amount);
                 self.total_ambassador_fee()
+                    .update(|current| *current += &denominated_ambassador_amount);
+                self.referral_ambassador_fee(&ambassador_wallet, &payment.token_identifier)
                     .update(|current| *current += &ambassador_amount);
-                self.ambassador_fee(&wallet)
-                    .update(|current| *current += &ambassador_amount);
+                self.ambassador_currencies(&ambassador_wallet)
+                    .insert(payment.token_identifier);
             }
             None => {}
         }
@@ -165,7 +181,7 @@ pub trait RaisePool: crate::storage::StorageModule {
         let mut refund_index = self.refund_index().get();
         while refund_index < addresses_len {
             let start_index = refund_index + 1;
-            let end_index = (start_index + REFUND_BATCH).min(addresses_len + 1);
+            let end_index = (start_index + BULK_BATCH).min(addresses_len + 1);
             for idx in start_index..end_index {
                 let address = self.addresses().get(idx);
                 let mut payments = ManagedVec::new();
@@ -181,7 +197,60 @@ pub trait RaisePool: crate::storage::StorageModule {
     }
 
     #[only_owner]
-    #[endpoint(release)]
-    fn release(&self) {
+    #[endpoint(release_plaform_and_group)]
+    fn release_plaform_and_group(&self) {
+        let mut payments = ManagedVec::new();
+        for token in self.payment_currencies().iter() {
+            payments.push(EsdtTokenPayment::new(
+                token.clone(),
+                0,
+                self.platform_fee(&token).get(),
+            ));
+        }
+        self.send()
+            .direct_multi(&self.platform_fee_wallet().get(), &payments);
+
+        let mut payments = ManagedVec::new();
+        for token in self.payment_currencies().iter() {
+            payments.push(EsdtTokenPayment::new(
+                token.clone(),
+                0,
+                self.group_fee(&token).get(),
+            ));
+        }
+        self.send()
+            .direct_multi(&self.group_fee_wallet().get(), &payments);
     }
+
+    #[only_owner]
+    #[endpoint(release_ambassadors)]
+    fn release_ambassadors(&self) {
+        let ambassadors_len = self.ambassadors().len();
+        let mut release_index = self.release_index().get();
+        while release_index < ambassadors_len {
+            let start_index = release_index + 1;
+            let end_index = (start_index + BULK_BATCH).min(ambassadors_len + 1);
+            for idx in start_index..end_index {
+                let ambassador = self.ambassadors().get(idx);
+                let mut payments = ManagedVec::new();
+                for token_identifier in self.ambassador_currencies(&ambassador).iter() {
+                    let amount = self.referral_ambassador_fee(&ambassador, &token_identifier).get();
+                    payments.push(EsdtTokenPayment::new(token_identifier, 0, amount));
+                }
+                self.send().direct_multi(&ambassador, &payments);
+            }
+            release_index = end_index;
+            self.release_index().set(release_index);
+        }
+    }
+
+    #[only_owner]
+    #[endpoint(refund_overcommited)]
+    fn refund_overcommited(&self, overcommited: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>) {
+        for overcommited in overcommited {
+            let (address, token_identifier, amount) = overcommited.into_tuple();
+            self.send().direct_esdt(&address, &token_identifier, 0, &amount);
+        }
+    }
+
 }

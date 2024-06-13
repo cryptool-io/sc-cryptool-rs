@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           28
+// Endpoints:                           36
 // Async Callback (empty):               1
-// Total number of exported functions:  31
+// Total number of exported functions:  39
 
 #![no_std]
 
@@ -22,7 +22,9 @@ multiversx_sc_wasm_adapter::endpoints! {
         upgrade => upgrade
         deposit => deposit
         refund => refund
-        release => release
+        release_plaform_and_group => release_plaform_and_group
+        release_ambassadors => release_ambassadors
+        refund_overcommited => refund_overcommited
         getSoftCap => soft_cap
         getHardCap => hard_cap
         getMinDeposit => min_deposit
@@ -42,12 +44,18 @@ multiversx_sc_wasm_adapter::endpoints! {
         getDepositedAmount => deposited_amount
         getTotalAmount => total_amount
         getAddressPlatformFee => address_platform_fee
+        getPlatformFee => platform_fee
         getTotalPlatformFee => total_platform_fee
         getAddressGroupFee => address_group_fee
+        getGroupFee => group_fee
         getTotalGroupFee => total_group_fee
+        getAmbassadors => ambassadors
+        getReleaseIndex => release_index
         getAddressAmbassadorFee => address_ambassador_fee
-        getTotalAmbassadorFee => total_ambassador_fee
         getAmbassadorFee => ambassador_fee
+        getTotalAmbassadorFee => total_ambassador_fee
+        getAmbassadorCurrencies => ambassador_currencies
+        getReferralAmbassadorFee => referral_ambassador_fee
     )
 }
 
