@@ -1,0 +1,12 @@
+[package]
+name = "factory-meta"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies.factory]
+path = ".."
+
+[dependencies.multiversx-sc-meta]
+version = "0.50.4"
+default-features = false

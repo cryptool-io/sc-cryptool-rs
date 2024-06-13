@@ -43,10 +43,6 @@ pub trait StorageModule {
     #[storage_mapper("group_fee_wallet")]
     fn group_fee_wallet(&self) -> SingleValueMapper<ManagedAddress>;
 
-    #[view(getSignerAddress)]
-    #[storage_mapper("signer_address")]
-    fn signer_address(&self) -> SingleValueMapper<ManagedAddress>;
-
     #[view(getPaymentCurrencies)]
     #[storage_mapper("payment_currencies")]
     fn payment_currencies(&self) -> UnorderedSetMapper<TokenIdentifier>;

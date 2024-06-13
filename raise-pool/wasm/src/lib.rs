@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           36
+// Endpoints:                           35
 // Async Callback (empty):               1
-// Total number of exported functions:  39
+// Total number of exported functions:  38
 
 #![no_std]
 
@@ -35,7 +35,6 @@ multiversx_sc_wasm_adapter::endpoints! {
         getRefundEnabled => refund_enabled
         getPlatfromFeeWallet => platform_fee_wallet
         getGroupFeeWallet => group_fee_wallet
-        getSignerAddress => signer_address
         getPaymentCurrencies => payment_currencies
         getCurrencyDecimals => currency_decimals
         getAddresses => addresses

@@ -23,7 +23,6 @@ pub trait RaisePool: crate::storage::StorageModule {
         refund_enabled: bool,
         platform_fee_wallet: ManagedAddress,
         group_fee_wallet: ManagedAddress,
-        signer_address: ManagedAddress,
         payment_currencies: MultiValueEncoded<MultiValue2<TokenIdentifier, u32>>,
     ) {
         require!(
@@ -56,7 +55,6 @@ pub trait RaisePool: crate::storage::StorageModule {
         self.refund_enabled().set(refund_enabled);
         self.platform_fee_wallet().set(platform_fee_wallet);
         self.group_fee_wallet().set(group_fee_wallet);
-        self.signer_address().set(signer_address);
         for payment_currency in payment_currencies {
             let (currency, decimals) = payment_currency.into_tuple();
             self.payment_currencies().insert(currency.clone());
