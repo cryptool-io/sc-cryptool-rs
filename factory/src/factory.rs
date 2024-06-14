@@ -18,8 +18,7 @@ pub trait Factory {
         self.source_contract().set(source_contract);
     }
 
-    fn validate_signature(&self, caller: &ManagedAddress, pool_id: &u64, signer: ManagedAddress, signature: ManagedBuffer) {
-        let timestamp = self.blockchain().get_block_timestamp();
+    fn validate_signature(&self, caller: &ManagedAddress, pool_id: &u64, signer: ManagedAddress, timestamp: u64, signature: ManagedBuffer) {
 
         let mut buffer = ManagedBuffer::new();
         buffer.append(&ManagedBuffer::new_from_bytes(&timestamp.to_be_bytes()));
@@ -47,10 +46,12 @@ pub trait Factory {
         group_fee_wallet: ManagedAddress,
         signer: ManagedAddress,
         signature: ManagedBuffer,
+        timestamp: u64,
         payment_currencies: MultiValueEncoded<MultiValue2<TokenIdentifier, u32>>,
     ) {
         let caller = self.blockchain().get_caller();
-        self.validate_signature(&caller, &pool_id, signer, signature);
+        self.validate_signature(&caller, &pool_id, signer, timestamp, signature);
+        require!(self.blockchain().get_block_timestamp() - timestamp < 60, "Deploy took too long");
 
         let (raise_pool_contract_address, ()) = self
             .raise_pool_deploy_proxy()
