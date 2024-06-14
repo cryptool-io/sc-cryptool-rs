@@ -20,6 +20,12 @@ num-bigint = "0.4"
 [dev-dependencies.multiversx-sc-scenario]
 version = "0.50.4"
 
+[dependencies.permissions_module]
+path = "../modules/permissions_module"
+
+[dependencies.pausable]
+path = "../modules/pausable"
+
 [workspace]
 members = [
     ".",

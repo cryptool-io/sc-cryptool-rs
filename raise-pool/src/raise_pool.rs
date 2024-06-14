@@ -2,12 +2,13 @@
 
 use multiversx_sc::imports::*;
 mod storage;
+use storage::ReleaseState;
 
 pub const MAX_PERCENTAGE: u64 = 10_000;
 pub const DEFAULT_DECIMALS: u32 = 18;
 pub const BULK_BATCH: usize = 100;
+pub const MIN_GAS_FOR_OPERATION: u64 = 2_000_000;
 
-/// An empty contract. To be used as a template when starting a new contract from scratch.
 #[multiversx_sc::contract]
 pub trait RaisePool: crate::storage::StorageModule {
     #[init]
@@ -60,19 +61,47 @@ pub trait RaisePool: crate::storage::StorageModule {
             self.payment_currencies().insert(currency.clone());
             self.currency_decimals(&currency).set(decimals);
         }
+        self.release_state().set(ReleaseState::None);
     }
 
     #[upgrade]
     fn upgrade(&self) {}
 
+    fn validate_signature(
+        &self,
+        caller: &ManagedAddress,
+        pool_id: &u64,
+        signer: ManagedAddress,
+        timestamp: u64,
+        signature: ManagedBuffer,
+    ) {
+        let mut buffer = ManagedBuffer::new();
+        buffer.append(&ManagedBuffer::new_from_bytes(&timestamp.to_be_bytes()));
+        buffer.append(&ManagedBuffer::new_from_bytes(&pool_id.to_be_bytes()));
+        buffer.append(&caller.as_managed_buffer());
+        self.crypto()
+            .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
+    }
+
     #[payable("*")]
     #[endpoint(deposit)]
     fn deposit(
         &self,
+        pool_id: u64,
+        signer: ManagedAddress,
+        timestamp: u64,
+        signature: ManagedBuffer,
         platform_fee_percentage: BigUint,
         group_fee_percentage: BigUint,
         ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>,
     ) {
+        let caller = self.blockchain().get_caller();
+        self.validate_signature(&caller, &pool_id, signer, timestamp, signature);
+        require!(
+            self.blockchain().get_block_timestamp() - timestamp < 60,
+            "Deposit took too long"
+        );
+
         let payment = self.call_value().single_esdt();
         require!(
             self.payment_currencies()
@@ -83,11 +112,6 @@ pub trait RaisePool: crate::storage::StorageModule {
         let timestamp = self.blockchain().get_block_timestamp();
         require!(timestamp > self.start_date().get(), "Deposits not open yet");
         require!(timestamp < self.end_date().get(), "Deposits closed");
-
-        require!(
-            self.total_amount().get() + &payment.amount <= self.hard_cap().get(),
-            "Hard cap threshold would be exceeded"
-        );
 
         require!(
             self.min_deposit().get() <= payment.amount,
@@ -105,7 +129,8 @@ pub trait RaisePool: crate::storage::StorageModule {
         );
 
         let caller = self.blockchain().get_caller();
-        self.addresses().push(&caller.clone());
+
+        self.addresses().insert(caller.clone());
         self.deposited_currencies(&caller)
             .insert(payment.token_identifier.clone());
         self.deposited_amount(&caller, &payment.token_identifier)
@@ -116,6 +141,12 @@ pub trait RaisePool: crate::storage::StorageModule {
             }
             _ => payment.amount.clone(),
         };
+
+        require!(
+            self.total_amount().get() + &payment_denomination <= self.hard_cap().get(),
+            "Hard cap threshold would be exceeded"
+        );
+
         self.total_amount()
             .update(|current| *current += &payment_denomination);
 
@@ -143,7 +174,7 @@ pub trait RaisePool: crate::storage::StorageModule {
         match ambassador.into_option() {
             Some(ambassador) => {
                 let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
-                self.ambassadors().push(&ambassador_wallet);
+                self.ambassadors().insert(ambassador_wallet.clone());
                 let ambassador_amount = (&payment.amount * &ambassador_percentage) / MAX_PERCENTAGE;
                 let denominated_ambassador_amount =
                     (&payment_denomination * &ambassador_percentage) / MAX_PERCENTAGE;
@@ -162,9 +193,20 @@ pub trait RaisePool: crate::storage::StorageModule {
         }
     }
 
-    #[only_owner]
     #[endpoint(refund)]
-    fn refund(&self) {
+    fn refund(
+        &self,
+        pool_id: u64,
+        signer: ManagedAddress,
+        timestamp: u64,
+        signature: ManagedBuffer,
+    ) -> OperationCompletionStatus {
+        let caller = self.blockchain().get_caller();
+        self.validate_signature(&caller, &pool_id, signer, timestamp, signature);
+        require!(
+            self.blockchain().get_block_timestamp() - timestamp < 60,
+            "Refund took too long"
+        );
         require!(self.refund_enabled().get(), "Refunds are not enabled");
         require!(
             self.blockchain().get_block_timestamp() > self.end_date().get(),
@@ -172,16 +214,22 @@ pub trait RaisePool: crate::storage::StorageModule {
         );
         require!(
             self.total_amount().get() < self.hard_cap().get(),
-            "Soft cap exceeded"
+            "Hard cap exceeded"
         );
 
         let addresses_len = self.addresses().len();
-        let mut refund_index = self.refund_index().get();
+        let addresses = self.addresses();
+        let mut addresses_iter = addresses.into_iter();
+        let refund_index = self.refund_index().get();
         while refund_index < addresses_len {
-            let start_index = refund_index + 1;
-            let end_index = (start_index + BULK_BATCH).min(addresses_len + 1);
+            let start_index = refund_index;
+            let end_index = (start_index + BULK_BATCH).min(addresses_len);
             for idx in start_index..end_index {
-                let address = self.addresses().get(idx);
+                if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION {
+                    self.refund_index().set(idx);
+                    return OperationCompletionStatus::InterruptedBeforeOutOfGas;
+                }
+                let address = addresses_iter.nth(idx).unwrap();
                 let mut payments = ManagedVec::new();
                 for token_identifier in self.deposited_currencies(&address).iter() {
                     let amount = self.deposited_amount(&address, &token_identifier).get();
@@ -189,14 +237,13 @@ pub trait RaisePool: crate::storage::StorageModule {
                 }
                 self.send().direct_multi(&address, &payments);
             }
-            refund_index = end_index;
-            self.refund_index().set(refund_index);
+            self.refund_index().set(end_index);
         }
+        OperationCompletionStatus::Completed
     }
 
-    #[only_owner]
-    #[endpoint(release_plaform_and_group)]
-    fn release_plaform_and_group(&self) {
+    #[endpoint(release_plaform)]
+    fn release_plaform(&self) {
         let mut payments = ManagedVec::new();
         for token in self.payment_currencies().iter() {
             payments.push(EsdtTokenPayment::new(
@@ -207,7 +254,9 @@ pub trait RaisePool: crate::storage::StorageModule {
         }
         self.send()
             .direct_multi(&self.platform_fee_wallet().get(), &payments);
+    }
 
+    fn release_group(&self) {
         let mut payments = ManagedVec::new();
         for token in self.payment_currencies().iter() {
             payments.push(EsdtTokenPayment::new(
@@ -220,35 +269,109 @@ pub trait RaisePool: crate::storage::StorageModule {
             .direct_multi(&self.group_fee_wallet().get(), &payments);
     }
 
-    #[only_owner]
-    #[endpoint(release_ambassadors)]
-    fn release_ambassadors(&self) {
+    fn release_ambassadors(&self) -> OperationCompletionStatus {
         let ambassadors_len = self.ambassadors().len();
-        let mut release_index = self.release_index().get();
+        let release_index = self.release_index().get();
+        let ambassadors = self.ambassadors();
+        let mut ambassadors_iter = ambassadors.into_iter();
         while release_index < ambassadors_len {
-            let start_index = release_index + 1;
-            let end_index = (start_index + BULK_BATCH).min(ambassadors_len + 1);
+            let start_index = release_index;
+            let end_index = (start_index + BULK_BATCH).min(ambassadors_len);
             for idx in start_index..end_index {
-                let ambassador = self.ambassadors().get(idx);
+                if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION {
+                    self.release_index().set(idx);
+                    return OperationCompletionStatus::InterruptedBeforeOutOfGas;
+                }
+                let ambassador = ambassadors_iter.nth(idx).unwrap();
                 let mut payments = ManagedVec::new();
                 for token_identifier in self.ambassador_currencies(&ambassador).iter() {
-                    let amount = self.referral_ambassador_fee(&ambassador, &token_identifier).get();
+                    let amount = self
+                        .referral_ambassador_fee(&ambassador, &token_identifier)
+                        .get();
                     payments.push(EsdtTokenPayment::new(token_identifier, 0, amount));
                 }
                 self.send().direct_multi(&ambassador, &payments);
             }
-            release_index = end_index;
-            self.release_index().set(release_index);
+            self.release_index().set(end_index);
         }
+
+        OperationCompletionStatus::Completed
     }
 
-    #[only_owner]
-    #[endpoint(refund_overcommited)]
-    fn refund_overcommited(&self, overcommited: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>) {
-        for overcommited in overcommited {
-            let (address, token_identifier, amount) = overcommited.into_tuple();
-            self.send().direct_esdt(&address, &token_identifier, 0, &amount);
+    fn refund_overcommited(
+        &self,
+        overcommited: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
+    ) -> OperationCompletionStatus {
+        let overcommited_len = overcommited.len();
+        let overcommited_index = self.overcommited_index().get();
+        let mut overcommited_iter = overcommited.into_iter();
+        while overcommited_index < overcommited_len {
+            let start_index = overcommited_index;
+            let end_index = (start_index + BULK_BATCH).min(overcommited_len);
+            for idx in start_index..end_index {
+                if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION {
+                    self.overcommited_index().set(idx);
+                    return OperationCompletionStatus::InterruptedBeforeOutOfGas;
+                }
+                let overcommitment_data = overcommited_iter.nth(idx).unwrap();
+                let (overcommiter, token_identifier, amount) = overcommitment_data.into_tuple();
+                self.send()
+                    .direct_esdt(&overcommiter, &token_identifier, 0, &amount);
+            }
+            self.overcommited_index().set(end_index);
         }
+        OperationCompletionStatus::Completed
     }
 
+    fn release(
+        &self,
+        pool_id: u64,
+        signer: ManagedAddress,
+        timestamp: u64,
+        signature: ManagedBuffer,
+        overcommited: OptionalValue<
+            MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
+        >,
+    ) -> OperationCompletionStatus {
+        let caller = self.blockchain().get_caller();
+        self.validate_signature(&caller, &pool_id, signer, timestamp, signature);
+        require!(
+            self.blockchain().get_block_timestamp() - timestamp < 60,
+            "Deposit took too long"
+        );
+        let overcommited_into_option = overcommited.into_option();
+
+        loop {
+            match self.release_state().get() {
+                ReleaseState::None => {
+                    self.release_plaform();
+                    self.release_state().set(ReleaseState::PlatformReleased);
+                }
+                ReleaseState::PlatformReleased => {
+                    self.release_group();
+                    self.release_state().set(ReleaseState::GroupReleased);
+                }
+                ReleaseState::GroupReleased => {
+                    let status = self.release_ambassadors();
+                    if status == OperationCompletionStatus::InterruptedBeforeOutOfGas {
+                        return status;
+                    }
+                    self.release_state().set(ReleaseState::AmbassadorsReleased);
+                }
+                ReleaseState::AmbassadorsReleased => match overcommited_into_option {
+                    Some(ref overcommited) => {
+                        let status = self.refund_overcommited(overcommited.clone());
+                        if status == OperationCompletionStatus::InterruptedBeforeOutOfGas {
+                            return status;
+                        }
+                        self.release_state().set(ReleaseState::AllReleased);
+                    }
+                    None => {
+                        self.release_state().set(ReleaseState::AllReleased);
+                    }
+                },
+                ReleaseState::AllReleased => return OperationCompletionStatus::Completed,
+            }
+        }
+    }
 }

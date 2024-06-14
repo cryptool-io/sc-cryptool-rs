@@ -22,9 +22,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         upgrade => upgrade
         deposit => deposit
         refund => refund
-        release_plaform_and_group => release_plaform_and_group
-        release_ambassadors => release_ambassadors
-        refund_overcommited => refund_overcommited
+        release_plaform => release_plaform
         getSoftCap => soft_cap
         getHardCap => hard_cap
         getMinDeposit => min_deposit
@@ -55,6 +53,8 @@ multiversx_sc_wasm_adapter::endpoints! {
         getTotalAmbassadorFee => total_ambassador_fee
         getAmbassadorCurrencies => ambassador_currencies
         getReferralAmbassadorFee => referral_ambassador_fee
+        getOvercommitedIndex => overcommited_index
+        getReleaseState => release_state
     )
 }
 

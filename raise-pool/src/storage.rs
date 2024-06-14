@@ -1,6 +1,15 @@
 multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
+#[derive(TopEncode, TopDecode, PartialEq, TypeAbi, Clone, Copy, Debug)]
+pub enum ReleaseState {
+    None,
+    PlatformReleased,
+    GroupReleased,
+    AmbassadorsReleased,
+    AllReleased,
+}
+
 #[multiversx_sc::module]
 pub trait StorageModule {
     #[view(getSoftCap)]
@@ -55,7 +64,7 @@ pub trait StorageModule {
 
     #[view(getAddresses)]
     #[storage_mapper("addresses")]
-    fn addresses(&self) -> VecMapper<ManagedAddress>;
+    fn addresses(&self) -> SetMapper<ManagedAddress>;
 
     #[view(getRefundIndex)]
     #[storage_mapper("refund_index")]
@@ -112,7 +121,7 @@ pub trait StorageModule {
 
     #[view(getAmbassadors)]
     #[storage_mapper("ambassadors")]
-    fn ambassadors(&self) -> VecMapper<ManagedAddress>;
+    fn ambassadors(&self) -> SetMapper<ManagedAddress>;
 
     #[view(getReleaseIndex)]
     #[storage_mapper("release_index")]
@@ -149,4 +158,11 @@ pub trait StorageModule {
         token: &TokenIdentifier,
     ) -> SingleValueMapper<BigUint>;
 
+    #[view(getOvercommitedIndex)]
+    #[storage_mapper("overcommited_index")]
+    fn overcommited_index(&self) -> SingleValueMapper<usize>;
+
+    #[view(getReleaseState)]
+    #[storage_mapper("release_state")]
+    fn release_state(&self) -> SingleValueMapper<ReleaseState>;
 }

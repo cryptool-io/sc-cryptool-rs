@@ -2,29 +2,35 @@
 
 #[allow(unused_imports)]
 use multiversx_sc::imports::*;
+use permissions_module::Permissions;
 use raise_pool::ProxyTrait as _;
 
 /// An empty contract. To be used as a template when starting a new contract from scratch.
 #[multiversx_sc::contract]
-pub trait Factory {
+pub trait Factory: permissions_module::PermissionsModule + pausable::PausableModule {
     #[init]
-    fn init(&self) {
+    fn init(&self, source_contract: ManagedAddress) {
+        let all_permissions = Permissions::OWNER | Permissions::ADMIN | Permissions::PAUSE;
+        self.set_permissions(self.blockchain().get_caller(), all_permissions);
         self.raise_pool_enabled().set(false);
-    }
-
-    #[only_owner]
-    #[endpoint(setSourceContract)]
-    fn set_source_contract(&self, source_contract: ManagedAddress) {
         self.source_contract().set(source_contract);
     }
 
-    fn validate_signature(&self, caller: &ManagedAddress, pool_id: &u64, signer: ManagedAddress, timestamp: u64, signature: ManagedBuffer) {
+    #[upgrade]
+    fn upgrade(&self) {}
 
+    fn validate_signature(
+        &self,
+        caller: &ManagedAddress,
+        pool_id: &u64,
+        signer: ManagedAddress,
+        timestamp: u64,
+        signature: ManagedBuffer,
+    ) {
         let mut buffer = ManagedBuffer::new();
         buffer.append(&ManagedBuffer::new_from_bytes(&timestamp.to_be_bytes()));
         buffer.append(&ManagedBuffer::new_from_bytes(&pool_id.to_be_bytes()));
         buffer.append(&caller.as_managed_buffer());
-
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
     }
@@ -51,7 +57,10 @@ pub trait Factory {
     ) {
         let caller = self.blockchain().get_caller();
         self.validate_signature(&caller, &pool_id, signer, timestamp, signature);
-        require!(self.blockchain().get_block_timestamp() - timestamp < 60, "Deploy took too long");
+        require!(
+            self.blockchain().get_block_timestamp() - timestamp < 60,
+            "Deploy took too long"
+        );
 
         let (raise_pool_contract_address, ()) = self
             .raise_pool_deploy_proxy()
@@ -79,11 +88,9 @@ pub trait Factory {
             .set(&raise_pool_contract_address);
     }
 
-    #[upgrade]
-    fn upgrade(&self) {}
-
     #[endpoint(setContractCreationEnabled)]
     fn set_raise_pool_enabled(&self, enabled: bool) {
+        self.require_caller_has_owner_permissions();
         self.raise_pool_enabled().set(enabled);
     }
 
