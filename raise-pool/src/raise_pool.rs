@@ -24,6 +24,7 @@ pub trait RaisePool: crate::storage::StorageModule {
         refund_enabled: bool,
         platform_fee_wallet: ManagedAddress,
         group_fee_wallet: ManagedAddress,
+        signer: ManagedAddress,
         payment_currencies: MultiValueEncoded<MultiValue2<TokenIdentifier, u32>>,
     ) {
         require!(
@@ -61,6 +62,8 @@ pub trait RaisePool: crate::storage::StorageModule {
             self.payment_currencies().insert(currency.clone());
             self.currency_decimals(&currency).set(decimals);
         }
+        self.pool_enabled().set(false);
+        self.signer().set(&signer);
         self.release_state().set(ReleaseState::None);
     }
 
@@ -69,26 +72,67 @@ pub trait RaisePool: crate::storage::StorageModule {
 
     fn validate_signature(
         &self,
-        caller: &ManagedAddress,
-        pool_id: &u64,
-        signer: ManagedAddress,
         timestamp: u64,
+        pool_id: &u32,
+        caller: &ManagedAddress,
+        signer: ManagedAddress,
         signature: ManagedBuffer,
     ) {
         let mut buffer = ManagedBuffer::new();
-        buffer.append(&ManagedBuffer::new_from_bytes(&timestamp.to_be_bytes()));
-        buffer.append(&ManagedBuffer::new_from_bytes(&pool_id.to_be_bytes()));
+        let result = timestamp.dep_encode(&mut buffer);
+        require!(result.is_ok(), "Could not encode");
+        let result = pool_id.dep_encode(&mut buffer);
+        require!(result.is_ok(), "Could not encode");
         buffer.append(&caller.as_managed_buffer());
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
+    }
+
+    fn validate_deploy_signature(
+        &self,
+        timestamp: u64,
+        pool_id: &u32,
+        caller: &ManagedAddress,
+        platform_fee_percentage: &BigUint,
+        group_fee_percentage: &BigUint,
+        signer: ManagedAddress,
+        signature: ManagedBuffer,
+        ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>,
+    ) {
+        let mut buffer = ManagedBuffer::new();
+        let result = timestamp.dep_encode(&mut buffer);
+        require!(result.is_ok(), "Could not encode");
+        let result = pool_id.dep_encode(&mut buffer);
+        require!(result.is_ok(), "Could not encode");
+        buffer.append(&caller.as_managed_buffer());
+        let result = platform_fee_percentage.dep_encode(&mut buffer);
+        require!(result.is_ok(), "Could not encode");
+        let result = group_fee_percentage.dep_encode(&mut buffer);
+        require!(result.is_ok(), "Could not encode");
+        match ambassador.into_option() {
+            Some(ambassador) => {
+                let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
+                let result = ambassador_percentage.dep_encode(&mut buffer);
+                require!(result.is_ok(), "Could not encode");
+                buffer.append(&ambassador_wallet.as_managed_buffer());
+            }
+            None => {}
+        }
+        self.crypto()
+            .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
+    }
+
+    #[only_owner]
+    #[endpoint(enablePool)]
+    fn enable_pool(&self) {
+        self.pool_enabled().set(true);
     }
 
     #[payable("*")]
     #[endpoint(deposit)]
     fn deposit(
         &self,
-        pool_id: u64,
-        signer: ManagedAddress,
+        pool_id: u32,
         timestamp: u64,
         signature: ManagedBuffer,
         platform_fee_percentage: BigUint,
@@ -96,11 +140,24 @@ pub trait RaisePool: crate::storage::StorageModule {
         ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>,
     ) {
         let caller = self.blockchain().get_caller();
-        self.validate_signature(&caller, &pool_id, signer, timestamp, signature);
+        let signer = self.signer().get();
+
+        self.validate_deploy_signature(
+            timestamp,
+            &pool_id,
+            &caller,
+            &platform_fee_percentage,
+            &group_fee_percentage,
+            signer,
+            signature,
+            ambassador.clone() 
+        );
         require!(
             self.blockchain().get_block_timestamp() - timestamp < 60,
             "Deposit took too long"
         );
+
+        require!(self.pool_enabled().get(), "Pool is not enabled");
 
         let payment = self.call_value().single_esdt();
         require!(
@@ -196,13 +253,13 @@ pub trait RaisePool: crate::storage::StorageModule {
     #[endpoint(refund)]
     fn refund(
         &self,
-        pool_id: u64,
-        signer: ManagedAddress,
+        pool_id: u32,
         timestamp: u64,
         signature: ManagedBuffer,
     ) -> OperationCompletionStatus {
         let caller = self.blockchain().get_caller();
-        self.validate_signature(&caller, &pool_id, signer, timestamp, signature);
+        let signer = self.signer().get();
+        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
         require!(
             self.blockchain().get_block_timestamp() - timestamp < 60,
             "Refund took too long"
@@ -323,10 +380,10 @@ pub trait RaisePool: crate::storage::StorageModule {
         OperationCompletionStatus::Completed
     }
 
+    #[endpoint(release)]
     fn release(
         &self,
-        pool_id: u64,
-        signer: ManagedAddress,
+        pool_id: u32,
         timestamp: u64,
         signature: ManagedBuffer,
         overcommited: OptionalValue<
@@ -334,7 +391,8 @@ pub trait RaisePool: crate::storage::StorageModule {
         >,
     ) -> OperationCompletionStatus {
         let caller = self.blockchain().get_caller();
-        self.validate_signature(&caller, &pool_id, signer, timestamp, signature);
+        let signer = self.signer().get();
+        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
         require!(
             self.blockchain().get_block_timestamp() - timestamp < 60,
             "Deposit took too long"

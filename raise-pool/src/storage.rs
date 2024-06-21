@@ -165,4 +165,12 @@ pub trait StorageModule {
     #[view(getReleaseState)]
     #[storage_mapper("release_state")]
     fn release_state(&self) -> SingleValueMapper<ReleaseState>;
+
+    #[view(poolEnabled)]
+    #[storage_mapper("pool_enabled")]
+    fn pool_enabled(&self) -> SingleValueMapper<bool>;
+
+    #[view(getSigner)]
+    #[storage_mapper("signer")]
+    fn signer(&self) -> SingleValueMapper<ManagedAddress>;
 }
