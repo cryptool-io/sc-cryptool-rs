@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           39
+// Endpoints:                           40
 // Async Callback (empty):               1
-// Total number of exported functions:  42
+// Total number of exported functions:  43
 
 #![no_std]
 
@@ -20,11 +20,12 @@ multiversx_sc_wasm_adapter::endpoints! {
     (
         init => init
         upgrade => upgrade
-        enablePool => enable_pool
+        enableRaisePool => enable_raise_pool
         deposit => deposit
         refund => refund
         release_plaform => release_plaform
         release => release
+        getPoolId => pool_id
         getSoftCap => soft_cap
         getHardCap => hard_cap
         getMinDeposit => min_deposit
@@ -57,7 +58,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         getReferralAmbassadorFee => referral_ambassador_fee
         getOvercommitedIndex => overcommited_index
         getReleaseState => release_state
-        poolEnabled => pool_enabled
+        raisePoolEnabled => raise_pool_enabled
         getSigner => signer
     )
 }

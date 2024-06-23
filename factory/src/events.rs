@@ -3,8 +3,8 @@ multiversx_sc::derive_imports!();
 
 #[multiversx_sc::module]
 pub trait EventsModule {
-    #[event("raisePoolDeployed")]
-    fn raise_pool_deployed(
+    #[event("raisePoolDeployedEvent")]
+    fn raise_pool_deployed_event(
         self,
         #[indexed] pool_id: u32,
         #[indexed] soft_cap: BigUint,
@@ -20,8 +20,4 @@ pub trait EventsModule {
         #[indexed] timestamp: u64,
         #[indexed] payment_currencies: MultiValueEncoded<MultiValue2<TokenIdentifier, u32>>,
     );
- 
-
-
-
 }

@@ -21,7 +21,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         init => init
         upgrade => upgrade
         deployRaisePool => deploy_raise_pool
-        setRaisePoolEnabled => set_raise_pool_enabled
+        enableRaisePool => enable_raise_pool
         getSourceContract => source_contract
         getContractCreationEnabled => raise_pool_enabled
         getAddressToDeployer => address_to_deployer

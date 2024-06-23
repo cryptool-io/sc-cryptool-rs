@@ -8,7 +8,9 @@ mod events;
 
 /// An empty contract. To be used as a template when starting a new contract from scratch.
 #[multiversx_sc::contract]
-pub trait Factory: permissions_module::PermissionsModule + pausable::PausableModule + events::EventsModule {
+pub trait Factory:
+    permissions_module::PermissionsModule + pausable::PausableModule + events::EventsModule
+{
     #[init]
     fn init(&self, source_contract: ManagedAddress, signer: ManagedAddress) {
         let all_permissions = Permissions::OWNER | Permissions::ADMIN | Permissions::PAUSE;
@@ -69,6 +71,7 @@ pub trait Factory: permissions_module::PermissionsModule + pausable::PausableMod
         let (raise_pool_contract_address, ()) = self
             .raise_pool_proxy()
             .init(
+                pool_id,
                 soft_cap.clone(),
                 hard_cap.clone(),
                 min_deposit.clone(),
@@ -92,7 +95,7 @@ pub trait Factory: permissions_module::PermissionsModule + pausable::PausableMod
         self.pool_id_to_address(&pool_id)
             .set(&raise_pool_contract_address);
 
-        self.raise_pool_deployed(
+        self.raise_pool_deployed_event(
             pool_id,
             soft_cap,
             hard_cap,
@@ -107,14 +110,19 @@ pub trait Factory: permissions_module::PermissionsModule + pausable::PausableMod
             timestamp,
             payment_currencies,
         );
-           
     }
 
-    #[endpoint(setRaisePoolEnabled)]
-    fn set_raise_pool_enabled(&self) {
+    #[endpoint(enableRaisePool)]
+    fn enable_raise_pool(&self, pool_id: u32) {
+        require!(
+            !self.pool_id_to_address(&pool_id).is_empty(),
+            "Pool not deployed"
+        );
         self.require_caller_has_owner_permissions();
-        let _ = self.raise_pool_proxy().enable_pool();
-        self.raise_pool_enabled().set(true);
+        self.tx()
+            .to(self.pool_id_to_address(&pool_id).get())
+            .raw_call("enableRaisePool")
+            .async_call_and_exit();
     }
 
     #[proxy]

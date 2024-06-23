@@ -12,6 +12,11 @@ pub enum ReleaseState {
 
 #[multiversx_sc::module]
 pub trait StorageModule {
+
+    #[view(getPoolId)]
+    #[storage_mapper("pool_id")]
+    fn pool_id(&self) -> SingleValueMapper<u32>;
+
     #[view(getSoftCap)]
     #[storage_mapper("soft_cap")]
     fn soft_cap(&self) -> SingleValueMapper<BigUint>;
@@ -166,9 +171,9 @@ pub trait StorageModule {
     #[storage_mapper("release_state")]
     fn release_state(&self) -> SingleValueMapper<ReleaseState>;
 
-    #[view(poolEnabled)]
-    #[storage_mapper("pool_enabled")]
-    fn pool_enabled(&self) -> SingleValueMapper<bool>;
+    #[view(raisePoolEnabled)]
+    #[storage_mapper("raise_pool_enabled")]
+    fn raise_pool_enabled(&self) -> SingleValueMapper<bool>;
 
     #[view(getSigner)]
     #[storage_mapper("signer")]

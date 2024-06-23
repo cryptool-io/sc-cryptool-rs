@@ -29,7 +29,7 @@ import {
   HARD_CAP_INVALID,
   MAX_DEPOSIT_INVALID,
   END_DATE_INVALID,
-  RAISE_POOL_ADDRESS
+  RAISE_POOL_DUMMY_ADDRESS
 } from "./helpers"; 
 
 
@@ -37,7 +37,8 @@ let world: LSWorld;
 let deployer: LSWallet;
 let bob: LSWallet;
 let factoryContract: LSContract;
-let raisePoolContract: LSContract; 
+let raisePoolDummyContract: LSContract; 
+let raisePoolContract: LSContract;
 
 beforeEach(async () => {
   world = await LSWorld.start();
@@ -46,10 +47,11 @@ beforeEach(async () => {
   });
   deployer =  await world.createWallet({ address: deployerAddress });
 
-  ({ contract: raisePoolContract } = await deployer.deployContract({
+  ({ contract: raisePoolDummyContract } = await deployer.deployContract({
     code: "file:raise-pool/output/raise-pool.wasm",
     codeMetadata: [],
     codeArgs: [
+      e.U64(0), 
       e.U64(0), 
       e.U64(10), 
       e.U64(1), 
@@ -74,7 +76,7 @@ beforeEach(async () => {
     codeMetadata: [],
     gasLimit: 10_000_000,
     codeArgs: [
-      e.Addr(raisePoolContract), e.Addr(deployer),
+      e.Addr(raisePoolDummyContract), e.Addr(deployer),
     ],
   }));
 });
@@ -90,14 +92,14 @@ test("Deploy Factory", async () => {
       e.kvs
         .Mapper("raise_pool_enabled")
         .Value(e.Bool(false)),
-      e.kvs.Mapper("source_contract").Value(e.Addr(raisePoolContract)),
+      e.kvs.Mapper("source_contract").Value(e.Addr(raisePoolDummyContract)),
       e.kvs.Mapper("permissions", e.Addr(deployer)).Value(e.U64(7)),
       e.kvs.Mapper("signer").Value(e.Addr(deployer)),
     ],
   });
   });
 
-test("Deploy Raise Pool with invalid Signature", async () => {
+test("Deploy Pool with invalid Signature", async () => {
   await deployer.callContract({
     callee: factoryContract,
     gasLimit: 50_000_000,
@@ -122,7 +124,7 @@ test("Deploy Raise Pool with invalid Signature", async () => {
     }).assertFail({ code: 10, message: "invalid signature" })
   }); 
 
-test("Deploy Raise Pool with too much delay", async () => {
+test("Deploy Pool with too much delay", async () => {
   await deployer.callContract({
     callee: factoryContract,
     gasLimit: 50_000_000,
@@ -147,7 +149,7 @@ test("Deploy Raise Pool with too much delay", async () => {
     }).assertFail({ code: 4, message: "Deploy took too long" })
   }); 
 
-test("Deploy Raise Pool with invalid Hard Cap", async () => {
+test("Deploy Pool with invalid Hard Cap", async () => {
   await deployer.callContract({
     callee: factoryContract,
     gasLimit: 50_000_000,
@@ -172,7 +174,7 @@ test("Deploy Raise Pool with invalid Hard Cap", async () => {
     }).assertFail({ code: 10, message: "error signalled by smartcontract" })
   });  
 
-test("Deploy Raise Pool with invalid Max Deposit", async () => {
+test("Deploy Pool with invalid Max Deposit", async () => {
   await deployer.callContract({
     callee: factoryContract,
     gasLimit: 50_000_000,
@@ -197,7 +199,7 @@ test("Deploy Raise Pool with invalid Max Deposit", async () => {
     }).assertFail({ code: 10, message: "error signalled by smartcontract" })
   });  
 
-test("Deploy Raise Pool with invalid End Date", async () => {
+test("Deploy Pool with invalid End Date", async () => {
   await deployer.callContract({
     callee: factoryContract,
     gasLimit: 50_000_000,
@@ -222,7 +224,7 @@ test("Deploy Raise Pool with invalid End Date", async () => {
     }).assertFail({ code: 10, message: "error signalled by smartcontract" })
   });  
 
-test("Deploy Raise Pool", async () => {
+test("Deploy Pool", async () => {
   await deployer.callContract({
     callee: factoryContract,
     gasLimit: 50_000_000,
@@ -252,68 +254,82 @@ test("Deploy Raise Pool", async () => {
         e.kvs
           .Mapper("raise_pool_enabled")
           .Value(e.Bool(false)),
-        e.kvs.Mapper("source_contract").Value(e.Addr(raisePoolContract)),
+        e.kvs.Mapper("source_contract").Value(e.Addr(raisePoolDummyContract)),
         e.kvs.Mapper("permissions", e.Addr(deployer)).Value(e.U64(7)),
-        e.kvs.Mapper("pool_id_to_address", e.U32(POOL_ID)).Value(e.Addr(RAISE_POOL_ADDRESS)),
-        e.kvs.Mapper("address_to_deployer", e.Addr(RAISE_POOL_ADDRESS)).Value(e.Addr(deployer)),
+        e.kvs.Mapper("pool_id_to_address", e.U32(POOL_ID)).Value(e.Addr(RAISE_POOL_DUMMY_ADDRESS)),
+        e.kvs.Mapper("address_to_deployer", e.Addr(RAISE_POOL_DUMMY_ADDRESS)).Value(e.Addr(deployer)),
         e.kvs.Mapper("signer").Value(e.Addr(deployer)),
       ],
     });
-  });  
- 
-test("Deployed Pool not enabled", async () => {
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "deployRaisePool",
-    funcArgs: [e.U32(POOL_ID), 
-      e.U64(SOFT_CAP), 
-      e.U64(HARD_CAP), 
-      e.U64(MIN_DEPOSIT), 
-      e.U64(MAX_DEPOSIT), 
-      e.U64(DEPOSIT_INCREMENTS), 
-      e.U64(START_DATE), 
-      e.U64(END_DATE), 
-      e.U64(REFUND_ENABLED), 
-      e.Addr(deployer), 
-      e.Addr(deployer),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.U64(TIMESTAMP),
-      e.Str(CURRENCY1), 
-      e.U64(DECIMALS1), 
-      e.Str(CURRENCY2), 
-      e.U64(DECIMALS2)],
-    })
- 
-    bob = await world.createWallet({
-      address: bobAddress,
-      balance: 100_000,
-      kvs: [
-        e.kvs.Esdts([
-          { id: CURRENCY1, amount: 2_000_000 },
-          { id: CURRENCY2, amount: 1_000_000 },
-        ]),
-      ],
+
+    const raisePoolAddressResult = await deployer.query({
+      callee: factoryContract,
+      funcName: "getPoolIdToAddress",
+      funcArgs: [e.U32(POOL_ID)],
     });
 
-    await bob.callContract({
-      callee: raisePoolContract,
-      gasLimit: 50_000_000,
-      funcName: "deposit",
-      funcArgs: [
-        e.U32(POOL_ID),
-        e.U64(TIMESTAMP),
-        e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
-        e.U(PLATFORM_FEE),
-        e.U(GROUP_FEE),
-        e.U(AMBASSADOR_FEE),
-        e.Addr(deployer),
-      ],
-      esdts: [
-        { id: CURRENCY1, amount: 100_000 },
-        { id: CURRENCY2, amount: 100_000 },
-      ],
-    }).assertFail({ code: 4, message: "Pool is not enabled" }) 
-    });  
+    const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+    const raisePoolContract = new LSContract({
+      address: raisePoolAddress,
+      world
+    });
   
- 
+    assertAccount(await raisePoolContract.getAccount(), {
+      balance: 0n,
+      kvs: [
+        e.kvs
+        .Mapper("soft_cap")
+        .Value(e.I(SOFT_CAP)),
+        e.kvs
+        .Mapper("hard_cap")
+        .Value(e.I(HARD_CAP)),
+        e.kvs
+        .Mapper("min_deposit")
+        .Value(e.I(MIN_DEPOSIT)),
+        e.kvs
+        .Mapper("max_deposit")
+        .Value(e.I(MAX_DEPOSIT)),
+        e.kvs
+        .Mapper("deposit_increments")
+        .Value(e.I(DEPOSIT_INCREMENTS)),
+        e.kvs
+        .Mapper("start_date")
+        .Value(e.U64(START_DATE)),
+        e.kvs
+        .Mapper("end_date")
+        .Value(e.U64(END_DATE)),
+        e.kvs
+        .Mapper("refund_enabled")
+        .Value(e.Bool(REFUND_ENABLED)),
+        e.kvs
+        .Mapper("platform_fee_wallet")
+        .Value(e.Addr(deployer)),
+        e.kvs
+        .Mapper("group_fee_wallet")
+        .Value(e.Addr(deployer)),
+        e.kvs
+        .Mapper("payment_currencies")
+        .UnorderedSet([e.Str(CURRENCY1), e.Str(CURRENCY2)]),
+        e.kvs
+        .Mapper("currency_decimals", e.Str(CURRENCY1))
+        .Value(e.U32(DECIMALS1)), 
+        e.kvs
+        .Mapper("currency_decimals", e.Str(CURRENCY2))
+        .Value(e.U32(DECIMALS2)), 
+        e.kvs
+        .Mapper("raise_pool_enabled")
+        .Value(e.Bool(false)),
+        e.kvs
+        .Mapper("signer")
+        .Value(e.Addr(deployer)),
+        e.kvs
+        .Mapper("pool_id")
+        .Value(e.U32(POOL_ID)),
+        e.kvs
+        .Mapper("release_state")
+        .Value(e.Usize(0)),
+      ],
+    });
+  });  
+

@@ -14,6 +14,7 @@ pub trait RaisePool: crate::storage::StorageModule {
     #[init]
     fn init(
         &self,
+        pool_id: u32,
         soft_cap: BigUint,
         hard_cap: BigUint,
         min_deposit: BigUint,
@@ -62,8 +63,9 @@ pub trait RaisePool: crate::storage::StorageModule {
             self.payment_currencies().insert(currency.clone());
             self.currency_decimals(&currency).set(decimals);
         }
-        self.pool_enabled().set(false);
+        self.raise_pool_enabled().set(false);
         self.signer().set(&signer);
+        self.pool_id().set(pool_id);
         self.release_state().set(ReleaseState::None);
     }
 
@@ -123,16 +125,15 @@ pub trait RaisePool: crate::storage::StorageModule {
     }
 
     #[only_owner]
-    #[endpoint(enablePool)]
-    fn enable_pool(&self) {
-        self.pool_enabled().set(true);
+    #[endpoint(enableRaisePool)]
+    fn enable_raise_pool(&self) {
+        self.raise_pool_enabled().set(true);
     }
 
     #[payable("*")]
     #[endpoint(deposit)]
     fn deposit(
         &self,
-        pool_id: u32,
         timestamp: u64,
         signature: ManagedBuffer,
         platform_fee_percentage: BigUint,
@@ -141,6 +142,7 @@ pub trait RaisePool: crate::storage::StorageModule {
     ) {
         let caller = self.blockchain().get_caller();
         let signer = self.signer().get();
+        let pool_id = self.pool_id().get();
 
         self.validate_deploy_signature(
             timestamp,
@@ -157,7 +159,7 @@ pub trait RaisePool: crate::storage::StorageModule {
             "Deposit took too long"
         );
 
-        require!(self.pool_enabled().get(), "Pool is not enabled");
+        require!(self.raise_pool_enabled().get() == true, "Pool is not enabled");
 
         let payment = self.call_value().single_esdt();
         require!(
@@ -253,12 +255,12 @@ pub trait RaisePool: crate::storage::StorageModule {
     #[endpoint(refund)]
     fn refund(
         &self,
-        pool_id: u32,
         timestamp: u64,
         signature: ManagedBuffer,
     ) -> OperationCompletionStatus {
         let caller = self.blockchain().get_caller();
         let signer = self.signer().get();
+        let pool_id = self.pool_id().get();
         self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
         require!(
             self.blockchain().get_block_timestamp() - timestamp < 60,

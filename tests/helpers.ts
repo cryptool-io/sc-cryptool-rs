@@ -5,7 +5,7 @@ import { BinaryCodec, U32Value, U64Value, BigUIntValue } from "@multiversx/sdk-c
 
 export const POOL_ID = 0
 export const SOFT_CAP = 10000
-export const HARD_CAP = 50000
+export const HARD_CAP = 30000
 export const CURRENCY1= "USDC-123456"
 export const DECIMALS1=18
 export const CURRENCY2 = "USDT-654321"
@@ -43,7 +43,7 @@ export const SIGNATURE_BEFORE = privateKeyDeployer.sign(DATA_BEFORE);
 export const HARD_CAP_INVALID = 5000
 export const MAX_DEPOSIT_INVALID = 500
 export const END_DATE_INVALID = 150
-export const RAISE_POOL_ADDRESS = "erd1qqqqqqqqqqqqqpgqzyg3zygqqqqqqqqqqqqq2qqqqqqqqqqqqqqqtstllp"
+export const RAISE_POOL_DUMMY_ADDRESS = "erd1qqqqqqqqqqqqqpgqzyg3zygqqqqqqqqqqqqq2qqqqqqqqqqqqqqqtstllp"
 
 export const PLATFORM_FEE = 100
 export const GROUP_FEE = 200
