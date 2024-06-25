@@ -1,16 +1,18 @@
 #![no_std]
 
 use multiversx_sc::imports::*;
+mod helper;
 mod storage;
+use crate::helper::ALLOWED_TIMESTAMP_DELAY;
 use storage::ReleaseState;
 
 pub const MAX_PERCENTAGE: u64 = 10_000;
 pub const DEFAULT_DECIMALS: u32 = 18;
-pub const BULK_BATCH: usize = 100;
 pub const MIN_GAS_FOR_OPERATION: u64 = 2_000_000;
+pub const MAX_TX_PER_RELEASE: u32 = 140;
 
 #[multiversx_sc::contract]
-pub trait RaisePool: crate::storage::StorageModule {
+pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule {
     #[init]
     fn init(
         &self,
@@ -28,26 +30,14 @@ pub trait RaisePool: crate::storage::StorageModule {
         signer: ManagedAddress,
         payment_currencies: MultiValueEncoded<MultiValue2<TokenIdentifier, u32>>,
     ) {
-        require!(
-            soft_cap <= hard_cap,
-            "Soft cap needs to be lower than hard cap"
+        self.validate_init(
+            &soft_cap,
+            &hard_cap,
+            &min_deposit,
+            &max_deposit,
+            start_date,
+            end_date,
         );
-
-        require!(
-            min_deposit <= max_deposit,
-            "Minimum deposit amount needs to be lower than maximum deposit amount"
-        );
-
-        require!(
-            start_date > self.blockchain().get_block_timestamp(),
-            "Start date timestamp must be in the future"
-        );
-
-        require!(
-            end_date > start_date,
-            "End date timestamp must be greater than sale end timestamp"
-        );
-
         self.soft_cap().set(soft_cap);
         self.hard_cap().set(hard_cap);
         self.min_deposit().set(min_deposit);
@@ -72,62 +62,19 @@ pub trait RaisePool: crate::storage::StorageModule {
     #[upgrade]
     fn upgrade(&self) {}
 
-    fn validate_signature(
-        &self,
-        timestamp: u64,
-        pool_id: &u32,
-        caller: &ManagedAddress,
-        signer: ManagedAddress,
-        signature: ManagedBuffer,
-    ) {
-        let mut buffer = ManagedBuffer::new();
-        let result = timestamp.dep_encode(&mut buffer);
-        require!(result.is_ok(), "Could not encode");
-        let result = pool_id.dep_encode(&mut buffer);
-        require!(result.is_ok(), "Could not encode");
-        buffer.append(&caller.as_managed_buffer());
-        self.crypto()
-            .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
-    }
-
-    fn validate_deploy_signature(
-        &self,
-        timestamp: u64,
-        pool_id: &u32,
-        caller: &ManagedAddress,
-        platform_fee_percentage: &BigUint,
-        group_fee_percentage: &BigUint,
-        signer: ManagedAddress,
-        signature: ManagedBuffer,
-        ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>,
-    ) {
-        let mut buffer = ManagedBuffer::new();
-        let result = timestamp.dep_encode(&mut buffer);
-        require!(result.is_ok(), "Could not encode");
-        let result = pool_id.dep_encode(&mut buffer);
-        require!(result.is_ok(), "Could not encode");
-        buffer.append(&caller.as_managed_buffer());
-        let result = platform_fee_percentage.dep_encode(&mut buffer);
-        require!(result.is_ok(), "Could not encode");
-        let result = group_fee_percentage.dep_encode(&mut buffer);
-        require!(result.is_ok(), "Could not encode");
-        match ambassador.into_option() {
-            Some(ambassador) => {
-                let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
-                let result = ambassador_percentage.dep_encode(&mut buffer);
-                require!(result.is_ok(), "Could not encode");
-                buffer.append(&ambassador_wallet.as_managed_buffer());
-            }
-            None => {}
-        }
-        self.crypto()
-            .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
-    }
-
     #[only_owner]
     #[endpoint(enableRaisePool)]
     fn enable_raise_pool(&self) {
         self.raise_pool_enabled().set(true);
+    }
+
+    fn denominate_payment(&self, payment: &EsdtTokenPayment) -> BigUint {
+        match self.currency_decimals(&payment.token_identifier).get(){
+            decimals if decimals != DEFAULT_DECIMALS => {
+                &payment.amount * 10_u64.pow(DEFAULT_DECIMALS - decimals)
+            }
+            _ => payment.amount.clone(),
+        }
     }
 
     #[payable("*")]
@@ -152,57 +99,22 @@ pub trait RaisePool: crate::storage::StorageModule {
             &group_fee_percentage,
             signer,
             signature,
-            ambassador.clone() 
+            ambassador.clone(),
         );
-        require!(
-            self.blockchain().get_block_timestamp() - timestamp < 60,
-            "Deposit took too long"
-        );
-
-        require!(self.raise_pool_enabled().get() == true, "Pool is not enabled");
 
         let payment = self.call_value().single_esdt();
-        require!(
-            self.payment_currencies()
-                .contains(&payment.token_identifier),
-            "Invalid token payment"
-        );
-
-        let timestamp = self.blockchain().get_block_timestamp();
-        require!(timestamp > self.start_date().get(), "Deposits not open yet");
-        require!(timestamp < self.end_date().get(), "Deposits closed");
-
-        require!(
-            self.min_deposit().get() <= payment.amount,
-            "Payment amount too low"
-        );
-
-        require!(
-            payment.amount <= self.max_deposit().get(),
-            "Payment amount too high"
-        );
-
-        require!(
-            &payment.amount % &self.deposit_increments().get() == 0,
-            "Payment amount is not a multiple of the deposit increment"
-        );
+        self.validate_deposit(&payment);
 
         let caller = self.blockchain().get_caller();
-
         self.addresses().insert(caller.clone());
         self.deposited_currencies(&caller)
             .insert(payment.token_identifier.clone());
         self.deposited_amount(&caller, &payment.token_identifier)
             .update(|current| *current += &payment.amount);
-        let payment_denomination = match self.currency_decimals(&payment.token_identifier).get() {
-            decimals if decimals != DEFAULT_DECIMALS => {
-                &payment.amount * 10_u64.pow(DEFAULT_DECIMALS - decimals)
-            }
-            _ => payment.amount.clone(),
-        };
+        let payment_denomination = self.denominate_payment(&payment);
 
         require!(
-            self.total_amount().get() + &payment_denomination <= self.hard_cap().get(),
+            self.total_amount().get() + &payment_denomination <= self.hard_cap().get() * 10_u64.pow(18),
             "Hard cap threshold would be exceeded"
         );
 
@@ -235,14 +147,10 @@ pub trait RaisePool: crate::storage::StorageModule {
                 let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
                 self.ambassadors().insert(ambassador_wallet.clone());
                 let ambassador_amount = (&payment.amount * &ambassador_percentage) / MAX_PERCENTAGE;
-                let denominated_ambassador_amount =
-                    (&payment_denomination * &ambassador_percentage) / MAX_PERCENTAGE;
                 self.address_ambassador_fee(&caller, &payment.token_identifier)
                     .update(|current| *current += &ambassador_amount);
                 self.ambassador_fee(&payment.token_identifier)
                     .update(|current| *current += &ambassador_amount);
-                self.total_ambassador_fee()
-                    .update(|current| *current += &denominated_ambassador_amount);
                 self.referral_ambassador_fee(&ambassador_wallet, &payment.token_identifier)
                     .update(|current| *current += &ambassador_amount);
                 self.ambassador_currencies(&ambassador_wallet)
@@ -253,17 +161,13 @@ pub trait RaisePool: crate::storage::StorageModule {
     }
 
     #[endpoint(refund)]
-    fn refund(
-        &self,
-        timestamp: u64,
-        signature: ManagedBuffer,
-    ) -> OperationCompletionStatus {
+    fn refund(&self, timestamp: u64, signature: ManagedBuffer) -> OperationCompletionStatus {
         let caller = self.blockchain().get_caller();
         let signer = self.signer().get();
         let pool_id = self.pool_id().get();
         self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
         require!(
-            self.blockchain().get_block_timestamp() - timestamp < 60,
+            self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
             "Refund took too long"
         );
         require!(self.refund_enabled().get(), "Refunds are not enabled");
@@ -276,28 +180,28 @@ pub trait RaisePool: crate::storage::StorageModule {
             "Hard cap exceeded"
         );
 
-        let addresses_len = self.addresses().len();
         let addresses = self.addresses();
+        let addresses_len = addresses.len();
         let mut addresses_iter = addresses.into_iter();
-        let refund_index = self.refund_index().get();
+        let mut refund_index = self.refund_index().get();
+        let mut tx_index = 0;
+
         while refund_index < addresses_len {
-            let start_index = refund_index;
-            let end_index = (start_index + BULK_BATCH).min(addresses_len);
-            for idx in start_index..end_index {
-                if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION {
-                    self.refund_index().set(idx);
-                    return OperationCompletionStatus::InterruptedBeforeOutOfGas;
-                }
-                let address = addresses_iter.nth(idx).unwrap();
-                let mut payments = ManagedVec::new();
-                for token_identifier in self.deposited_currencies(&address).iter() {
-                    let amount = self.deposited_amount(&address, &token_identifier).get();
-                    payments.push(EsdtTokenPayment::new(token_identifier, 0, amount));
-                }
-                self.send().direct_multi(&address, &payments);
+            if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION || tx_index <= MAX_TX_PER_RELEASE {
+                self.refund_index().set(refund_index); 
+                return OperationCompletionStatus::InterruptedBeforeOutOfGas;
             }
-            self.refund_index().set(end_index);
+            let address = addresses_iter.nth(refund_index).unwrap();
+            let mut payments = ManagedVec::new();
+            for token_identifier in self.deposited_currencies(&address).iter() {
+                let amount = self.deposited_amount(&address, &token_identifier).get();
+                payments.push(EsdtTokenPayment::new(token_identifier, 0, amount));
+            }
+            self.send().direct_multi(&address, &payments);
+            refund_index += 1;
+            tx_index += 1;
         }
+        self.refund_index().set(addresses_len);
         OperationCompletionStatus::Completed
     }
 
@@ -329,31 +233,31 @@ pub trait RaisePool: crate::storage::StorageModule {
     }
 
     fn release_ambassadors(&self) -> OperationCompletionStatus {
-        let ambassadors_len = self.ambassadors().len();
-        let release_index = self.release_index().get();
         let ambassadors = self.ambassadors();
+        let ambassadors_len = ambassadors.len();
         let mut ambassadors_iter = ambassadors.into_iter();
-        while release_index < ambassadors_len {
-            let start_index = release_index;
-            let end_index = (start_index + BULK_BATCH).min(ambassadors_len);
-            for idx in start_index..end_index {
-                if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION {
-                    self.release_index().set(idx);
-                    return OperationCompletionStatus::InterruptedBeforeOutOfGas;
-                }
-                let ambassador = ambassadors_iter.nth(idx).unwrap();
-                let mut payments = ManagedVec::new();
-                for token_identifier in self.ambassador_currencies(&ambassador).iter() {
-                    let amount = self
-                        .referral_ambassador_fee(&ambassador, &token_identifier)
+        let mut release_ambassador_index = self.release_ambassador_index().get();
+        let mut tx_index = 0;
+
+        while release_ambassador_index < ambassadors_len {
+            if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION || tx_index <= MAX_TX_PER_RELEASE {
+                self.release_ambassador_index().set(release_ambassador_index);
+                return OperationCompletionStatus::InterruptedBeforeOutOfGas;
+            }
+            let ambassador = ambassadors_iter.nth(release_ambassador_index).unwrap();
+            let mut payments = ManagedVec::new();
+            for token_identifier in self.ambassador_currencies(&ambassador).iter() {
+                let amount = self
+                    .referral_ambassador_fee(&ambassador, &token_identifier)
                         .get();
                     payments.push(EsdtTokenPayment::new(token_identifier, 0, amount));
-                }
-                self.send().direct_multi(&ambassador, &payments);
             }
-            self.release_index().set(end_index);
+            self.send().direct_multi(&ambassador, &payments);
+            release_ambassador_index += 1;
+            tx_index += 1;
         }
-
+        
+        self.release_ambassador_index().set(ambassadors_len);
         OperationCompletionStatus::Completed
     }
 
@@ -362,23 +266,33 @@ pub trait RaisePool: crate::storage::StorageModule {
         overcommited: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
     ) -> OperationCompletionStatus {
         let overcommited_len = overcommited.len();
-        let overcommited_index = self.overcommited_index().get();
+        let mut overcommited_index = self.overcommited_index().get();
         let mut overcommited_iter = overcommited.into_iter();
+        let mut tx_index: usize = 0;
+
         while overcommited_index < overcommited_len {
-            let start_index = overcommited_index;
-            let end_index = (start_index + BULK_BATCH).min(overcommited_len);
-            for idx in start_index..end_index {
-                if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION {
-                    self.overcommited_index().set(idx);
-                    return OperationCompletionStatus::InterruptedBeforeOutOfGas;
-                }
-                let overcommitment_data = overcommited_iter.nth(idx).unwrap();
-                let (overcommiter, token_identifier, amount) = overcommitment_data.into_tuple();
-                self.send()
-                    .direct_esdt(&overcommiter, &token_identifier, 0, &amount);
+            if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION || tx_index <= MAX_TX_PER_RELEASE as usize {
+                self.overcommited_index().set(overcommited_index);
+                return OperationCompletionStatus::InterruptedBeforeOutOfGas;
             }
-            self.overcommited_index().set(end_index);
+            let overcommitment_data = overcommited_iter.nth(tx_index).unwrap();
+            let (overcommiter, token_identifier, amount) = overcommitment_data.into_tuple();
+            self.send()
+                .direct_esdt(&overcommiter, &token_identifier, 0, &amount);
+            
+            self.deposited_amount(&overcommiter, &token_identifier)
+                .update(|current| *current -= &amount);
+
+            let payment = EsdtTokenPayment::new(token_identifier.clone(), 0, amount);
+            let payment_denomination = self.denominate_payment(&payment);
+            self.total_amount()
+            .update(|current| *current += &payment_denomination);
+
+            overcommited_index += 1;
+            tx_index += 1;
         }
+
+        self.overcommited_index().set(overcommited_len);
         OperationCompletionStatus::Completed
     }
 
@@ -396,7 +310,7 @@ pub trait RaisePool: crate::storage::StorageModule {
         let signer = self.signer().get();
         self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
         require!(
-            self.blockchain().get_block_timestamp() - timestamp < 60,
+            self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
             "Deposit took too long"
         );
         let overcommited_into_option = overcommited.into_option();

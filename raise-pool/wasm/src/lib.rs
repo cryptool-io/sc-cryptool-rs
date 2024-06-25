@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           40
+// Endpoints:                           39
 // Async Callback (empty):               1
-// Total number of exported functions:  43
+// Total number of exported functions:  42
 
 #![no_std]
 
@@ -50,10 +50,9 @@ multiversx_sc_wasm_adapter::endpoints! {
         getGroupFee => group_fee
         getTotalGroupFee => total_group_fee
         getAmbassadors => ambassadors
-        getReleaseIndex => release_index
+        getReleaseAmbassadorIndex => release_ambassador_index
         getAddressAmbassadorFee => address_ambassador_fee
         getAmbassadorFee => ambassador_fee
-        getTotalAmbassadorFee => total_ambassador_fee
         getAmbassadorCurrencies => ambassador_currencies
         getReferralAmbassadorFee => referral_ambassador_fee
         getOvercommitedIndex => overcommited_index

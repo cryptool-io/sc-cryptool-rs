@@ -12,7 +12,6 @@ pub enum ReleaseState {
 
 #[multiversx_sc::module]
 pub trait StorageModule {
-
     #[view(getPoolId)]
     #[storage_mapper("pool_id")]
     fn pool_id(&self) -> SingleValueMapper<u32>;
@@ -128,9 +127,9 @@ pub trait StorageModule {
     #[storage_mapper("ambassadors")]
     fn ambassadors(&self) -> SetMapper<ManagedAddress>;
 
-    #[view(getReleaseIndex)]
-    #[storage_mapper("release_index")]
-    fn release_index(&self) -> SingleValueMapper<usize>;
+    #[view(getReleaseAmbassadorIndex)]
+    #[storage_mapper("release_ambassador_index")]
+    fn release_ambassador_index(&self) -> SingleValueMapper<usize>;
 
     #[view(getAddressAmbassadorFee)]
     #[storage_mapper("address_ambassador_fee")]
@@ -143,11 +142,7 @@ pub trait StorageModule {
     #[view(getAmbassadorFee)]
     #[storage_mapper("ambassador_fee")]
     fn ambassador_fee(&self, token: &TokenIdentifier) -> SingleValueMapper<BigUint>;
-
-    #[view(getTotalAmbassadorFee)]
-    #[storage_mapper("total_ambassador_fee")]
-    fn total_ambassador_fee(&self) -> SingleValueMapper<BigUint>;
-
+ 
     #[view(getAmbassadorCurrencies)]
     #[storage_mapper("ambassador_currencies")]
     fn ambassador_currencies(
