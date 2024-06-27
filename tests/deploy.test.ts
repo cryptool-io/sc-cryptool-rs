@@ -2,12 +2,8 @@ import { test, beforeEach, afterEach } from "vitest";
 import { assertAccount, LSWorld, LSWallet, LSContract } from "xsuite";
 import { e } from "xsuite";
 import {
-  deployerAddress,
-  bobAddress,
   POOL_ID,
   TIMESTAMP,
-  SIGNATURE_DEPLOYER,
-  SIGNATURE_BOB_WITH_AMBASSADOR,
   SOFT_CAP,
   HARD_CAP,
   CURRENCY1,
@@ -20,25 +16,33 @@ import {
   START_DATE,
   END_DATE,
   REFUND_ENABLED,
-  PLATFORM_FEE,
-  GROUP_FEE,
+  PLATFORM_FEE1,
+  GROUP_FEE1,
   AMBASSADOR_FEE,
-  SIGNATURE_DUMMY,
   TIMESTAMP_BEFORE,
-  SIGNATURE_BEFORE,
   HARD_CAP_INVALID,
   MAX_DEPOSIT_INVALID,
   END_DATE_INVALID,
-  RAISE_POOL_DUMMY_ADDRESS
-} from "./helpers"; 
+  RAISE_POOL_DUMMY_ADDRESS,
+} from "./helpers.ts"; 
 
+import {
+  deployerAddress,
+  SIGNATURE_DEPLOYER,
+  SIGNATURE_DUMMY,
+  SIGNATURE_BEFORE,
+} from "./signatures/deployer.ts"
+
+import {
+  bobAddress,
+  SIGNATURE_BOB_WITH_AMBASSADOR,
+} from "./signatures/bob.ts"
 
 let world: LSWorld;
 let deployer: LSWallet;
 let bob: LSWallet;
 let factoryContract: LSContract;
 let raisePoolDummyContract: LSContract; 
-let raisePoolContract: LSContract;
 
 beforeEach(async () => {
   world = await LSWorld.start();
@@ -278,197 +282,25 @@ test("Deploy Pool", async () => {
     assertAccount(await raisePoolContract.getAccount(), {
       balance: 0n,
       kvs: [
-        e.kvs
-        .Mapper("soft_cap")
-        .Value(e.I(SOFT_CAP)),
-        e.kvs
-        .Mapper("hard_cap")
-        .Value(e.I(HARD_CAP)),
-        e.kvs
-        .Mapper("min_deposit")
-        .Value(e.I(MIN_DEPOSIT)),
-        e.kvs
-        .Mapper("max_deposit")
-        .Value(e.I(MAX_DEPOSIT)),
-        e.kvs
-        .Mapper("deposit_increments")
-        .Value(e.I(DEPOSIT_INCREMENTS)),
-        e.kvs
-        .Mapper("start_date")
-        .Value(e.U64(START_DATE)),
-        e.kvs
-        .Mapper("end_date")
-        .Value(e.U64(END_DATE)),
-        e.kvs
-        .Mapper("refund_enabled")
-        .Value(e.Bool(REFUND_ENABLED)),
-        e.kvs
-        .Mapper("platform_fee_wallet")
-        .Value(e.Addr(deployer)),
-        e.kvs
-        .Mapper("group_fee_wallet")
-        .Value(e.Addr(deployer)),
-        e.kvs
-        .Mapper("payment_currencies")
-        .UnorderedSet([e.Str(CURRENCY1), e.Str(CURRENCY2)]),
-        e.kvs
-        .Mapper("currency_decimals", e.Str(CURRENCY1))
-        .Value(e.U32(DECIMALS1)), 
-        e.kvs
-        .Mapper("currency_decimals", e.Str(CURRENCY2))
-        .Value(e.U32(DECIMALS2)), 
-        e.kvs
-        .Mapper("raise_pool_enabled")
-        .Value(e.Bool(false)),
-        e.kvs
-        .Mapper("signer")
-        .Value(e.Addr(deployer)),
-        e.kvs
-        .Mapper("pool_id")
-        .Value(e.U32(POOL_ID)),
-        e.kvs
-        .Mapper("release_state")
-        .Value(e.Usize(0)),
+        e.kvs.Mapper("soft_cap").Value(e.I(SOFT_CAP)),
+        e.kvs.Mapper("hard_cap").Value(e.I(HARD_CAP)),
+        e.kvs.Mapper("min_deposit").Value(e.I(MIN_DEPOSIT)),
+        e.kvs.Mapper("max_deposit").Value(e.I(MAX_DEPOSIT)),
+        e.kvs.Mapper("deposit_increments").Value(e.I(DEPOSIT_INCREMENTS)),
+        e.kvs.Mapper("start_date").Value(e.U64(START_DATE)),
+        e.kvs.Mapper("end_date").Value(e.U64(END_DATE)),
+        e.kvs.Mapper("refund_enabled").Value(e.Bool(REFUND_ENABLED)),
+        e.kvs.Mapper("platform_fee_wallet").Value(e.Addr(deployer)),
+        e.kvs.Mapper("group_fee_wallet").Value(e.Addr(deployer)),
+        e.kvs.Mapper("payment_currencies").UnorderedSet([e.Str(CURRENCY1), e.Str(CURRENCY2)]),
+        e.kvs.Mapper("currency_decimals", e.Str(CURRENCY1)).Value(e.U32(DECIMALS1)), 
+        e.kvs.Mapper("currency_decimals", e.Str(CURRENCY2)).Value(e.U32(DECIMALS2)), 
+        e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(false)),
+        e.kvs.Mapper("signer").Value(e.Addr(deployer)),
+        e.kvs.Mapper("pool_id").Value(e.U32(POOL_ID)),
+        e.kvs.Mapper("release_state").Value(e.Usize(0)),
       ],
     });
   });  
 
-test("Deposit in not enabled pool", async () => {
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "deployRaisePool",
-    funcArgs: [e.U32(POOL_ID), 
-      e.U64(SOFT_CAP), 
-      e.U64(HARD_CAP), 
-      e.U64(MIN_DEPOSIT), 
-      e.U64(MAX_DEPOSIT), 
-      e.U64(DEPOSIT_INCREMENTS), 
-      e.U64(START_DATE), 
-      e.U64(END_DATE), 
-      e.U64(REFUND_ENABLED), 
-      e.Addr(deployer), 
-      e.Addr(deployer),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.U64(TIMESTAMP),
-      e.Str(CURRENCY1), 
-      e.U64(DECIMALS1), 
-      e.Str(CURRENCY2), 
-      e.U64(DECIMALS2)],
-    })
-
-    const raisePoolAddressResult = await deployer.query({
-      callee: factoryContract,
-      funcName: "getPoolIdToAddress",
-      funcArgs: [e.U32(POOL_ID)],
-    });
-
-    const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
-    const raisePoolContract = new LSContract({
-      address: raisePoolAddress,
-      world
-    });
-
-    bob = await world.createWallet({
-      address: bobAddress,
-      balance: 100_000,
-      kvs: [
-        e.kvs.Esdts([
-          { id: CURRENCY1, amount: 2_000_000 },
-          { id: CURRENCY2, amount: 1_000_000 },
-        ]),
-      ],
-    });
-
-    await bob.callContract({
-      callee: raisePoolContract,
-      gasLimit: 50_000_000,
-      funcName: "deposit",
-      funcArgs: [
-        e.U64(TIMESTAMP),
-        e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
-        e.U(PLATFORM_FEE),
-        e.U(GROUP_FEE),
-        e.U(AMBASSADOR_FEE),
-        e.Addr(deployer),
-      ],
-      esdts: [
-        { id: CURRENCY1, amount: 100_000 },
-      ],
-    }).assertFail({ code: 4, message: "Pool is not enabled" }) 
-  });  
-
-test("Deposit while deposits not open yet", async () => {
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "deployRaisePool",
-    funcArgs: [e.U32(POOL_ID), 
-      e.U64(SOFT_CAP), 
-      e.U64(HARD_CAP), 
-      e.U64(MIN_DEPOSIT), 
-      e.U64(MAX_DEPOSIT), 
-      e.U64(DEPOSIT_INCREMENTS), 
-      e.U64(START_DATE), 
-      e.U64(END_DATE), 
-      e.U64(REFUND_ENABLED), 
-      e.Addr(deployer), 
-      e.Addr(deployer),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.U64(TIMESTAMP),
-      e.Str(CURRENCY1), 
-      e.U64(DECIMALS1), 
-      e.Str(CURRENCY2), 
-      e.U64(DECIMALS2)],
-    })
-
-    await deployer.callContract({
-      callee: factoryContract,
-      gasLimit: 50_000_000,
-      funcName: "enableRaisePool",
-      funcArgs: [e.U32(POOL_ID)], 
-    });
-
-    const raisePoolAddressResult = await deployer.query({
-      callee: factoryContract,
-      funcName: "getPoolIdToAddress",
-      funcArgs: [e.U32(POOL_ID)],
-    });
-
-    const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
-    const raisePoolContract = new LSContract({
-      address: raisePoolAddress,
-      world
-    });
-
-    bob = await world.createWallet({
-      address: bobAddress,
-      balance: 100_000,
-      kvs: [
-        e.kvs.Esdts([
-          { id: CURRENCY1, amount: 2_000_000 },
-          { id: CURRENCY2, amount: 1_000_000 },
-        ]),
-      ],
-    });
-
-    await bob.callContract({
-      callee: raisePoolContract,
-      gasLimit: 50_000_000,
-      funcName: "deposit",
-      funcArgs: [
-        e.U64(TIMESTAMP),
-        e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
-        e.U(PLATFORM_FEE),
-        e.U(GROUP_FEE),
-        e.U(AMBASSADOR_FEE),
-        e.Addr(deployer),
-      ],
-      esdts: [
-        { id: CURRENCY1, amount: 100_000 },
-      ],
-    }).assertFail({ code: 4, message: "Deposits not open yet" }) 
-  });  
  

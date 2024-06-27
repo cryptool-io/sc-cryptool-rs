@@ -1,64 +1,41 @@
-import fs from 'fs';
-import path from 'path';
-import { UserSecretKey } from '@multiversx/sdk-wallet/out';
-import { BinaryCodec, U32Value, U64Value, BigUIntValue } from "@multiversx/sdk-core"
-
 export const POOL_ID = 0
 export const SOFT_CAP = 10000
+export const LOW_SOFT_CAP = 2000
 export const HARD_CAP = 30000
+export const LOW_HARD_CAP = 9000
 export const CURRENCY1= "USDC-123456"
 export const DECIMALS1=18
+export const CURRENCY1_DEPOSIT_AMOUNT = BigInt(2000 * 10 ** DECIMALS1)
+export const CURRENCY1_DEPOSIT_INCORECT_AMOUNT = BigInt(1999 * 10 ** DECIMALS1)
+export const CURRENCY1_DEPOSIT_TOO_LOW = BigInt(900 * 10 ** DECIMALS1)
+export const CURRENCY1_DEPOSIT_MAX = BigInt(5000 * 10 ** DECIMALS1)
 export const CURRENCY2 = "USDT-654321"
 export const DECIMALS2 = 12
+export const CURRENCY2_DEPOSIT_AMOUNT = BigInt(3000 * 10 ** DECIMALS2)
+export const CURRENCY2_DEPOSIT_MAX = BigInt(5000 * 10 ** DECIMALS2)
+export const CURRENCY3 = "USDX-00000"
+export const DECIMALS3 = 6
+export const CURRENCY3_DEPOSIT_AMOUNT = BigInt(4000 * 10 ** DECIMALS3)
+export const DUMMY_TOKEN = "DUMMY-000000"
 export const MIN_DEPOSIT = 1000
 export const MAX_DEPOSIT = 5000
 export const DEPOSIT_INCREMENTS = 50
 export const START_DATE = 180
-export const END_DATE = 240
-export const REFUND_ENABLED = 1
+export const END_DATE = 600
 export const TIMESTAMP = 120
-  
-
-const codec = new BinaryCodec();
-const signerPemDeployer = fs.readFileSync(path.resolve(process.cwd(), 'tests/deployer.pem')).toString();
-const privateKeyDeployer = UserSecretKey.fromPem(signerPemDeployer);
-export const deployerAddress = privateKeyDeployer.generatePublicKey().toAddress().pubkey();
-const DATA_DEPLOYER = Buffer.concat([
-    codec.encodeNested(new U64Value(TIMESTAMP)),
-    codec.encodeNested(new U32Value(POOL_ID)),
-    deployerAddress,
-  ]);
-export const SIGNATURE_DEPLOYER = privateKeyDeployer.sign(DATA_DEPLOYER);
-
-export const SIGNATURE_DUMMY = privateKeyDeployer.sign(Buffer.from("SOME DUMMY DATA")); 
-export const TIMESTAMP_BEFORE = 30
-
-const DATA_BEFORE = Buffer.concat([
-    codec.encodeNested(new U64Value(TIMESTAMP_BEFORE)),
-    codec.encodeNested(new U32Value(POOL_ID)),
-    deployerAddress,
-  ]);
-export const SIGNATURE_BEFORE = privateKeyDeployer.sign(DATA_BEFORE);
-
+export const DEPOSIT_TIMESTAMP = 200
+export const TIMESTAMP_BEFORE = 60
+export const TIMESTAMP_AFTER = 660
+export const TIMESTAMP_WITH_DELAY = 360
+export const REFUND_ENABLED = 1
+export const MAX_PERCENTAGE = BigInt(10000)
 export const HARD_CAP_INVALID = 5000
 export const MAX_DEPOSIT_INVALID = 500
 export const END_DATE_INVALID = 150
 export const RAISE_POOL_DUMMY_ADDRESS = "erd1qqqqqqqqqqqqqpgqzyg3zygqqqqqqqqqqqqq2qqqqqqqqqqqqqqqtstllp"
+export const PLATFORM_FEE1 = BigInt(100)
+export const GROUP_FEE1 = BigInt(200)
+export const AMBASSADOR_FEE = BigInt(300)
+export const PLATFORM_FEE2 = BigInt(300)
+export const GROUP_FEE2 = BigInt(400)
 
-export const PLATFORM_FEE = 100
-export const GROUP_FEE = 200
-export const AMBASSADOR_FEE = 300
-
-const signerPemBob = fs.readFileSync(path.resolve(process.cwd(), 'tests/bob.pem')).toString();
-const privateKeyBob = UserSecretKey.fromPem(signerPemBob);
-export const bobAddress = privateKeyBob.generatePublicKey().toAddress().pubkey();
-const DATA_BOB = Buffer.concat([
-  codec.encodeNested(new U64Value(TIMESTAMP)),
-  codec.encodeNested(new U32Value(POOL_ID)),
-  bobAddress,
-  codec.encodeNested(new BigUIntValue(PLATFORM_FEE)),
-  codec.encodeNested(new BigUIntValue(GROUP_FEE)),
-  codec.encodeNested(new BigUIntValue(AMBASSADOR_FEE)),
-  deployerAddress,
-]);
-export const SIGNATURE_BOB_WITH_AMBASSADOR = privateKeyDeployer.sign(DATA_BOB);

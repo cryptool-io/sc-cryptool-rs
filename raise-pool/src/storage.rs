@@ -142,7 +142,7 @@ pub trait StorageModule {
     #[view(getAmbassadorFee)]
     #[storage_mapper("ambassador_fee")]
     fn ambassador_fee(&self, token: &TokenIdentifier) -> SingleValueMapper<BigUint>;
- 
+
     #[view(getAmbassadorCurrencies)]
     #[storage_mapper("ambassador_currencies")]
     fn ambassador_currencies(

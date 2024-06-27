@@ -20,7 +20,6 @@ multiversx_sc_wasm_adapter::endpoints! {
     (
         init => init
         upgrade => upgrade
-        enableRaisePool => enable_raise_pool
         deposit => deposit
         refund => refund
         release_plaform => release_plaform
@@ -59,6 +58,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         getReleaseState => release_state
         raisePoolEnabled => raise_pool_enabled
         getSigner => signer
+        enableRaisePool => enable_raise_pool
     )
 }
 

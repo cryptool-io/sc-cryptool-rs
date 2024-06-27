@@ -7,7 +7,6 @@ use crate::helper::ALLOWED_TIMESTAMP_DELAY;
 use storage::ReleaseState;
 
 pub const MAX_PERCENTAGE: u64 = 10_000;
-pub const DEFAULT_DECIMALS: u32 = 18;
 pub const MIN_GAS_FOR_OPERATION: u64 = 2_000_000;
 pub const MAX_TX_PER_RELEASE: u32 = 140;
 
@@ -62,19 +61,67 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
     #[upgrade]
     fn upgrade(&self) {}
 
-    #[only_owner]
-    #[endpoint(enableRaisePool)]
-    fn enable_raise_pool(&self) {
-        self.raise_pool_enabled().set(true);
+    fn update_general(&self, caller: &ManagedAddress, payment: &EsdtTokenPayment) {
+        self.addresses().insert(caller.clone());
+        self.deposited_currencies(&caller)
+            .insert(payment.token_identifier.clone());
+        self.deposited_amount(&caller, &payment.token_identifier)
+            .update(|current| *current += &payment.amount);
     }
 
-    fn denominate_payment(&self, payment: &EsdtTokenPayment) -> BigUint {
-        match self.currency_decimals(&payment.token_identifier).get(){
-            decimals if decimals != DEFAULT_DECIMALS => {
-                &payment.amount * 10_u64.pow(DEFAULT_DECIMALS - decimals)
-            }
-            _ => payment.amount.clone(),
-        }
+    fn update_platform_fee(
+        &self,
+        caller: &ManagedAddress,
+        payment: &EsdtTokenPayment,
+        payment_denomination: &BigUint,
+        platform_fee_percentage: &BigUint,
+    ) {
+        let platform_fee_amount = (&payment.amount * platform_fee_percentage) / MAX_PERCENTAGE;
+        let denominated_platform_fee_amount =
+            (payment_denomination * platform_fee_percentage) / MAX_PERCENTAGE;
+        self.address_platform_fee(&caller, &payment.token_identifier)
+            .update(|current| *current += &platform_fee_amount);
+        self.platform_fee(&payment.token_identifier)
+            .update(|current| *current += &platform_fee_amount);
+        self.total_platform_fee()
+            .update(|current| *current += &denominated_platform_fee_amount);
+    }
+
+    fn update_group_fee(
+        &self,
+        caller: &ManagedAddress,
+        payment: &EsdtTokenPayment,
+        payment_denomination: &BigUint,
+        group_fee_percentage: &BigUint,
+    ) {
+        let group_fee_amount = (&payment.amount * group_fee_percentage) / MAX_PERCENTAGE;
+        let denominated_group_fee_amount =
+            (payment_denomination * group_fee_percentage) / MAX_PERCENTAGE;
+        self.address_group_fee(&caller, &payment.token_identifier)
+            .update(|current| *current += &group_fee_amount);
+        self.group_fee(&payment.token_identifier)
+            .update(|current| *current += &group_fee_amount);
+        self.total_group_fee()
+            .update(|current| *current += &denominated_group_fee_amount);
+    }
+
+    fn update_ambassador_fee(
+        &self,
+        caller: &ManagedAddress,
+        payment: &EsdtTokenPayment,
+        ambassador: MultiValue2<BigUint, ManagedAddress>,
+    ) {
+        let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
+        self.ambassadors().insert(ambassador_wallet.clone());
+        let ambassador_amount = (&payment.amount * &ambassador_percentage) / MAX_PERCENTAGE;
+        self.address_ambassador_fee(&caller, &payment.token_identifier)
+            .update(|current| *current += &ambassador_amount);
+        self.ambassador_fee(&payment.token_identifier)
+            .update(|current| *current += &ambassador_amount);
+        self.referral_ambassador_fee(&ambassador_wallet, &payment.token_identifier)
+            .update(|current| *current += &ambassador_amount);
+        self.ambassador_currencies(&ambassador_wallet)
+            .insert(payment.token_identifier.clone());
     }
 
     #[payable("*")]
@@ -102,59 +149,38 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             ambassador.clone(),
         );
 
-        let payment = self.call_value().single_esdt();
-        self.validate_deposit(&payment);
-
         let caller = self.blockchain().get_caller();
-        self.addresses().insert(caller.clone());
-        self.deposited_currencies(&caller)
-            .insert(payment.token_identifier.clone());
-        self.deposited_amount(&caller, &payment.token_identifier)
-            .update(|current| *current += &payment.amount);
-        let payment_denomination = self.denominate_payment(&payment);
+        let payment = self.call_value().single_esdt();
+        self.validate_deposit(&payment, &timestamp);
+        self.update_general(&caller, &payment);
 
+        let payment_denomination = self.denominate_payment(&payment);
         require!(
-            self.total_amount().get() + &payment_denomination <= self.hard_cap().get() * 10_u64.pow(18),
+            self.total_amount().get() + &payment_denomination
+                <= self.hard_cap().get() * 10_u64.pow(18),
             "Hard cap threshold would be exceeded"
         );
 
         self.total_amount()
             .update(|current| *current += &payment_denomination);
 
-        let platform_fee_amount = (&payment.amount * &platform_fee_percentage) / MAX_PERCENTAGE;
-        let denominated_platform_fee_amount =
-            (&payment_denomination * &platform_fee_percentage) / MAX_PERCENTAGE;
+        self.update_platform_fee(
+            &caller,
+            &payment,
+            &payment_denomination,
+            &platform_fee_percentage,
+        );
 
-        self.address_platform_fee(&caller, &payment.token_identifier)
-            .update(|current| *current += &platform_fee_amount);
-        self.platform_fee(&payment.token_identifier)
-            .update(|current| *current += &platform_fee_amount);
-        self.total_platform_fee()
-            .update(|current| *current += &denominated_platform_fee_amount);
-
-        let group_fee_amount = (&payment.amount * &group_fee_percentage) / MAX_PERCENTAGE;
-        let denominated_group_fee_amount =
-            (&payment_denomination * &group_fee_percentage) / MAX_PERCENTAGE;
-        self.address_group_fee(&caller, &payment.token_identifier)
-            .update(|current| *current += &group_fee_amount);
-        self.group_fee(&payment.token_identifier)
-            .update(|current| *current += &group_fee_amount);
-        self.total_group_fee()
-            .update(|current| *current += &denominated_group_fee_amount);
+        self.update_group_fee(
+            &caller,
+            &payment,
+            &payment_denomination,
+            &group_fee_percentage,
+        );
 
         match ambassador.into_option() {
             Some(ambassador) => {
-                let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
-                self.ambassadors().insert(ambassador_wallet.clone());
-                let ambassador_amount = (&payment.amount * &ambassador_percentage) / MAX_PERCENTAGE;
-                self.address_ambassador_fee(&caller, &payment.token_identifier)
-                    .update(|current| *current += &ambassador_amount);
-                self.ambassador_fee(&payment.token_identifier)
-                    .update(|current| *current += &ambassador_amount);
-                self.referral_ambassador_fee(&ambassador_wallet, &payment.token_identifier)
-                    .update(|current| *current += &ambassador_amount);
-                self.ambassador_currencies(&ambassador_wallet)
-                    .insert(payment.token_identifier);
+                self.update_ambassador_fee(&caller, &payment, ambassador);
             }
             None => {}
         }
@@ -176,8 +202,8 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             "Refunds are not open"
         );
         require!(
-            self.total_amount().get() < self.hard_cap().get(),
-            "Hard cap exceeded"
+            self.total_amount().get() < self.soft_cap().get() * 10_u64.pow(18),
+            "Soft cap exceeded"
         );
 
         let addresses = self.addresses();
@@ -187,8 +213,10 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         let mut tx_index = 0;
 
         while refund_index < addresses_len {
-            if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION || tx_index <= MAX_TX_PER_RELEASE {
-                self.refund_index().set(refund_index); 
+            if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION
+                || tx_index <= MAX_TX_PER_RELEASE
+            {
+                self.refund_index().set(refund_index);
                 return OperationCompletionStatus::InterruptedBeforeOutOfGas;
             }
             let address = addresses_iter.nth(refund_index).unwrap();
@@ -240,8 +268,11 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         let mut tx_index = 0;
 
         while release_ambassador_index < ambassadors_len {
-            if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION || tx_index <= MAX_TX_PER_RELEASE {
-                self.release_ambassador_index().set(release_ambassador_index);
+            if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION
+                || tx_index <= MAX_TX_PER_RELEASE
+            {
+                self.release_ambassador_index()
+                    .set(release_ambassador_index);
                 return OperationCompletionStatus::InterruptedBeforeOutOfGas;
             }
             let ambassador = ambassadors_iter.nth(release_ambassador_index).unwrap();
@@ -249,14 +280,14 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             for token_identifier in self.ambassador_currencies(&ambassador).iter() {
                 let amount = self
                     .referral_ambassador_fee(&ambassador, &token_identifier)
-                        .get();
-                    payments.push(EsdtTokenPayment::new(token_identifier, 0, amount));
+                    .get();
+                payments.push(EsdtTokenPayment::new(token_identifier, 0, amount));
             }
             self.send().direct_multi(&ambassador, &payments);
             release_ambassador_index += 1;
             tx_index += 1;
         }
-        
+
         self.release_ambassador_index().set(ambassadors_len);
         OperationCompletionStatus::Completed
     }
@@ -271,7 +302,9 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         let mut tx_index: usize = 0;
 
         while overcommited_index < overcommited_len {
-            if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION || tx_index <= MAX_TX_PER_RELEASE as usize {
+            if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION
+                || tx_index <= MAX_TX_PER_RELEASE as usize
+            {
                 self.overcommited_index().set(overcommited_index);
                 return OperationCompletionStatus::InterruptedBeforeOutOfGas;
             }
@@ -279,14 +312,14 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             let (overcommiter, token_identifier, amount) = overcommitment_data.into_tuple();
             self.send()
                 .direct_esdt(&overcommiter, &token_identifier, 0, &amount);
-            
+
             self.deposited_amount(&overcommiter, &token_identifier)
                 .update(|current| *current -= &amount);
 
             let payment = EsdtTokenPayment::new(token_identifier.clone(), 0, amount);
             let payment_denomination = self.denominate_payment(&payment);
             self.total_amount()
-            .update(|current| *current += &payment_denomination);
+                .update(|current| *current += &payment_denomination);
 
             overcommited_index += 1;
             tx_index += 1;

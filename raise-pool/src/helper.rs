@@ -2,9 +2,30 @@ multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
 pub const ALLOWED_TIMESTAMP_DELAY: u64 = 90;
+pub const DEFAULT_DECIMALS: u32 = 18;
 
 #[multiversx_sc::module]
-pub trait HelperModule: crate::storage::StorageModule  {
+pub trait HelperModule: crate::storage::StorageModule {
+    #[only_owner]
+    #[endpoint(enableRaisePool)]
+    fn enable_raise_pool(&self) {
+        self.raise_pool_enabled().set(true);
+    }
+
+    fn denominate_payment(&self, payment: &EsdtTokenPayment) -> BigUint {
+        match self.currency_decimals(&payment.token_identifier).get() {
+            decimals if decimals != DEFAULT_DECIMALS => {
+                &payment.amount * 10_u64.pow(DEFAULT_DECIMALS - decimals)
+            }
+            _ => payment.amount.clone(),
+        }
+    }
+
+    fn match_denomination(&self, amount: BigUint, payment: &EsdtTokenPayment) -> BigUint {
+        let decimals = self.currency_decimals(&payment.token_identifier).get();
+        amount * 10_u64.pow(decimals)
+    }
+
     fn validate_init(
         &self,
         soft_cap: &BigUint,
@@ -32,34 +53,60 @@ pub trait HelperModule: crate::storage::StorageModule  {
         );
     }
 
-    fn validate_deposit(&self, payment: &EsdtTokenPayment) {
+    fn validate_deposit(&self, payment: &EsdtTokenPayment, backend_timestamp: &u64) {
         let timestamp = self.blockchain().get_block_timestamp();
         require!(
-            self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
+            self.payment_currencies()
+                .contains(&payment.token_identifier),
+            "Invalid token payment"
+        );
+        require!(timestamp > self.start_date().get(), "Deposits not open yet");
+        require!(timestamp < self.end_date().get(), "Deposits closed");
+        require!(
+            timestamp - backend_timestamp < ALLOWED_TIMESTAMP_DELAY,
             "Deposit took too long"
         );
         require!(
             self.raise_pool_enabled().get() == true,
             "Pool is not enabled"
         );
-        require!(timestamp > self.start_date().get(), "Deposits not open yet");
-        require!(timestamp < self.end_date().get(), "Deposits closed");
+        let min_deposit_denominated = self.match_denomination(self.min_deposit().get(), payment);
         require!(
-            self.min_deposit().get() <= payment.amount,
+            min_deposit_denominated <= payment.amount,
             "Payment amount too low"
         );
+        let max_deposit_denominated = self.match_denomination(self.max_deposit().get(), payment);
         require!(
-            payment.amount <= self.max_deposit().get(),
+            payment.amount <= max_deposit_denominated,
             "Payment amount too high"
         );
+
+        let caller = self.blockchain().get_caller();
+        let mut total_caller_amount = BigUint::zero();
+        for currency in self.deposited_currencies(&caller).iter() {
+            let deposited_amount = self.deposited_amount(&caller, &currency).get();
+            let payment = EsdtTokenPayment::new(currency, 0, deposited_amount);
+            let denominated_amount = self.denominate_payment(&payment);
+            total_caller_amount += denominated_amount;
+        }
+        let payment_denomination = self.denominate_payment(&payment);
         require!(
-            &payment.amount % &self.deposit_increments().get() == 0,
-            "Payment amount is not a multiple of the deposit increment"
+            total_caller_amount + &payment_denomination
+                <= self.max_deposit().get() * 10_u64.pow(18),
+            "Max_deposit threshold would be exceeded"
         );
+
         require!(
-            self.payment_currencies()
-                .contains(&payment.token_identifier),
-            "Invalid token payment"
+            self.total_amount().get() + &payment_denomination
+                <= self.hard_cap().get() * 10_u64.pow(18),
+            "Hard cap threshold would be exceeded"
+        );
+
+        let increment = self.deposit_increments().get();
+        let increment_denominted = self.match_denomination(increment, &payment);
+        require!(
+            &payment.amount % &increment_denominted == 0,
+            "Payment amount is not a multiple of the deposit increment"
         );
     }
 
@@ -114,5 +161,4 @@ pub trait HelperModule: crate::storage::StorageModule  {
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
     }
-
 }
