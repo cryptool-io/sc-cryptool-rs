@@ -7,12 +7,11 @@ import {
     TIMESTAMP,
     POOL_ID,
     TIMESTAMP_BEFORE,
-    TIMESTAMP_WITH_DELAY
 } from "../helpers";
 
 const codec = new BinaryCodec();
 
-const signerPemDeployer = fs.readFileSync(path.resolve(process.cwd(), 'tests/wallets/deployer.pem')).toString();
+const signerPemDeployer = fs.readFileSync(path.resolve(__dirname, '../wallets/deployer.pem')).toString();
 export const privateKeyDeployer = UserSecretKey.fromPem(signerPemDeployer);
 export const deployerAddress = privateKeyDeployer.generatePublicKey().toAddress().pubkey();
 const DATA_DEPLOYER = Buffer.concat([
