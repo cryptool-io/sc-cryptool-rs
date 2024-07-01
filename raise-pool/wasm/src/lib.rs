@@ -22,7 +22,6 @@ multiversx_sc_wasm_adapter::endpoints! {
         upgrade => upgrade
         deposit => deposit
         refund => refund
-        release_plaform => release_plaform
         release => release
         getPoolId => pool_id
         getSoftCap => soft_cap
@@ -58,6 +57,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         getReleaseState => release_state
         raisePoolEnabled => raise_pool_enabled
         getSigner => signer
+        getOwner => owner
         enableRaisePool => enable_raise_pool
     )
 }

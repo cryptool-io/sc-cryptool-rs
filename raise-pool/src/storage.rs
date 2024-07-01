@@ -173,4 +173,8 @@ pub trait StorageModule {
     #[view(getSigner)]
     #[storage_mapper("signer")]
     fn signer(&self) -> SingleValueMapper<ManagedAddress>;
+
+    #[view(getOwner)]
+    #[storage_mapper("owner")]
+    fn owner(&self) -> SingleValueMapper<ManagedAddress>;
 }

@@ -43,3 +43,9 @@ const DATA_BOB_AFTER = Buffer.concat([
   deployerAddress,
 ]);
 export const SIGNATURE_BOB_AFTER = privateKeyDeployer.sign(DATA_BOB_AFTER);
+
+const DATA_BOB_REFUND = Buffer.concat([
+  codec.encodeNested(new U64Value(TIMESTAMP)),
+  codec.encodeNested(new U32Value(POOL_ID)),
+  bobAddress]);
+export const SIGNATURE_BOB_REFUND = privateKeyDeployer.sign(DATA_BOB_REFUND);

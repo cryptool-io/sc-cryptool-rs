@@ -71,6 +71,7 @@ pub trait Factory:
         let (raise_pool_contract_address, ()) = self
             .raise_pool_proxy()
             .init(
+                caller.clone(),
                 pool_id,
                 soft_cap.clone(),
                 hard_cap.clone(),

@@ -1,6 +1,7 @@
 export const POOL_ID = 0
 export const SOFT_CAP = 10000
 export const LOW_SOFT_CAP = 2000
+export const HIGH_SOFT_CAP = BigInt(5000 * 10 ** 8)
 export const HARD_CAP = 30000
 export const LOW_HARD_CAP = 9000
 export const HIGH_HARD_CAP = BigInt(5000 * 10 ** 10)
@@ -29,6 +30,7 @@ export const TIMESTAMP_BEFORE = 60
 export const TIMESTAMP_AFTER = 660
 export const TIMESTAMP_WITH_DELAY = 360
 export const REFUND_ENABLED = 1
+export const REFUND_NOT_ENABLED = 0
 export const MAX_PERCENTAGE = BigInt(10000)
 export const HARD_CAP_INVALID = 5000
 export const MAX_DEPOSIT_INVALID = 500

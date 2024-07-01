@@ -8,13 +8,14 @@ use storage::ReleaseState;
 
 pub const MAX_PERCENTAGE: u64 = 10_000;
 pub const MIN_GAS_FOR_OPERATION: u64 = 2_000_000;
-pub const MAX_TX_PER_RELEASE: u32 = 140;
+pub const MAX_TX_PER_RELEASE: u32 = 10; // CHANGE THIS TO 10 WHILE TESTING !!!
 
 #[multiversx_sc::contract]
 pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule {
     #[init]
     fn init(
         &self,
+        owner: ManagedAddress,
         pool_id: u32,
         soft_cap: BigUint,
         hard_cap: BigUint,
@@ -56,6 +57,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         self.signer().set(&signer);
         self.pool_id().set(pool_id);
         self.release_state().set(ReleaseState::None);
+        self.owner().set(owner);
     }
 
     #[upgrade]
@@ -192,6 +194,8 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         let signer = self.signer().get();
         let pool_id = self.pool_id().get();
         self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
+        let caller = self.blockchain().get_caller();
+        require!(caller == self.owner().get(), "Only owner can call refund");
         require!(
             self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
             "Refund took too long"
@@ -208,19 +212,21 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
 
         let addresses = self.addresses();
         let addresses_len = addresses.len();
-        let mut addresses_iter = addresses.into_iter();
+        let addresses_iter = addresses.iter();
         let mut refund_index = self.refund_index().get();
+        let mut addresses_iter = addresses_iter.skip(refund_index);
         let mut tx_index = 0;
 
         while refund_index < addresses_len {
             if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION
-                || tx_index <= MAX_TX_PER_RELEASE
+                || tx_index == MAX_TX_PER_RELEASE
             {
                 self.refund_index().set(refund_index);
                 return OperationCompletionStatus::InterruptedBeforeOutOfGas;
             }
-            let address = addresses_iter.nth(refund_index).unwrap();
-            let mut payments = ManagedVec::new();
+
+            let address = addresses_iter.next().unwrap();
+            let mut payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
             for token_identifier in self.deposited_currencies(&address).iter() {
                 let amount = self.deposited_amount(&address, &token_identifier).get();
                 payments.push(EsdtTokenPayment::new(token_identifier, 0, amount));
@@ -233,7 +239,6 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         OperationCompletionStatus::Completed
     }
 
-    #[endpoint(release_plaform)]
     fn release_plaform(&self) {
         let mut payments = ManagedVec::new();
         for token in self.payment_currencies().iter() {
@@ -269,7 +274,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
 
         while release_ambassador_index < ambassadors_len {
             if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION
-                || tx_index <= MAX_TX_PER_RELEASE
+                || tx_index >= MAX_TX_PER_RELEASE
             {
                 self.release_ambassador_index()
                     .set(release_ambassador_index);
@@ -303,7 +308,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
 
         while overcommited_index < overcommited_len {
             if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION
-                || tx_index <= MAX_TX_PER_RELEASE as usize
+                || tx_index == MAX_TX_PER_RELEASE as usize
             {
                 self.overcommited_index().set(overcommited_index);
                 return OperationCompletionStatus::InterruptedBeforeOutOfGas;
@@ -342,6 +347,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         let caller = self.blockchain().get_caller();
         let signer = self.signer().get();
         self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
+        require!(caller == self.owner().get(), "Only owner can call release");
         require!(
             self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
             "Deposit took too long"

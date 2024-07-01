@@ -7,6 +7,7 @@ import {
     TIMESTAMP,
     POOL_ID,
     TIMESTAMP_BEFORE,
+    TIMESTAMP_AFTER,
 } from "../helpers";
 
 const codec = new BinaryCodec();
@@ -30,4 +31,10 @@ const DATA_BEFORE = Buffer.concat([
   ]);
 export const SIGNATURE_BEFORE = privateKeyDeployer.sign(DATA_BEFORE);
 
- 
+const DATA_AFTER = Buffer.concat([
+  codec.encodeNested(new U64Value(TIMESTAMP_AFTER)),
+  codec.encodeNested(new U32Value(POOL_ID)),
+  deployerAddress,
+]);
+export const SIGNATURE_AFTER = privateKeyDeployer.sign(DATA_AFTER);
+
