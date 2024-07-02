@@ -91,6 +91,10 @@ pub trait StorageModule {
     #[storage_mapper("total_amount")]
     fn total_amount(&self) -> SingleValueMapper<BigUint>;
 
+    #[view(getTotalAmountCurrency)]
+    #[storage_mapper("total_amount_currency")]
+    fn total_amount_currency(&self, currency: &TokenIdentifier) -> SingleValueMapper<BigUint>;
+
     #[view(getAddressPlatformFee)]
     #[storage_mapper("address_platform_fee")]
     fn address_platform_fee(

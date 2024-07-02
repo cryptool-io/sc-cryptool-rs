@@ -26,6 +26,15 @@ pub trait HelperModule: crate::storage::StorageModule {
         amount * 10_u64.pow(decimals)
     }
 
+    fn decrease_totals(&self, token_identifier: TokenIdentifier, amount: BigUint) {
+        let payment = EsdtTokenPayment::new(token_identifier.clone(), 0, amount.clone());
+        let payment_denomination = self.denominate_payment(&payment);
+        self.total_amount()
+            .update(|current| *current -= &payment_denomination);
+        self.total_amount_currency(&token_identifier)
+            .update(|current| *current -= &amount);
+    }
+
     fn validate_init(
         &self,
         soft_cap: &BigUint,

@@ -1136,6 +1136,9 @@ test("Deposit Currency1 with Bob", async () => {
         .Value(e.U(CURRENCY1_DEPOSIT_AMOUNT)),
       e.kvs.Mapper("total_amount").Value(e.U(CURRENCY1_DEPOSIT_AMOUNT)),
       e.kvs
+        .Mapper("total_amount_currency", e.Str(CURRENCY1))
+        .Value(e.U(CURRENCY1_DEPOSIT_AMOUNT)),
+      e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(
           e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE)
@@ -1327,6 +1330,12 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
         .Value(e.U(CURRENCY2_DEPOSIT_AMOUNT)),
       e.kvs.Mapper("total_amount").Value(e.U(total_deposited_amount)),
       e.kvs
+        .Mapper("total_amount_currency", e.Str(CURRENCY1))
+        .Value(e.U(CURRENCY1_DEPOSIT_AMOUNT)),
+      e.kvs
+        .Mapper("total_amount_currency", e.Str(CURRENCY1))
+        .Value(e.U(CURRENCY1_DEPOSIT_AMOUNT)),
+      e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(
           e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE)
@@ -1394,6 +1403,12 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
       e.kvs
         .Mapper("ambassador_currencies", e.Addr(deployer))
         .UnorderedSet([e.Str(CURRENCY1), e.Str(CURRENCY2)]),
+      e.kvs
+        .Mapper("total_amount_currency", e.Str(CURRENCY1))
+        .Value(e.U(CURRENCY1_DEPOSIT_AMOUNT)),
+      e.kvs
+        .Mapper("total_amount_currency", e.Str(CURRENCY2))
+        .Value(e.U(CURRENCY2_DEPOSIT_AMOUNT)),
       e.kvs.Esdts([{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }]),
       e.kvs.Esdts([{ id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT }]),
       e.kvs.Mapper("owner").Value(e.Addr(deployer)),
@@ -1582,6 +1597,15 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
         .Mapper("deposited_amount", e.Addr(carol), e.Str(CURRENCY3))
         .Value(e.U(CURRENCY3_DEPOSIT_AMOUNT)),
       e.kvs.Mapper("total_amount").Value(e.U(total_deposited_amount)),
+      e.kvs
+        .Mapper("total_amount_currency", e.Str(CURRENCY1))
+        .Value(e.U(CURRENCY1_DEPOSIT_AMOUNT)),
+      e.kvs
+        .Mapper("total_amount_currency", e.Str(CURRENCY2))
+        .Value(e.U(CURRENCY2_DEPOSIT_AMOUNT)),
+      e.kvs
+        .Mapper("total_amount_currency", e.Str(CURRENCY3))
+        .Value(e.U(CURRENCY3_DEPOSIT_AMOUNT)),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(
@@ -1923,7 +1947,7 @@ test("Deposit automatically with random parameters", async () => {
     );
   }
 
-  const feesKvs = [
+  const amountsKvs = [
     e.kvs.Mapper("addresses").Set(addresses),
     e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
     e.kvs
@@ -1956,6 +1980,15 @@ test("Deposit automatically with random parameters", async () => {
     e.kvs
       .Mapper("ambassador_fee", e.Str(CURRENCY3))
       .Value(e.U(currenciesAmbassadorFees[2])),
+    e.kvs
+      .Mapper("total_amount_currency", e.Str(CURRENCY1))
+      .Value(e.U(currenciesTotal[0])),
+    e.kvs
+      .Mapper("total_amount_currency", e.Str(CURRENCY2))
+      .Value(e.U(currenciesTotal[1])),
+    e.kvs
+      .Mapper("total_amount_currency", e.Str(CURRENCY3))
+      .Value(e.U(currenciesTotal[2])),
     e.kvs.Esdts([
       { id: CURRENCY1, amount: currenciesTotal[0] },
       { id: CURRENCY2, amount: currenciesTotal[1] },
@@ -1965,7 +1998,7 @@ test("Deposit automatically with random parameters", async () => {
 
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
-    kvs: [...baseKvs, ...walletsKvs, ...feesKvs],
+    kvs: [...baseKvs, ...walletsKvs, ...amountsKvs],
   });
 }, 60000);
 
@@ -2209,7 +2242,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
     );
   }
 
-  const feesKvs = [
+  const amountsKvs = [
     e.kvs.Mapper("addresses").Set(addresses),
     e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
     e.kvs
@@ -2242,6 +2275,15 @@ test("Deposit automatically with deployer as ambassador", async () => {
     e.kvs
       .Mapper("ambassador_fee", e.Str(CURRENCY3))
       .Value(e.U(currenciesAmbassadorFees[2])),
+    e.kvs
+      .Mapper("total_amount_currency", e.Str(CURRENCY1))
+      .Value(e.U(currenciesTotal[0])),
+    e.kvs
+      .Mapper("total_amount_currency", e.Str(CURRENCY2))
+      .Value(e.U(currenciesTotal[1])),
+    e.kvs
+      .Mapper("total_amount_currency", e.Str(CURRENCY3))
+      .Value(e.U(currenciesTotal[2])),
     e.kvs.Esdts([
       { id: CURRENCY1, amount: currenciesTotal[0] },
       { id: CURRENCY2, amount: currenciesTotal[1] },
@@ -2251,6 +2293,6 @@ test("Deposit automatically with deployer as ambassador", async () => {
 
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
-    kvs: [...baseKvs, ...walletsKvs, ...feesKvs],
+    kvs: [...baseKvs, ...walletsKvs, ...amountsKvs],
   });
 }, 60000);
