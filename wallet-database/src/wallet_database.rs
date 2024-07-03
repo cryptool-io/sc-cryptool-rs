@@ -2,11 +2,14 @@
 
 #[allow(unused_imports)]
 use multiversx_sc::imports::*;
+use permissions_module::Permissions;
 
 #[multiversx_sc::contract]
 pub trait WalletDatabase: permissions_module::PermissionsModule + pausable::PausableModule {
     #[init]
     fn init(&self, signer: ManagedAddress) {
+        let all_permissions = Permissions::OWNER | Permissions::ADMIN | Permissions::PAUSE;
+        self.set_permissions(self.blockchain().get_caller(), all_permissions);
         self.signer_address().set(signer);
     }
 
@@ -29,15 +32,16 @@ pub trait WalletDatabase: permissions_module::PermissionsModule + pausable::Paus
 
         let signer = self.signer_address().get();
 
-        self.crypto().verify_ed25519(
-            &caller.as_managed_buffer(),
-            &caller.as_managed_buffer(),
-            &user_signature,
-        );
+        let mut buffer_user = ManagedBuffer::new();
+        buffer_user.append(&caller.as_managed_buffer());
+        self.crypto()
+            .verify_ed25519(signer.as_managed_buffer(), &buffer_user, &user_signature);
 
+        let mut buffer_signer = ManagedBuffer::new();
+        buffer_signer.append(&signer.as_managed_buffer());
         self.crypto().verify_ed25519(
             signer.as_managed_buffer(),
-            &signer.as_managed_buffer(),
+            &buffer_signer,
             &signer_signature,
         );
 
@@ -54,9 +58,11 @@ pub trait WalletDatabase: permissions_module::PermissionsModule + pausable::Paus
         );
         let signer = self.signer_address().get();
 
+        let mut buffer_signer = ManagedBuffer::new();
+        buffer_signer.append(&signer.as_managed_buffer());
         self.crypto().verify_ed25519(
             signer.as_managed_buffer(),
-            &caller.as_managed_buffer(),
+            &buffer_signer,
             &signer_signature,
         );
 

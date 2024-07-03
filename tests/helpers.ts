@@ -1,7 +1,37 @@
-import { e } from "xsuite";
+import fs from "fs";
+import path from "path";
+import { UserSecretKey } from "@multiversx/sdk-wallet/out";
+import { BinaryCodec, U32Value, U64Value } from "@multiversx/sdk-core";
 
-export const ALICE_ADDRESS =
-  "erd1aqd2v3hsrpgpcscls6a6al35uc3vqjjmskj6vnvl0k93e73x7wpqtpctqw";
+const codec = new BinaryCodec();
 
-export const USER_SIGNATURE =
-  "0d083e2d83ca116261dde6e9afe5ee9474735ff57d51f5acc7689bc0a305e9a5462d6a36b9b20d317177d82c4ed6b98b593159d85e06878baa624a3bc140940b";
+const signerPemDeployer = fs
+  .readFileSync(path.resolve(__dirname, "./wallets/deployer.pem"))
+  .toString();
+export const privateKeyDeployer = UserSecretKey.fromPem(signerPemDeployer);
+export const deployerAddress = privateKeyDeployer
+  .generatePublicKey()
+  .toAddress()
+  .pubkey();
+const DATA_DEPLOYER = Buffer.concat([deployerAddress]);
+export const SIGNATURE_DEPLOYER = privateKeyDeployer.sign(DATA_DEPLOYER);
+
+const signerPemBob = fs
+  .readFileSync(path.resolve(__dirname, "./wallets/bob.pem"))
+  .toString();
+const privateKeyBob = UserSecretKey.fromPem(signerPemBob);
+export const bobAddress = privateKeyBob
+  .generatePublicKey()
+  .toAddress()
+  .pubkey();
+export const bobAddressHex = privateKeyBob
+  .generatePublicKey()
+  .toAddress()
+  .hex();
+const DATA_BOB = Buffer.concat([bobAddress]);
+
+export const SIGNATURE_BOB = privateKeyDeployer.sign(DATA_BOB);
+
+export const SIGNATURE_DUMMY = privateKeyDeployer.sign(
+  Buffer.from("SOME DUMMY DATA")
+);
