@@ -100,7 +100,7 @@ beforeEach(async () => {
 afterEach(async () => {
   world.terminate();
 });
- 
+
 test("Retrieve with wrong signature", async () => {
   const numberOfDeposits = 1;
 
@@ -611,7 +611,7 @@ test("Retrieve before release", async () => {
     })
     .assertFail({ code: 4, message: "Release needs to be called first" });
 });
- 
+
 test("Retrieve after release in 3 calls with half deposit as overcommitment", async () => {
   const numberOfDeposits = 15;
 

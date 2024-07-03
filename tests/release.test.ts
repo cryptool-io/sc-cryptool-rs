@@ -96,7 +96,7 @@ beforeEach(async () => {
 afterEach(async () => {
   world.terminate();
 });
- 
+
 test("Release with wrong signature", async () => {
   const numberOfDeposits = 1;
 
@@ -999,7 +999,7 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
     );
   }
 }, 20000);
- 
+
 test("Release in 3 calls with half deposit as overcommitment", async () => {
   const numberOfDeposits = 15;
 
