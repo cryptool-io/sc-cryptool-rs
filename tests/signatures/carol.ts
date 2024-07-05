@@ -41,3 +41,8 @@ const DATA_CAROL_WITH_AMBASSADOR = Buffer.concat([
 ]);
 
 export const SIGNATURE_CAROL_WITH_AMBASSADOR = privateKeyDeployer.sign(DATA_CAROL_WITH_AMBASSADOR);
+
+const DATA_WALLET = Buffer.concat([
+  carolAddress,
+]);
+export const SIGNATURE_CAROL_WALLET = privateKeyDeployer.sign(DATA_WALLET);

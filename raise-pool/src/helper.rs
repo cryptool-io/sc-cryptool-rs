@@ -1,6 +1,7 @@
 multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
+pub const MAX_PERCENTAGE: u64 = 10_000;
 pub const ALLOWED_TIMESTAMP_DELAY: u64 = 90;
 pub const DEFAULT_DECIMALS: u32 = 18;
 
@@ -12,29 +13,6 @@ pub trait HelperModule: crate::storage::StorageModule {
         self.raise_pool_enabled().set(true);
     }
 
-    fn denominate_payment(&self, payment: &EsdtTokenPayment) -> BigUint {
-        match self.currency_decimals(&payment.token_identifier).get() {
-            decimals if decimals != DEFAULT_DECIMALS => {
-                &payment.amount * 10_u64.pow(DEFAULT_DECIMALS - decimals)
-            }
-            _ => payment.amount.clone(),
-        }
-    }
-
-    fn match_denomination(&self, amount: BigUint, payment: &EsdtTokenPayment) -> BigUint {
-        let decimals = self.currency_decimals(&payment.token_identifier).get();
-        amount * 10_u64.pow(decimals)
-    }
-
-    fn decrease_totals(&self, token_identifier: TokenIdentifier, amount: BigUint) {
-        let payment = EsdtTokenPayment::new(token_identifier.clone(), 0, amount.clone());
-        let payment_denomination = self.denominate_payment(&payment);
-        self.total_amount()
-            .update(|current| *current -= &payment_denomination);
-        self.total_amount_currency(&token_identifier)
-            .update(|current| *current -= &amount);
-    }
-
     fn validate_init(
         &self,
         soft_cap: &BigUint,
@@ -43,7 +21,12 @@ pub trait HelperModule: crate::storage::StorageModule {
         max_deposit: &BigUint,
         start_date: u64,
         end_date: u64,
+        deposit_increments: &BigUint,
     ) {
+        require!(
+            min_deposit % deposit_increments == 0 && max_deposit % deposit_increments == 0,
+            "Min and max deposit amounts must be a multiple of deposit increments"
+        );
         require!(
             soft_cap <= hard_cap,
             "Soft cap needs to be lower than hard cap"
@@ -71,6 +54,11 @@ pub trait HelperModule: crate::storage::StorageModule {
         );
         require!(timestamp > self.start_date().get(), "Deposits not open yet");
         require!(timestamp < self.end_date().get(), "Deposits closed");
+        require!(timestamp > self.start_date().get(), "Deposits not open yet");
+        require!(
+            timestamp >= *backend_timestamp,
+            "Backend timestamp higher than current timestamp"
+        );
         require!(
             timestamp - backend_timestamp < ALLOWED_TIMESTAMP_DELAY,
             "Deposit took too long"
@@ -101,13 +89,13 @@ pub trait HelperModule: crate::storage::StorageModule {
         let payment_denomination = self.denominate_payment(&payment);
         require!(
             total_caller_amount + &payment_denomination
-                <= self.max_deposit().get() * 10_u64.pow(18),
+                <= self.max_deposit().get() * 10_u64.pow(DEFAULT_DECIMALS),
             "Max_deposit threshold would be exceeded"
         );
 
         require!(
             self.total_amount().get() + &payment_denomination
-                <= self.hard_cap().get() * 10_u64.pow(18),
+                <= self.hard_cap().get() * 10_u64.pow(DEFAULT_DECIMALS),
             "Hard cap threshold would be exceeded"
         );
 
@@ -169,5 +157,91 @@ pub trait HelperModule: crate::storage::StorageModule {
         }
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
+    }
+
+    fn denominate_payment(&self, payment: &EsdtTokenPayment) -> BigUint {
+        match self.currency_decimals(&payment.token_identifier).get() {
+            decimals if decimals != DEFAULT_DECIMALS => {
+                &payment.amount * 10_u64.pow(DEFAULT_DECIMALS - decimals)
+            }
+            _ => payment.amount.clone(),
+        }
+    }
+
+    fn match_denomination(&self, amount: BigUint, payment: &EsdtTokenPayment) -> BigUint {
+        let decimals = self.currency_decimals(&payment.token_identifier).get();
+        amount * 10_u64.pow(decimals)
+    }
+
+    fn decrease_totals(&self, token_identifier: TokenIdentifier, amount: BigUint) {
+        let payment = EsdtTokenPayment::new(token_identifier.clone(), 0, amount.clone());
+        let payment_denomination = self.denominate_payment(&payment);
+        self.total_amount()
+            .update(|current| *current -= &payment_denomination);
+        self.total_amount_currency(&token_identifier)
+            .update(|current| *current -= &amount);
+    }
+
+    fn update_general(&self, caller: &ManagedAddress, payment: &EsdtTokenPayment) {
+        self.addresses().insert(caller.clone());
+        self.deposited_currencies(&caller)
+            .insert(payment.token_identifier.clone());
+        self.deposited_amount(&caller, &payment.token_identifier)
+            .update(|current| *current += &payment.amount);
+    }
+
+    fn update_platform_fee(
+        &self,
+        caller: &ManagedAddress,
+        payment: &EsdtTokenPayment,
+        payment_denomination: &BigUint,
+        platform_fee_percentage: &BigUint,
+    ) {
+        let platform_fee_amount = (&payment.amount * platform_fee_percentage) / MAX_PERCENTAGE;
+        let denominated_platform_fee_amount =
+            (payment_denomination * platform_fee_percentage) / MAX_PERCENTAGE;
+        self.address_platform_fee(&caller, &payment.token_identifier)
+            .update(|current| *current += &platform_fee_amount);
+        self.platform_fee(&payment.token_identifier)
+            .update(|current| *current += &platform_fee_amount);
+        self.total_platform_fee()
+            .update(|current| *current += &denominated_platform_fee_amount);
+    }
+
+    fn update_group_fee(
+        &self,
+        caller: &ManagedAddress,
+        payment: &EsdtTokenPayment,
+        payment_denomination: &BigUint,
+        group_fee_percentage: &BigUint,
+    ) {
+        let group_fee_amount = (&payment.amount * group_fee_percentage) / MAX_PERCENTAGE;
+        let denominated_group_fee_amount =
+            (payment_denomination * group_fee_percentage) / MAX_PERCENTAGE;
+        self.address_group_fee(&caller, &payment.token_identifier)
+            .update(|current| *current += &group_fee_amount);
+        self.group_fee(&payment.token_identifier)
+            .update(|current| *current += &group_fee_amount);
+        self.total_group_fee()
+            .update(|current| *current += &denominated_group_fee_amount);
+    }
+
+    fn update_ambassador_fee(
+        &self,
+        caller: &ManagedAddress,
+        payment: &EsdtTokenPayment,
+        ambassador: MultiValue2<BigUint, ManagedAddress>,
+    ) {
+        let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
+        self.ambassadors().insert(ambassador_wallet.clone());
+        let ambassador_amount = (&payment.amount * &ambassador_percentage) / MAX_PERCENTAGE;
+        self.address_ambassador_fee(&caller, &payment.token_identifier)
+            .update(|current| *current += &ambassador_amount);
+        self.ambassador_fee(&payment.token_identifier)
+            .update(|current| *current += &ambassador_amount);
+        self.referral_ambassador_fee(&ambassador_wallet, &payment.token_identifier)
+            .update(|current| *current += &ambassador_amount);
+        self.ambassador_currencies(&ambassador_wallet)
+            .insert(payment.token_identifier.clone());
     }
 }

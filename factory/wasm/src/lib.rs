@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           16
+// Endpoints:                           18
 // Async Callback (empty):               1
-// Total number of exported functions:  19
+// Total number of exported functions:  21
 
 #![no_std]
 
@@ -23,6 +23,8 @@ multiversx_sc_wasm_adapter::endpoints! {
         deployRaisePool => deploy_raise_pool
         enableRaisePool => enable_raise_pool
         getSourceContract => source_contract
+        getPaymentCurrencies => payment_currencies
+        getCurrencyDecimals => currency_decimals
         getContractCreationEnabled => raise_pool_enabled
         getAddressToDeployer => address_to_deployer
         getPoolIdToAddress => pool_id_to_address

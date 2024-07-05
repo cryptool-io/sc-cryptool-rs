@@ -16,14 +16,15 @@ import {
   START_DATE,
   END_DATE,
   REFUND_ENABLED,
-  PLATFORM_FEE1,
-  GROUP_FEE1,
-  AMBASSADOR_FEE,
   TIMESTAMP_BEFORE,
   HARD_CAP_INVALID,
   MAX_DEPOSIT_INVALID,
   END_DATE_INVALID,
   RAISE_POOL_DUMMY_ADDRESS,
+  MIN_DEPOSIT_INCORRECT,
+  MAX_DEPOSIT_INCORRECT,
+  INCORRECT_DECIMALS,
+  CURRENCY3,
 } from "./helpers.ts";
 
 import {
@@ -31,6 +32,7 @@ import {
   SIGNATURE_DEPLOYER,
   SIGNATURE_DUMMY,
   SIGNATURE_BEFORE,
+  SIGNATURE_WALLET,
 } from "./signatures/deployer.ts";
 
 let world: LSWorld;
@@ -49,23 +51,23 @@ beforeEach(async () => {
     code: "file:raise-pool/output/raise-pool.wasm",
     codeMetadata: [],
     codeArgs: [
-      e.Addr(deployer),
-      e.U64(0),
-      e.U64(0),
-      e.U64(10),
-      e.U64(1),
-      e.U64(5),
-      e.U64(2),
-      e.U64(121),
-      e.U64(122),
-      e.U64(1),
-      e.Addr(deployer),
-      e.Addr(deployer),
-      e.Addr(deployer),
-      e.Str("Dummy1"),
-      e.U64(0),
-      e.Str("Dummy2"),
-      e.U64(0),
+      e.Addr(deployer), // POOL OWNER
+      e.U64(0), // POOL ID
+      e.U64(0), // SOFT CAP
+      e.U64(10), // HARD CAP
+      e.U64(1), // MIN DEPOSIT
+      e.U64(10), // MAX DEPOSIT
+      e.U64(1), // DEPOSIT INCREMENTS
+      e.U64(121), // START DATE
+      e.U64(122), // END DATE
+      e.U64(1), // REFUND ENABLED
+      e.Addr(deployer), // PLATFORM FEE WALLET
+      e.Addr(deployer), // GROUP FEE WALLET
+      e.Addr(deployer), // SIGNATURE DEPLOYER
+      e.Str("Dummy1"), // CURRENCY1
+      e.U64(0), // DECIMALS1
+      e.Str("Dummy2"), // CURRENCY2
+      e.U64(0), // DECIMALS2
     ],
     gasLimit: 10_000_000,
   }));
@@ -74,7 +76,14 @@ beforeEach(async () => {
     code: "file:factory/output/factory.wasm",
     codeMetadata: [],
     gasLimit: 10_000_000,
-    codeArgs: [e.Addr(raisePoolDummyContract), e.Addr(deployer)],
+    codeArgs: [
+      e.Addr(raisePoolDummyContract),
+      e.Addr(deployer),
+      e.Str(CURRENCY1),
+      e.U64(DECIMALS1),
+      e.Str(CURRENCY2),
+      e.U64(DECIMALS2),
+    ],
   }));
 });
 
@@ -90,8 +99,71 @@ test("Deploy Factory", async () => {
       e.kvs.Mapper("source_contract").Value(e.Addr(raisePoolDummyContract)),
       e.kvs.Mapper("permissions", e.Addr(deployer)).Value(e.U64(7)),
       e.kvs.Mapper("signer").Value(e.Addr(deployer)),
+      e.kvs
+        .Mapper("payment_currencies")
+        .UnorderedSet([e.Str(CURRENCY1), e.Str(CURRENCY2)]),
+      e.kvs
+        .Mapper("currency_decimals", e.Str(CURRENCY1))
+        .Value(e.U32(DECIMALS1)),
+      e.kvs
+        .Mapper("currency_decimals", e.Str(CURRENCY2))
+        .Value(e.U32(DECIMALS2)),
     ],
   });
+});
+
+test("Deploy Pool with incorrect min deposit", async () => {
+  await deployer
+    .callContract({
+      callee: factoryContract,
+      gasLimit: 50_000_000,
+      funcName: "deployRaisePool",
+      funcArgs: [
+        e.U32(POOL_ID),
+        e.U64(SOFT_CAP),
+        e.U64(HARD_CAP),
+        e.U64(MIN_DEPOSIT_INCORRECT),
+        e.U64(MAX_DEPOSIT),
+        e.U64(DEPOSIT_INCREMENTS),
+        e.U64(START_DATE),
+        e.U64(END_DATE),
+        e.U64(REFUND_ENABLED),
+        e.Addr(deployer),
+        e.Addr(deployer),
+        e.TopBuffer(SIGNATURE_DEPLOYER),
+        e.U64(TIMESTAMP),
+        e.Str(CURRENCY1),
+        e.Str(CURRENCY2),
+      ],
+    })
+    .assertFail({ code: 10, message: "error signalled by smartcontract" });
+});
+
+test("Deploy Pool with incorrect max deposit", async () => {
+  await deployer
+    .callContract({
+      callee: factoryContract,
+      gasLimit: 50_000_000,
+      funcName: "deployRaisePool",
+      funcArgs: [
+        e.U32(POOL_ID),
+        e.U64(SOFT_CAP),
+        e.U64(HARD_CAP),
+        e.U64(MIN_DEPOSIT),
+        e.U64(MAX_DEPOSIT_INCORRECT),
+        e.U64(DEPOSIT_INCREMENTS),
+        e.U64(START_DATE),
+        e.U64(END_DATE),
+        e.U64(REFUND_ENABLED),
+        e.Addr(deployer),
+        e.Addr(deployer),
+        e.TopBuffer(SIGNATURE_DEPLOYER),
+        e.U64(TIMESTAMP),
+        e.Str(CURRENCY1),
+        e.Str(CURRENCY2),
+      ],
+    })
+    .assertFail({ code: 10, message: "error signalled by smartcontract" });
 });
 
 test("Deploy Pool with invalid Signature", async () => {
@@ -115,9 +187,7 @@ test("Deploy Pool with invalid Signature", async () => {
         e.TopBuffer(SIGNATURE_DUMMY),
         e.U64(TIMESTAMP),
         e.Str(CURRENCY1),
-        e.U64(DECIMALS1),
         e.Str(CURRENCY2),
-        e.U64(DECIMALS2),
       ],
     })
     .assertFail({ code: 10, message: "invalid signature" });
@@ -144,9 +214,7 @@ test("Deploy Pool with too much delay", async () => {
         e.TopBuffer(SIGNATURE_BEFORE),
         e.U64(TIMESTAMP_BEFORE),
         e.Str(CURRENCY1),
-        e.U64(DECIMALS1),
         e.Str(CURRENCY2),
-        e.U64(DECIMALS2),
       ],
     })
     .assertFail({ code: 4, message: "Deploy took too long" });
@@ -173,9 +241,7 @@ test("Deploy Pool with invalid Soft, Hard Cap pair", async () => {
         e.TopBuffer(SIGNATURE_DEPLOYER),
         e.U64(TIMESTAMP),
         e.Str(CURRENCY1),
-        e.U64(DECIMALS1),
         e.Str(CURRENCY2),
-        e.U64(DECIMALS2),
       ],
     })
     .assertFail({ code: 10, message: "error signalled by smartcontract" });
@@ -202,9 +268,7 @@ test("Deploy Pool with invalid Min, Max Deposit pair", async () => {
         e.TopBuffer(SIGNATURE_DEPLOYER),
         e.U64(TIMESTAMP),
         e.Str(CURRENCY1),
-        e.U64(DECIMALS1),
         e.Str(CURRENCY2),
-        e.U64(DECIMALS2),
       ],
     })
     .assertFail({ code: 10, message: "error signalled by smartcontract" });
@@ -231,12 +295,55 @@ test("Deploy Pool with invalid Start, End Date pair", async () => {
         e.TopBuffer(SIGNATURE_DEPLOYER),
         e.U64(TIMESTAMP),
         e.Str(CURRENCY1),
-        e.U64(DECIMALS1),
+        e.Str(CURRENCY2),
+      ],
+    })
+    .assertFail({ code: 10, message: "error signalled by smartcontract" });
+});
+
+test("Deploy Pool with incorrect decimals", async () => {
+  await deployer
+    .deployContract({
+      code: "file:factory/output/factory.wasm",
+      codeMetadata: [],
+      gasLimit: 10_000_000,
+      codeArgs: [
+        e.Addr(raisePoolDummyContract),
+        e.Addr(deployer),
+        e.Str(CURRENCY1),
+        e.U64(INCORRECT_DECIMALS),
         e.Str(CURRENCY2),
         e.U64(DECIMALS2),
       ],
     })
-    .assertFail({ code: 10, message: "error signalled by smartcontract" });
+    .assertFail({ code: 4, message: "Maximum decimals number is 18" });
+});
+
+test("Deploy Pool with not whitelisted currency", async () => {
+  await deployer
+    .callContract({
+      callee: factoryContract,
+      gasLimit: 50_000_000,
+      funcName: "deployRaisePool",
+      funcArgs: [
+        e.U32(POOL_ID),
+        e.U64(SOFT_CAP),
+        e.U64(HARD_CAP),
+        e.U64(MIN_DEPOSIT),
+        e.U64(MAX_DEPOSIT),
+        e.U64(DEPOSIT_INCREMENTS),
+        e.U64(START_DATE),
+        e.U64(END_DATE),
+        e.U64(REFUND_ENABLED),
+        e.Addr(deployer),
+        e.Addr(deployer),
+        e.TopBuffer(SIGNATURE_DEPLOYER),
+        e.U64(TIMESTAMP),
+        e.Str(CURRENCY3),
+        e.Str(CURRENCY2),
+      ],
+    })
+    .assertFail({ code: 4, message: "One of the currencies is not whitelisted" });
 });
 
 test("Deploy Pool", async () => {
@@ -259,9 +366,7 @@ test("Deploy Pool", async () => {
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
       e.Str(CURRENCY1),
-      e.U64(DECIMALS1),
       e.Str(CURRENCY2),
-      e.U64(DECIMALS2),
     ],
   });
 
@@ -278,6 +383,15 @@ test("Deploy Pool", async () => {
         .Mapper("address_to_deployer", e.Addr(RAISE_POOL_DUMMY_ADDRESS))
         .Value(e.Addr(deployer)),
       e.kvs.Mapper("signer").Value(e.Addr(deployer)),
+      e.kvs
+        .Mapper("payment_currencies")
+        .UnorderedSet([e.Str(CURRENCY1), e.Str(CURRENCY2)]),
+      e.kvs
+        .Mapper("currency_decimals", e.Str(CURRENCY1))
+        .Value(e.U32(DECIMALS1)),
+      e.kvs
+        .Mapper("currency_decimals", e.Str(CURRENCY2))
+        .Value(e.U32(DECIMALS2)),
     ],
   });
 

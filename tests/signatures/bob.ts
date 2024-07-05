@@ -10,6 +10,7 @@ import {
     GROUP_FEE1,
     AMBASSADOR_FEE,
     TIMESTAMP_AFTER,
+    AFTER_DEPOSIT_TIMESTAMP
 } from "../helpers";
 
 import { 
@@ -49,3 +50,19 @@ const DATA_BOB_REFUND = Buffer.concat([
   codec.encodeNested(new U32Value(POOL_ID)),
   bobAddress]);
 export const SIGNATURE_BOB_REFUND = privateKeyDeployer.sign(DATA_BOB_REFUND);
+
+const DATA_WALLET = Buffer.concat([
+  bobAddress,
+]);
+export const SIGNATURE_BOB_WALLET = privateKeyDeployer.sign(DATA_WALLET);
+
+const DATA_BOB_AFTER_DEPOSIT = Buffer.concat([
+  codec.encodeNested(new U64Value(AFTER_DEPOSIT_TIMESTAMP)),
+  codec.encodeNested(new U32Value(POOL_ID)),
+  bobAddress,
+  codec.encodeNested(new BigUIntValue(Number(PLATFORM_FEE1))),
+  codec.encodeNested(new BigUIntValue(Number(GROUP_FEE1))),
+  codec.encodeNested(new BigUIntValue(Number(AMBASSADOR_FEE))),
+  deployerAddress,
+]);
+export const SIGNATURE_BOB_AFTER_DEPOSIT = privateKeyDeployer.sign(DATA_BOB_AFTER_DEPOSIT);

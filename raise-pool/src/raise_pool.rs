@@ -3,15 +3,18 @@
 use multiversx_sc::imports::*;
 mod helper;
 mod storage;
+mod wallet_database;
 use crate::helper::ALLOWED_TIMESTAMP_DELAY;
+use crate::helper::DEFAULT_DECIMALS;
 use storage::ReleaseState;
 
-pub const MAX_PERCENTAGE: u64 = 10_000;
 pub const MIN_GAS_FOR_OPERATION: u64 = 2_000_000;
-pub const MAX_TX_PER_RELEASE: u32 = 10; // Value in production: 140, value for testing: 10
+pub const MAX_TX_PER_RELEASE: u32 = 140; // Value in production: 140, value for testing: 10
 
 #[multiversx_sc::contract]
-pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule {
+pub trait RaisePool:
+    crate::storage::StorageModule + crate::helper::HelperModule + crate::wallet_database::WalletDatabase
+{
     #[init]
     fn init(
         &self,
@@ -37,6 +40,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             &max_deposit,
             start_date,
             end_date,
+            &deposit_increments,
         );
         self.soft_cap().set(soft_cap);
         self.hard_cap().set(hard_cap);
@@ -63,69 +67,6 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
     #[upgrade]
     fn upgrade(&self) {}
 
-    fn update_general(&self, caller: &ManagedAddress, payment: &EsdtTokenPayment) {
-        self.addresses().insert(caller.clone());
-        self.deposited_currencies(&caller)
-            .insert(payment.token_identifier.clone());
-        self.deposited_amount(&caller, &payment.token_identifier)
-            .update(|current| *current += &payment.amount);
-    }
-
-    fn update_platform_fee(
-        &self,
-        caller: &ManagedAddress,
-        payment: &EsdtTokenPayment,
-        payment_denomination: &BigUint,
-        platform_fee_percentage: &BigUint,
-    ) {
-        let platform_fee_amount = (&payment.amount * platform_fee_percentage) / MAX_PERCENTAGE;
-        let denominated_platform_fee_amount =
-            (payment_denomination * platform_fee_percentage) / MAX_PERCENTAGE;
-        self.address_platform_fee(&caller, &payment.token_identifier)
-            .update(|current| *current += &platform_fee_amount);
-        self.platform_fee(&payment.token_identifier)
-            .update(|current| *current += &platform_fee_amount);
-        self.total_platform_fee()
-            .update(|current| *current += &denominated_platform_fee_amount);
-    }
-
-    fn update_group_fee(
-        &self,
-        caller: &ManagedAddress,
-        payment: &EsdtTokenPayment,
-        payment_denomination: &BigUint,
-        group_fee_percentage: &BigUint,
-    ) {
-        let group_fee_amount = (&payment.amount * group_fee_percentage) / MAX_PERCENTAGE;
-        let denominated_group_fee_amount =
-            (payment_denomination * group_fee_percentage) / MAX_PERCENTAGE;
-        self.address_group_fee(&caller, &payment.token_identifier)
-            .update(|current| *current += &group_fee_amount);
-        self.group_fee(&payment.token_identifier)
-            .update(|current| *current += &group_fee_amount);
-        self.total_group_fee()
-            .update(|current| *current += &denominated_group_fee_amount);
-    }
-
-    fn update_ambassador_fee(
-        &self,
-        caller: &ManagedAddress,
-        payment: &EsdtTokenPayment,
-        ambassador: MultiValue2<BigUint, ManagedAddress>,
-    ) {
-        let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
-        self.ambassadors().insert(ambassador_wallet.clone());
-        let ambassador_amount = (&payment.amount * &ambassador_percentage) / MAX_PERCENTAGE;
-        self.address_ambassador_fee(&caller, &payment.token_identifier)
-            .update(|current| *current += &ambassador_amount);
-        self.ambassador_fee(&payment.token_identifier)
-            .update(|current| *current += &ambassador_amount);
-        self.referral_ambassador_fee(&ambassador_wallet, &payment.token_identifier)
-            .update(|current| *current += &ambassador_amount);
-        self.ambassador_currencies(&ambassador_wallet)
-            .insert(payment.token_identifier.clone());
-    }
-
     #[payable("*")]
     #[endpoint(deposit)]
     fn deposit(
@@ -151,7 +92,10 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             ambassador.clone(),
         );
 
-        let caller = self.blockchain().get_caller();
+        require!(
+            self.whitelisted_wallets().contains(&caller),
+            "Wallet not whitelisted"
+        );
         let payment = self.call_value().single_esdt();
         self.validate_deposit(&payment, &timestamp);
         self.update_general(&caller, &payment);
@@ -159,7 +103,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         let payment_denomination = self.denominate_payment(&payment);
         require!(
             self.total_amount().get() + &payment_denomination
-                <= self.hard_cap().get() * 10_u64.pow(18),
+                <= self.hard_cap().get() * 10_u64.pow(DEFAULT_DECIMALS),
             "Hard cap threshold would be exceeded"
         );
 
@@ -199,6 +143,10 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         let caller = self.blockchain().get_caller();
         require!(caller == self.owner().get(), "Only owner can call refund");
         require!(
+            timestamp <= self.blockchain().get_block_timestamp(),
+            "Timestamp provided by backend set in the future"
+        );
+        require!(
             self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
             "Refund took too long"
         );
@@ -208,7 +156,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             "Refunds are not open"
         );
         require!(
-            self.total_amount().get() < self.soft_cap().get() * 10_u64.pow(18),
+            self.total_amount().get() < self.soft_cap().get() * 10_u64.pow(DEFAULT_DECIMALS),
             "Soft cap exceeded"
         );
 
@@ -239,6 +187,95 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         }
         self.refund_index().set(addresses_len);
         OperationCompletionStatus::Completed
+    }
+
+    #[endpoint(release)]
+    fn release(
+        &self,
+        timestamp: u64,
+        signature: ManagedBuffer,
+        overcommited: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
+    ) -> OperationCompletionStatus {
+        let caller = self.blockchain().get_caller();
+        let signer = self.signer().get();
+        let pool_id = self.pool_id().get();
+        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
+        require!(caller == self.owner().get(), "Only owner can call release");
+        require!(
+            timestamp <= self.blockchain().get_block_timestamp(),
+            "Timestamp provided by backend set in the future"
+        );
+        require!(
+            self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
+            "Release took too long"
+        );
+
+        let overcommited_len = overcommited.len();
+        loop {
+            match self.release_state().get() {
+                ReleaseState::None => {
+                    self.release_plaform();
+                    self.release_state().set(ReleaseState::PlatformReleased);
+                }
+                ReleaseState::PlatformReleased => {
+                    self.release_group();
+                    self.release_state().set(ReleaseState::GroupReleased);
+                }
+                ReleaseState::GroupReleased => {
+                    let status = self.release_ambassadors();
+                    if status == OperationCompletionStatus::InterruptedBeforeOutOfGas {
+                        return status;
+                    }
+                    self.release_state().set(ReleaseState::AmbassadorsReleased);
+                }
+                ReleaseState::AmbassadorsReleased => {
+                    if overcommited_len > 0 {
+                        let status =
+                            self.refund_overcommited(overcommited.clone(), overcommited_len);
+                        if status == OperationCompletionStatus::InterruptedBeforeOutOfGas {
+                            return status;
+                        }
+                        self.release_state().set(ReleaseState::AllReleased);
+                    } else {
+                        self.release_state().set(ReleaseState::AllReleased);
+                    }
+                }
+                ReleaseState::AllReleased => return OperationCompletionStatus::Completed,
+            }
+        }
+    }
+
+    #[endpoint(retrieve)]
+    fn retrieve(&self, timestamp: u64, signature: ManagedBuffer) {
+        let caller = self.blockchain().get_caller();
+        let signer = self.signer().get();
+        let pool_id = self.pool_id().get();
+        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
+        require!(caller == self.owner().get(), "Only owner can call retrieve");
+        require!(
+            timestamp <= self.blockchain().get_block_timestamp(),
+            "Timestamp provided by backend set in the future"
+        );
+        require!(
+            self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
+            "Retrieve took too long"
+        );
+        require!(
+            self.release_state().get() == ReleaseState::AllReleased,
+            "Release needs to be called first"
+        );
+
+        let mut payments = ManagedVec::new();
+        for token in self.payment_currencies().iter() {
+            let amount = self.total_amount_currency(&token).get();
+            if amount > 0 {
+                payments.push(EsdtTokenPayment::new(token.clone(), 0, amount));
+            }
+        }
+        self.send().direct_multi(&caller, &payments);
+        for payment in &payments {
+            self.decrease_totals(payment.token_identifier, payment.amount);
+        }
     }
 
     fn release_plaform(&self) {
@@ -314,8 +351,8 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
     fn refund_overcommited(
         &self,
         overcommited: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
+        overcommited_len: usize,
     ) -> OperationCompletionStatus {
-        let overcommited_len = overcommited.len();
         let overcommited_iter = overcommited.into_iter();
         let mut overcommited_index = self.overcommited_index().get();
         let mut overcommited_iter = overcommited_iter.skip(overcommited_index);
@@ -343,88 +380,5 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
 
         self.overcommited_index().set(overcommited_len);
         OperationCompletionStatus::Completed
-    }
-
-    #[endpoint(release)]
-    fn release(
-        &self,
-        timestamp: u64,
-        signature: ManagedBuffer,
-        overcommited: OptionalValue<
-            MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
-        >,
-    ) -> OperationCompletionStatus {
-        let caller = self.blockchain().get_caller();
-        let signer = self.signer().get();
-        let pool_id = self.pool_id().get();
-        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
-        require!(caller == self.owner().get(), "Only owner can call release");
-        require!(
-            self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
-            "Release took too long"
-        );
-
-        let overcommited_into_option = overcommited.into_option();
-        loop {
-            match self.release_state().get() {
-                ReleaseState::None => {
-                    self.release_plaform();
-                    self.release_state().set(ReleaseState::PlatformReleased);
-                }
-                ReleaseState::PlatformReleased => {
-                    self.release_group();
-                    self.release_state().set(ReleaseState::GroupReleased);
-                }
-                ReleaseState::GroupReleased => {
-                    let status = self.release_ambassadors();
-                    if status == OperationCompletionStatus::InterruptedBeforeOutOfGas {
-                        return status;
-                    }
-                    self.release_state().set(ReleaseState::AmbassadorsReleased);
-                }
-                ReleaseState::AmbassadorsReleased => match overcommited_into_option {
-                    Some(ref overcommited) => {
-                        let status = self.refund_overcommited(overcommited.clone());
-                        if status == OperationCompletionStatus::InterruptedBeforeOutOfGas {
-                            return status;
-                        }
-                        self.release_state().set(ReleaseState::AllReleased);
-                    }
-                    None => {
-                        self.release_state().set(ReleaseState::AllReleased);
-                    }
-                },
-                ReleaseState::AllReleased => return OperationCompletionStatus::Completed,
-            }
-        }
-    }
-
-    #[endpoint(retrieve)]
-    fn retrieve(&self, timestamp: u64, signature: ManagedBuffer) {
-        let caller = self.blockchain().get_caller();
-        let signer = self.signer().get();
-        let pool_id = self.pool_id().get();
-        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
-        require!(caller == self.owner().get(), "Only owner can call release");
-        require!(
-            self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
-            "Retrieve took too long"
-        );
-        require!(
-            self.release_state().get() == ReleaseState::AllReleased,
-            "Release needs to be called first"
-        );
-
-        let mut payments = ManagedVec::new();
-        for token in self.payment_currencies().iter() {
-            let amount = self.total_amount_currency(&token).get();
-            if amount > 0 {
-                payments.push(EsdtTokenPayment::new(token.clone(), 0, amount));
-            }
-        }
-        self.send().direct_multi(&caller, &payments);
-        for payment in &payments {
-            self.decrease_totals(payment.token_identifier, payment.amount);
-        }
     }
 }

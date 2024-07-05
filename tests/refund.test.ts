@@ -40,6 +40,7 @@ import {
   SIGNATURE_AFTER,
   SIGNATURE_DEPLOYER,
   SIGNATURE_DUMMY,
+  SIGNATURE_WALLET,
 } from "./signatures/deployer.ts";
 
 import {
@@ -66,23 +67,23 @@ beforeEach(async () => {
     code: "file:raise-pool/output/raise-pool.wasm",
     codeMetadata: [],
     codeArgs: [
-      e.Addr(deployer),
-      e.U64(0),
-      e.U64(0),
-      e.U64(10),
-      e.U64(1),
-      e.U64(5),
-      e.U64(2),
-      e.U64(121),
-      e.U64(122),
-      e.U64(1),
-      e.Addr(deployer),
-      e.Addr(deployer),
-      e.Addr(deployer),
-      e.Str("Dummy1"),
-      e.U64(0),
-      e.Str("Dummy2"),
-      e.U64(0),
+      e.Addr(deployer), // POOL OWNER
+      e.U64(0), // POOL ID
+      e.U64(0), // SOFT CAP
+      e.U64(10), // HARD CAP
+      e.U64(1), // MIN DEPOSIT
+      e.U64(10), // MAX DEPOSIT
+      e.U64(1), // DEPOSIT INCREMENTS
+      e.U64(121), // START DATE
+      e.U64(122), // END DATE
+      e.U64(1), // REFUND ENABLED
+      e.Addr(deployer), // PLATFORM FEE WALLET
+      e.Addr(deployer), // GROUP FEE WALLET
+      e.Addr(deployer), // SIGNATURE DEPLOYER
+      e.Str("Dummy1"), // CURRENCY1
+      e.U64(0), // DECIMALS1
+      e.Str("Dummy2"), // CURRENCY2
+      e.U64(0), // DECIMALS2
     ],
     gasLimit: 10_000_000,
   }));
@@ -91,14 +92,23 @@ beforeEach(async () => {
     code: "file:factory/output/factory.wasm",
     codeMetadata: [],
     gasLimit: 10_000_000,
-    codeArgs: [e.Addr(raisePoolDummyContract), e.Addr(deployer)],
+    codeArgs: [
+      e.Addr(raisePoolDummyContract),
+      e.Addr(deployer),
+      e.Str(CURRENCY1),
+      e.U64(DECIMALS1),
+      e.Str(CURRENCY2),
+      e.U64(DECIMALS2),
+      e.Str(CURRENCY3),
+      e.U64(DECIMALS3),
+    ],
   }));
 });
 
 afterEach(async () => {
   world.terminate();
 });
-
+ 
 test("Refund with wrong signature", async () => {
   const numberOfDeposits = 1;
 
@@ -121,11 +131,8 @@ test("Refund with wrong signature", async () => {
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
       e.Str(CURRENCY1),
-      e.U64(DECIMALS1),
       e.Str(CURRENCY2),
-      e.U64(DECIMALS2),
       e.Str(CURRENCY3),
-      e.U64(DECIMALS3),
     ],
   });
 
@@ -159,7 +166,8 @@ test("Refund with wrong signature", async () => {
   for (let i = 0; i < numberOfDeposits; i++) {
     const {
       address,
-      signature,
+      whitelistSignature,
+      depositSignature,
       platformFee,
       groupFee,
       ambassadorFee,
@@ -186,10 +194,20 @@ test("Refund with wrong signature", async () => {
     await genericWallet.callContract({
       callee: raisePoolContract,
       gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [
+        e.TopBuffer(whitelistSignature),
+        e.TopBuffer(SIGNATURE_WALLET),
+      ],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
       funcName: "deposit",
       funcArgs: [
         e.U64(TIMESTAMP),
-        e.TopBuffer(signature),
+        e.TopBuffer(depositSignature),
         e.U(platformFee),
         e.U(groupFee),
         e.U(ambassadorFee),
@@ -231,11 +249,8 @@ test("Refund by non owner", async () => {
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
       e.Str(CURRENCY1),
-      e.U64(DECIMALS1),
       e.Str(CURRENCY2),
-      e.U64(DECIMALS2),
       e.Str(CURRENCY3),
-      e.U64(DECIMALS3),
     ],
   });
 
@@ -269,7 +284,8 @@ test("Refund by non owner", async () => {
   for (let i = 0; i < numberOfDeposits; i++) {
     const {
       address,
-      signature,
+      whitelistSignature,
+      depositSignature,
       platformFee,
       groupFee,
       ambassadorFee,
@@ -296,10 +312,20 @@ test("Refund by non owner", async () => {
     await genericWallet.callContract({
       callee: raisePoolContract,
       gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [
+        e.TopBuffer(whitelistSignature),
+        e.TopBuffer(SIGNATURE_WALLET),
+      ],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
       funcName: "deposit",
       funcArgs: [
         e.U64(TIMESTAMP),
-        e.TopBuffer(signature),
+        e.TopBuffer(depositSignature),
         e.U(platformFee),
         e.U(groupFee),
         e.U(ambassadorFee),
@@ -346,11 +372,8 @@ test("Refund with too much delay", async () => {
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
       e.Str(CURRENCY1),
-      e.U64(DECIMALS1),
       e.Str(CURRENCY2),
-      e.U64(DECIMALS2),
       e.Str(CURRENCY3),
-      e.U64(DECIMALS3),
     ],
   });
 
@@ -384,7 +407,8 @@ test("Refund with too much delay", async () => {
   for (let i = 0; i < numberOfDeposits; i++) {
     const {
       address,
-      signature,
+      whitelistSignature,
+      depositSignature,
       platformFee,
       groupFee,
       ambassadorFee,
@@ -411,10 +435,20 @@ test("Refund with too much delay", async () => {
     await genericWallet.callContract({
       callee: raisePoolContract,
       gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [
+        e.TopBuffer(whitelistSignature),
+        e.TopBuffer(SIGNATURE_WALLET),
+      ],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
       funcName: "deposit",
       funcArgs: [
         e.U64(TIMESTAMP),
-        e.TopBuffer(signature),
+        e.TopBuffer(depositSignature),
         e.U(platformFee),
         e.U(groupFee),
         e.U(ambassadorFee),
@@ -460,11 +494,8 @@ test("Refund while refunds not enabled", async () => {
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
       e.Str(CURRENCY1),
-      e.U64(DECIMALS1),
       e.Str(CURRENCY2),
-      e.U64(DECIMALS2),
       e.Str(CURRENCY3),
-      e.U64(DECIMALS3),
     ],
   });
 
@@ -498,7 +529,8 @@ test("Refund while refunds not enabled", async () => {
   for (let i = 0; i < numberOfDeposits; i++) {
     const {
       address,
-      signature,
+      whitelistSignature,
+      depositSignature,
       platformFee,
       groupFee,
       ambassadorFee,
@@ -525,10 +557,20 @@ test("Refund while refunds not enabled", async () => {
     await genericWallet.callContract({
       callee: raisePoolContract,
       gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [
+        e.TopBuffer(whitelistSignature),
+        e.TopBuffer(SIGNATURE_WALLET),
+      ],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
       funcName: "deposit",
       funcArgs: [
         e.U64(TIMESTAMP),
-        e.TopBuffer(signature),
+        e.TopBuffer(depositSignature),
         e.U(platformFee),
         e.U(groupFee),
         e.U(ambassadorFee),
@@ -570,11 +612,8 @@ test("Refund while refunds not open", async () => {
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
       e.Str(CURRENCY1),
-      e.U64(DECIMALS1),
       e.Str(CURRENCY2),
-      e.U64(DECIMALS2),
       e.Str(CURRENCY3),
-      e.U64(DECIMALS3),
     ],
   });
 
@@ -608,7 +647,8 @@ test("Refund while refunds not open", async () => {
   for (let i = 0; i < numberOfDeposits; i++) {
     const {
       address,
-      signature,
+      whitelistSignature,
+      depositSignature,
       platformFee,
       groupFee,
       ambassadorFee,
@@ -635,10 +675,20 @@ test("Refund while refunds not open", async () => {
     await genericWallet.callContract({
       callee: raisePoolContract,
       gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [
+        e.TopBuffer(whitelistSignature),
+        e.TopBuffer(SIGNATURE_WALLET),
+      ],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
       funcName: "deposit",
       funcArgs: [
         e.U64(TIMESTAMP),
-        e.TopBuffer(signature),
+        e.TopBuffer(depositSignature),
         e.U(platformFee),
         e.U(groupFee),
         e.U(ambassadorFee),
@@ -680,11 +730,8 @@ test("Refund after soft cap exceeded", async () => {
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
       e.Str(CURRENCY1),
-      e.U64(DECIMALS1),
       e.Str(CURRENCY2),
-      e.U64(DECIMALS2),
       e.Str(CURRENCY3),
-      e.U64(DECIMALS3),
     ],
   });
 
@@ -718,7 +765,8 @@ test("Refund after soft cap exceeded", async () => {
   for (let i = 0; i < numberOfDeposits; i++) {
     const {
       address,
-      signature,
+      whitelistSignature,
+      depositSignature,
       platformFee,
       groupFee,
       ambassadorFee,
@@ -745,10 +793,20 @@ test("Refund after soft cap exceeded", async () => {
     await genericWallet.callContract({
       callee: raisePoolContract,
       gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [
+        e.TopBuffer(whitelistSignature),
+        e.TopBuffer(SIGNATURE_WALLET),
+      ],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
       funcName: "deposit",
       funcArgs: [
         e.U64(TIMESTAMP),
-        e.TopBuffer(signature),
+        e.TopBuffer(depositSignature),
         e.U(platformFee),
         e.U(groupFee),
         e.U(ambassadorFee),
@@ -771,9 +829,9 @@ test("Refund after soft cap exceeded", async () => {
     })
     .assertFail({ code: 4, message: "Soft cap exceeded" });
 });
-
+ 
 test("Refund in 1 call", async () => {
-  const numberOfDeposits = 10;
+  const numberOfDeposits = 140;
 
   await deployer.callContract({
     callee: factoryContract,
@@ -794,11 +852,8 @@ test("Refund in 1 call", async () => {
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
       e.Str(CURRENCY1),
-      e.U64(DECIMALS1),
       e.Str(CURRENCY2),
-      e.U64(DECIMALS2),
       e.Str(CURRENCY3),
-      e.U64(DECIMALS3),
     ],
   });
 
@@ -835,7 +890,8 @@ test("Refund in 1 call", async () => {
   for (let i = 0; i < numberOfDeposits; i++) {
     const {
       address,
-      signature,
+      whitelistSignature,
+      depositSignature,
       platformFee,
       groupFee,
       ambassadorFee,
@@ -862,10 +918,20 @@ test("Refund in 1 call", async () => {
     await genericWallet.callContract({
       callee: raisePoolContract,
       gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [
+        e.TopBuffer(whitelistSignature),
+        e.TopBuffer(SIGNATURE_WALLET),
+      ],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
       funcName: "deposit",
       funcArgs: [
         e.U64(TIMESTAMP),
-        e.TopBuffer(signature),
+        e.TopBuffer(depositSignature),
         e.U(platformFee),
         e.U(groupFee),
         e.U(ambassadorFee),
@@ -896,7 +962,7 @@ test("Refund in 1 call", async () => {
 
   let state = await deployer.callContract({
     callee: raisePoolContract,
-    gasLimit: 50_000_000,
+    gasLimit: 500_000_000,
     funcName: "refund",
     funcArgs: [e.U64(TIMESTAMP_AFTER), e.TopBuffer(SIGNATURE_AFTER)],
   });
@@ -909,10 +975,10 @@ test("Refund in 1 call", async () => {
     });
     console.log(`Returned amount to Id: ${String(i + 1).padStart(2, " ")}`);
   }
-}, 20000);
-
+}, 200000);
+ 
 test("Refund in 2 calls", async () => {
-  const numberOfDeposits = 15;
+  const numberOfDeposits = 200;
 
   await deployer.callContract({
     callee: factoryContract,
@@ -933,11 +999,8 @@ test("Refund in 2 calls", async () => {
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
       e.Str(CURRENCY1),
-      e.U64(DECIMALS1),
       e.Str(CURRENCY2),
-      e.U64(DECIMALS2),
       e.Str(CURRENCY3),
-      e.U64(DECIMALS3),
     ],
   });
 
@@ -974,7 +1037,8 @@ test("Refund in 2 calls", async () => {
   for (let i = 0; i < numberOfDeposits; i++) {
     const {
       address,
-      signature,
+      whitelistSignature,
+      depositSignature,
       platformFee,
       groupFee,
       ambassadorFee,
@@ -1001,10 +1065,20 @@ test("Refund in 2 calls", async () => {
     await genericWallet.callContract({
       callee: raisePoolContract,
       gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [
+        e.TopBuffer(whitelistSignature),
+        e.TopBuffer(SIGNATURE_WALLET),
+      ],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
       funcName: "deposit",
       funcArgs: [
         e.U64(TIMESTAMP),
-        e.TopBuffer(signature),
+        e.TopBuffer(depositSignature),
         e.U(platformFee),
         e.U(groupFee),
         e.U(ambassadorFee),
@@ -1044,7 +1118,7 @@ test("Refund in 2 calls", async () => {
 
   let state2 = await deployer.callContract({
     callee: raisePoolContract,
-    gasLimit: 50_000_000,
+    gasLimit: 500_000_000,
     funcName: "refund",
     funcArgs: [e.U64(TIMESTAMP_AFTER), e.TopBuffer(SIGNATURE_AFTER)],
   });
@@ -1057,7 +1131,7 @@ test("Refund in 2 calls", async () => {
     });
     console.log(`Returned amount to Id: ${String(i + 1).padStart(2, " ")}`);
   }
-}, 20000);
+}, 200000);
 
 test("Refund with not enough gas", async () => {
   const numberOfDeposits = 5;
@@ -1081,11 +1155,8 @@ test("Refund with not enough gas", async () => {
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
       e.Str(CURRENCY1),
-      e.U64(DECIMALS1),
       e.Str(CURRENCY2),
-      e.U64(DECIMALS2),
       e.Str(CURRENCY3),
-      e.U64(DECIMALS3),
     ],
   });
 
@@ -1122,7 +1193,8 @@ test("Refund with not enough gas", async () => {
   for (let i = 0; i < numberOfDeposits; i++) {
     const {
       address,
-      signature,
+      whitelistSignature,
+      depositSignature,
       platformFee,
       groupFee,
       ambassadorFee,
@@ -1149,10 +1221,20 @@ test("Refund with not enough gas", async () => {
     await genericWallet.callContract({
       callee: raisePoolContract,
       gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [
+        e.TopBuffer(whitelistSignature),
+        e.TopBuffer(SIGNATURE_WALLET),
+      ],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
       funcName: "deposit",
       funcArgs: [
         e.U64(TIMESTAMP),
-        e.TopBuffer(signature),
+        e.TopBuffer(depositSignature),
         e.U(platformFee),
         e.U(groupFee),
         e.U(ambassadorFee),
@@ -1179,3 +1261,4 @@ test("Refund with not enough gas", async () => {
     })
     .assertFail({ code: 5, message: "not enough gas" });
 }, 20000);
+ 

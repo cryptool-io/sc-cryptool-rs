@@ -174,10 +174,6 @@ pub trait StorageModule {
     #[storage_mapper("raise_pool_enabled")]
     fn raise_pool_enabled(&self) -> SingleValueMapper<bool>;
 
-    #[view(getSigner)]
-    #[storage_mapper("signer")]
-    fn signer(&self) -> SingleValueMapper<ManagedAddress>;
-
     #[view(getOwner)]
     #[storage_mapper("owner")]
     fn owner(&self) -> SingleValueMapper<ManagedAddress>;

@@ -38,3 +38,9 @@ const DATA_AFTER = Buffer.concat([
 ]);
 export const SIGNATURE_AFTER = privateKeyDeployer.sign(DATA_AFTER);
 
+const DATA_WALLET = Buffer.concat([
+  deployerAddress,
+]);
+export const SIGNATURE_WALLET = privateKeyDeployer.sign(DATA_WALLET);
+
+ 

@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           41
+// Endpoints:                           44
 // Async Callback (empty):               1
-// Total number of exported functions:  44
+// Total number of exported functions:  47
 
 #![no_std]
 
@@ -58,9 +58,12 @@ multiversx_sc_wasm_adapter::endpoints! {
         getOvercommitedIndex => overcommited_index
         getReleaseState => release_state
         raisePoolEnabled => raise_pool_enabled
-        getSigner => signer
         getOwner => owner
         enableRaisePool => enable_raise_pool
+        registerWallet => register_wallet
+        removeWallet => remove_wallet
+        getSigner => signer
+        getRegisteredWallets => registered_wallets
     )
 }
 

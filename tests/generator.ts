@@ -41,7 +41,8 @@ function generateAddress(): Buffer {
 
 export function generateDataAndSignature(ambassadorBool: number): {
   address: Buffer;
-  signature: Buffer;
+  whitelistSignature: Buffer;
+  depositSignature: Buffer;
   platformFee: number;
   groupFee: number;
   ambassadorFee: number;
@@ -51,7 +52,9 @@ export function generateDataAndSignature(ambassadorBool: number): {
   const groupFee = getRandomInt(101, 200);
   const address = generateAddress();
 
-  var data = Buffer.concat([
+  var whitelist_data = Buffer.concat([address]);
+
+  var deploy_data = Buffer.concat([
     codec.encodeNested(new U64Value(TIMESTAMP)),
     codec.encodeNested(new U32Value(POOL_ID)),
     address,
@@ -63,17 +66,19 @@ export function generateDataAndSignature(ambassadorBool: number): {
   if (ambassadorBool == 1) {
     ambassadorFee = getRandomInt(201, 300);
     ambassadorAddress = generateAddress();
-    data = Buffer.concat([
-      data,
+    deploy_data = Buffer.concat([
+      deploy_data,
       codec.encodeNested(new BigUIntValue(ambassadorFee)),
       ambassadorAddress,
     ]);
   }
-  const generated_signature = privateKeyDeployer.sign(data);
+  const whitelistSignature = privateKeyDeployer.sign(whitelist_data);
+  const depositSignature = privateKeyDeployer.sign(deploy_data);
 
   return {
     address,
-    signature: generated_signature,
+    whitelistSignature,
+    depositSignature,
     platformFee,
     groupFee,
     ambassadorFee,
@@ -83,7 +88,8 @@ export function generateDataAndSignature(ambassadorBool: number): {
 
 export function generateDataAndSignatureDeployerAmbassador() : {
   address: Buffer;
-  signature: Buffer;
+  whitelistSignature: Buffer;
+  depositSignature: Buffer;
   platformFee: number;
   groupFee: number;
   ambassadorFee: number;
@@ -93,7 +99,9 @@ export function generateDataAndSignatureDeployerAmbassador() : {
   const address = generateAddress();
   const ambassadorFee = getRandomInt(201, 300);
 
-  var data = Buffer.concat([
+  var whitelist_data = Buffer.concat([address]);  
+
+  var deploy_data = Buffer.concat([
     codec.encodeNested(new U64Value(TIMESTAMP)),
     codec.encodeNested(new U32Value(POOL_ID)),
     address,
@@ -103,11 +111,13 @@ export function generateDataAndSignatureDeployerAmbassador() : {
     deployerAddress,
     ]);
 
-  const generated_signature = privateKeyDeployer.sign(data);
+  const whitelistSignature = privateKeyDeployer.sign(whitelist_data);
+  const depositSignature = privateKeyDeployer.sign(deploy_data);
 
   return {
     address,
-    signature: generated_signature,
+    whitelistSignature,
+    depositSignature,
     platformFee,
     groupFee,
     ambassadorFee,
