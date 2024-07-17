@@ -1,6 +1,8 @@
 multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
+use wallet_database::ProxyTrait as _;
+
 pub const MAX_PERCENTAGE: u64 = 10_000;
 pub const ALLOWED_TIMESTAMP_DELAY: u64 = 90;
 pub const DEFAULT_DECIMALS: u32 = 18;
@@ -9,8 +11,8 @@ pub const DEFAULT_DECIMALS: u32 = 18;
 pub trait HelperModule: crate::storage::StorageModule {
     #[only_owner]
     #[endpoint(enableRaisePool)]
-    fn enable_raise_pool(&self) {
-        self.raise_pool_enabled().set(true);
+    fn enable_raise_pool(&self, value: bool) {
+        self.raise_pool_enabled().set(value);
     }
 
     fn validate_init(
@@ -244,4 +246,16 @@ pub trait HelperModule: crate::storage::StorageModule {
         self.ambassador_currencies(&ambassador_wallet)
             .insert(payment.token_identifier.clone());
     }
+
+    fn is_registered(&self, address: &ManagedAddress) -> bool {
+        self.wallet_database_proxy(self.wallet_database_address().get())
+            .is_registered(address)
+            .execute_on_dest_context::<bool>()
+    }
+
+    #[proxy]
+    fn wallet_database_proxy(
+        &self,
+        callee_sc_address: ManagedAddress,
+    ) -> wallet_database::Proxy<Self::Api>;
 }

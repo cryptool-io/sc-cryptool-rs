@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           18
+// Endpoints:                           19
 // Async Callback (empty):               1
-// Total number of exported functions:  21
+// Total number of exported functions:  22
 
 #![no_std]
 
@@ -22,13 +22,6 @@ multiversx_sc_wasm_adapter::endpoints! {
         upgrade => upgrade
         deployRaisePool => deploy_raise_pool
         enableRaisePool => enable_raise_pool
-        getSourceContract => source_contract
-        getPaymentCurrencies => payment_currencies
-        getCurrencyDecimals => currency_decimals
-        getContractCreationEnabled => raise_pool_enabled
-        getAddressToDeployer => address_to_deployer
-        getPoolIdToAddress => pool_id_to_address
-        getSigner => signer
         addAdmin => add_admin_endpoint
         removeAdmin => remove_admin_endpoint
         updateOwnerOrAdmin => update_owner_or_admin_endpoint
@@ -38,6 +31,14 @@ multiversx_sc_wasm_adapter::endpoints! {
         pause => pause
         resume => resume
         getState => state
+        getSourceContract => source_raise_contract
+        getWalletDatabaseContract => wallet_database_address
+        getPaymentCurrencies => payment_currencies
+        getCurrencyDecimals => currency_decimals
+        getContractCreationEnabled => raise_pool_enabled
+        getAddressToDeployer => address_to_deployer
+        getPoolIdToAddress => pool_id_to_address
+        getSigner => signer
     )
 }
 

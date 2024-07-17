@@ -40,7 +40,6 @@ import {
   SIGNATURE_AFTER,
   SIGNATURE_DEPLOYER,
   SIGNATURE_DUMMY,
-  SIGNATURE_WALLET,
 } from "./signatures/deployer.ts";
 
 import {
@@ -55,6 +54,7 @@ let bob: LSWallet;
 let genericWallet: LSWallet;
 let factoryContract: LSContract;
 let raisePoolDummyContract: LSContract;
+let walletDababaseContract: LSContract;
 
 beforeEach(async () => {
   world = await LSWorld.start();
@@ -62,6 +62,13 @@ beforeEach(async () => {
     timestamp: TIMESTAMP,
   });
   deployer = await world.createWallet({ address: deployerAddress });
+
+  ({ contract: walletDababaseContract } = await deployer.deployContract({
+    code: "file:wallet-database/output/wallet-database.wasm",
+    codeMetadata: [],
+    codeArgs: [e.Addr(deployer)],
+    gasLimit: 10_000_000,
+  }));
 
   ({ contract: raisePoolDummyContract } = await deployer.deployContract({
     code: "file:raise-pool/output/raise-pool.wasm",
@@ -80,6 +87,7 @@ beforeEach(async () => {
       e.Addr(deployer), // PLATFORM FEE WALLET
       e.Addr(deployer), // GROUP FEE WALLET
       e.Addr(deployer), // SIGNATURE DEPLOYER
+      e.Addr(walletDababaseContract), // WALLET DATABASE CONTRACT
       e.Str("Dummy1"), // CURRENCY1
       e.U64(0), // DECIMALS1
       e.Str("Dummy2"), // CURRENCY2
@@ -94,6 +102,7 @@ beforeEach(async () => {
     gasLimit: 10_000_000,
     codeArgs: [
       e.Addr(raisePoolDummyContract),
+      e.Addr(walletDababaseContract),
       e.Addr(deployer),
       e.Str(CURRENCY1),
       e.U64(DECIMALS1),
@@ -108,7 +117,7 @@ beforeEach(async () => {
 afterEach(async () => {
   world.terminate();
 });
- 
+
 test("Refund with wrong signature", async () => {
   const numberOfDeposits = 1;
 
@@ -134,13 +143,6 @@ test("Refund with wrong signature", async () => {
       e.Str(CURRENCY2),
       e.Str(CURRENCY3),
     ],
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
   });
 
   const raisePoolAddressResult = await deployer.query({
@@ -180,7 +182,7 @@ test("Refund with wrong signature", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -192,13 +194,10 @@ test("Refund with wrong signature", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -254,13 +253,6 @@ test("Refund by non owner", async () => {
     ],
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
-  });
-
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
@@ -298,7 +290,7 @@ test("Refund by non owner", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -310,13 +302,10 @@ test("Refund by non owner", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -377,13 +366,6 @@ test("Refund with too much delay", async () => {
     ],
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
-  });
-
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
@@ -421,7 +403,7 @@ test("Refund with too much delay", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -433,13 +415,10 @@ test("Refund with too much delay", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -499,13 +478,6 @@ test("Refund while refunds not enabled", async () => {
     ],
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
-  });
-
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
@@ -543,7 +515,7 @@ test("Refund while refunds not enabled", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -555,13 +527,10 @@ test("Refund while refunds not enabled", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -617,13 +586,6 @@ test("Refund while refunds not open", async () => {
     ],
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
-  });
-
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
@@ -661,7 +623,7 @@ test("Refund while refunds not open", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -673,13 +635,10 @@ test("Refund while refunds not open", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -735,13 +694,6 @@ test("Refund after soft cap exceeded", async () => {
     ],
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
-  });
-
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
@@ -779,7 +731,7 @@ test("Refund after soft cap exceeded", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -791,13 +743,10 @@ test("Refund after soft cap exceeded", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -829,7 +778,7 @@ test("Refund after soft cap exceeded", async () => {
     })
     .assertFail({ code: 4, message: "Soft cap exceeded" });
 });
- 
+
 test("Refund in 1 call", async () => {
   const numberOfDeposits = 140;
 
@@ -857,13 +806,6 @@ test("Refund in 1 call", async () => {
     ],
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
-  });
-
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
@@ -904,7 +846,7 @@ test("Refund in 1 call", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -916,13 +858,10 @@ test("Refund in 1 call", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -946,13 +885,13 @@ test("Refund in 1 call", async () => {
 
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
-        depositAmount
+        depositAmount,
       ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
-        platformFee
+        platformFee,
       ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
         3,
-        " "
-      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`
+        " ",
+      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
   }
 
@@ -976,7 +915,7 @@ test("Refund in 1 call", async () => {
     console.log(`Returned amount to Id: ${String(i + 1).padStart(2, " ")}`);
   }
 }, 200000);
- 
+
 test("Refund in 2 calls", async () => {
   const numberOfDeposits = 200;
 
@@ -1004,13 +943,6 @@ test("Refund in 2 calls", async () => {
     ],
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
-  });
-
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
@@ -1051,7 +983,7 @@ test("Refund in 2 calls", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -1063,13 +995,10 @@ test("Refund in 2 calls", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -1093,13 +1022,13 @@ test("Refund in 2 calls", async () => {
 
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
-        depositAmount
+        depositAmount,
       ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
-        platformFee
+        platformFee,
       ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
         3,
-        " "
-      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`
+        " ",
+      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
   }
 
@@ -1160,13 +1089,6 @@ test("Refund with not enough gas", async () => {
     ],
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
-  });
-
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
@@ -1207,7 +1129,7 @@ test("Refund with not enough gas", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -1219,13 +1141,10 @@ test("Refund with not enough gas", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -1261,4 +1180,3 @@ test("Refund with not enough gas", async () => {
     })
     .assertFail({ code: 5, message: "not enough gas" });
 }, 20000);
- 

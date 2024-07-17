@@ -33,7 +33,6 @@ import {
   SIGNATURE_AFTER,
   SIGNATURE_DEPLOYER,
   SIGNATURE_DUMMY,
-  SIGNATURE_WALLET,
 } from "./signatures/deployer.ts";
 
 import { bobAddress, SIGNATURE_BOB_REFUND } from "./signatures/bob.ts";
@@ -53,6 +52,7 @@ let groupWallet: LSWallet;
 let ambassadorWallet: LSWallet;
 let factoryContract: LSContract;
 let raisePoolDummyContract: LSContract;
+let walletDababaseContract: LSContract;
 
 beforeEach(async () => {
   world = await LSWorld.start();
@@ -60,6 +60,13 @@ beforeEach(async () => {
     timestamp: TIMESTAMP,
   });
   deployer = await world.createWallet({ address: deployerAddress });
+
+  ({ contract: walletDababaseContract } = await deployer.deployContract({
+    code: "file:wallet-database/output/wallet-database.wasm",
+    codeMetadata: [],
+    codeArgs: [e.Addr(deployer)],
+    gasLimit: 10_000_000,
+  }));
 
   ({ contract: raisePoolDummyContract } = await deployer.deployContract({
     code: "file:raise-pool/output/raise-pool.wasm",
@@ -78,6 +85,7 @@ beforeEach(async () => {
       e.Addr(deployer), // PLATFORM FEE WALLET
       e.Addr(deployer), // GROUP FEE WALLET
       e.Addr(deployer), // SIGNATURE DEPLOYER
+      e.Addr(walletDababaseContract), // WALLET DATABASE CONTRACT
       e.Str("Dummy1"), // CURRENCY1
       e.U64(0), // DECIMALS1
       e.Str("Dummy2"), // CURRENCY2
@@ -92,6 +100,7 @@ beforeEach(async () => {
     gasLimit: 10_000_000,
     codeArgs: [
       e.Addr(raisePoolDummyContract),
+      e.Addr(walletDababaseContract),
       e.Addr(deployer),
       e.Str(CURRENCY1),
       e.U64(DECIMALS1),
@@ -106,7 +115,7 @@ beforeEach(async () => {
 afterEach(async () => {
   world.terminate();
 });
- 
+
 test("Release with wrong signature", async () => {
   const numberOfDeposits = 1;
 
@@ -132,13 +141,6 @@ test("Release with wrong signature", async () => {
       e.Str(CURRENCY2),
       e.Str(CURRENCY3),
     ],
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
   });
 
   const raisePoolAddressResult = await deployer.query({
@@ -178,7 +180,7 @@ test("Release with wrong signature", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -190,13 +192,10 @@ test("Release with wrong signature", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -252,13 +251,6 @@ test("Release by non owner", async () => {
     ],
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
-  });
-
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
@@ -296,7 +288,7 @@ test("Release by non owner", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -308,13 +300,10 @@ test("Release by non owner", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -375,13 +364,6 @@ test("Release with too much delay", async () => {
     ],
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
-  });
-
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
@@ -419,7 +401,7 @@ test("Release with too much delay", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -431,13 +413,10 @@ test("Release with too much delay", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -500,13 +479,6 @@ test("Release in 1 call no overcommitment", async () => {
     ],
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
-  });
-
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
@@ -550,7 +522,7 @@ test("Release in 1 call no overcommitment", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -569,13 +541,10 @@ test("Release in 1 call no overcommitment", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -605,13 +574,13 @@ test("Release in 1 call no overcommitment", async () => {
 
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
-        depositAmount
+        depositAmount,
       ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
-        platformFee
+        platformFee,
       ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
         3,
-        " "
-      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`
+        " ",
+      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
   }
 
@@ -649,7 +618,7 @@ test("Release in 1 call no overcommitment", async () => {
       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
     });
     console.log(
-      `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`
+      `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`,
     );
   }
 }, 200000);
@@ -682,13 +651,6 @@ test("Release in 2 calls no overcommitment", async () => {
       e.Str(CURRENCY2),
       e.Str(CURRENCY3),
     ],
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
   });
 
   const raisePoolAddressResult = await deployer.query({
@@ -734,7 +696,7 @@ test("Release in 2 calls no overcommitment", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -753,13 +715,10 @@ test("Release in 2 calls no overcommitment", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -789,13 +748,13 @@ test("Release in 2 calls no overcommitment", async () => {
 
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
-        depositAmount
+        depositAmount,
       ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
-        platformFee
+        platformFee,
       ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
         3,
-        " "
-      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`
+        " ",
+      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
   }
 
@@ -811,7 +770,7 @@ test("Release in 2 calls no overcommitment", async () => {
   });
 
   expect(result1.returnData[0]).toBe(
-    Buffer.from("interrupted").toString("hex")
+    Buffer.from("interrupted").toString("hex"),
   );
 
   let result2 = await deployer.callContract({
@@ -844,7 +803,7 @@ test("Release in 2 calls no overcommitment", async () => {
       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
     });
     console.log(
-      `Ambassador amount sent to Id: ${String(i + 1).padStart(2, " ")}`
+      `Ambassador amount sent to Id: ${String(i + 1).padStart(2, " ")}`,
     );
   }
 }, 200000);
@@ -877,13 +836,6 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
       e.Str(CURRENCY2),
       e.Str(CURRENCY3),
     ],
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
   });
 
   const raisePoolAddressResult = await deployer.query({
@@ -930,7 +882,7 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -949,13 +901,10 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -986,13 +935,13 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
 
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
-        depositAmount
+        depositAmount,
       ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
-        platformFee
+        platformFee,
       ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
         3,
-        " "
-      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`
+        " ",
+      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
   }
 
@@ -1040,7 +989,7 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
     });
     console.log(
-      `Ambassador amount sent to Id: ${String(i + 1).padStart(2, " ")}`
+      `Ambassador amount sent to Id: ${String(i + 1).padStart(2, " ")}`,
     );
 
     assertAccount(await world.getAccount(overcommiterWallets[i]), {
@@ -1052,12 +1001,12 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
     });
     console.log(
       `Overcommiter sent half the deposited amount to Id: ${String(
-        i + 1
-      ).padStart(2, " ")}`
+        i + 1,
+      ).padStart(2, " ")}`,
     );
   }
 }, 200000);
- 
+
 test("Release in 3 calls with half deposit as overcommitment", async () => {
   const numberOfDeposits = 200;
 
@@ -1086,13 +1035,6 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
       e.Str(CURRENCY2),
       e.Str(CURRENCY3),
     ],
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [e.U32(POOL_ID)],
   });
 
   const raisePoolAddressResult = await deployer.query({
@@ -1139,7 +1081,7 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
     const depositAmount = getRandomDeposit(
       MIN_DEPOSIT,
       MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS
+      DEPOSIT_INCREMENTS,
     );
     const depositAmountInCurrency =
       BigInt(depositAmount) * BigInt(10 ** decimals);
@@ -1158,13 +1100,10 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
     });
 
     await genericWallet.callContract({
-      callee: raisePoolContract,
+      callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [
-        e.TopBuffer(whitelistSignature),
-        e.TopBuffer(SIGNATURE_WALLET),
-      ],
+      funcArgs: [e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -1195,13 +1134,13 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
 
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
-        depositAmount
+        depositAmount,
       ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
-        platformFee
+        platformFee,
       ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
         3,
-        " "
-      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`
+        " ",
+      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
   }
 
@@ -1227,7 +1166,7 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
   });
 
   expect(result1.returnData[0]).toBe(
-    Buffer.from("interrupted").toString("hex")
+    Buffer.from("interrupted").toString("hex"),
   );
 
   let result2 = await deployer.callContract({
@@ -1238,7 +1177,7 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
   });
 
   expect(result2.returnData[0]).toBe(
-    Buffer.from("interrupted").toString("hex")
+    Buffer.from("interrupted").toString("hex"),
   );
 
   let result3 = await deployer.callContract({
@@ -1271,7 +1210,7 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
     });
     console.log(
-      `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`
+      `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`,
     );
 
     assertAccount(await world.getAccount(overcommiterWallets[i]), {
@@ -1283,9 +1222,8 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
     });
     console.log(
       `Half the deposited amunt sent sent to Overcommiter Id: ${String(
-        i + 1
-      ).padStart(2, " ")}`
+        i + 1,
+      ).padStart(2, " ")}`,
     );
   }
 }, 200000);
- 

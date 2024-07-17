@@ -1,20 +1,17 @@
 #![no_std]
 
 use multiversx_sc::imports::*;
-mod helper;
-mod storage;
-mod wallet_database;
+pub mod helper;
+pub mod storage;
 use crate::helper::ALLOWED_TIMESTAMP_DELAY;
 use crate::helper::DEFAULT_DECIMALS;
 use storage::ReleaseState;
 
 pub const MIN_GAS_FOR_OPERATION: u64 = 2_000_000;
-pub const MAX_TX_PER_RELEASE: u32 = 140; // Value in production: 140, value for testing: 10
+pub const MAX_TX_PER_RELEASE: u32 = 140;
 
 #[multiversx_sc::contract]
-pub trait RaisePool:
-    crate::storage::StorageModule + crate::helper::HelperModule + crate::wallet_database::WalletDatabase
-{
+pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule {
     #[init]
     fn init(
         &self,
@@ -31,6 +28,7 @@ pub trait RaisePool:
         platform_fee_wallet: ManagedAddress,
         group_fee_wallet: ManagedAddress,
         signer: ManagedAddress,
+        wallet_database_address: ManagedAddress,
         payment_currencies: MultiValueEncoded<MultiValue2<TokenIdentifier, u32>>,
     ) {
         self.validate_init(
@@ -57,8 +55,9 @@ pub trait RaisePool:
             self.payment_currencies().insert(currency.clone());
             self.currency_decimals(&currency).set(decimals);
         }
-        self.raise_pool_enabled().set(false);
-        self.signer().set(&signer);
+        self.raise_pool_enabled().set(true);
+        self.wallet_database_address().set(wallet_database_address);
+        self.signer().set(signer);
         self.pool_id().set(pool_id);
         self.release_state().set(ReleaseState::None);
         self.owner().set(owner);
@@ -92,10 +91,7 @@ pub trait RaisePool:
             ambassador.clone(),
         );
 
-        require!(
-            self.whitelisted_wallets().contains(&caller),
-            "Wallet not whitelisted"
-        );
+        require!(self.is_registered(&caller), "Wallet not registered");
         let payment = self.call_value().single_esdt();
         self.validate_deposit(&payment, &timestamp);
         self.update_general(&caller, &payment);
@@ -136,6 +132,10 @@ pub trait RaisePool:
 
     #[endpoint(refund)]
     fn refund(&self, timestamp: u64, signature: ManagedBuffer) -> OperationCompletionStatus {
+        require!(
+            self.raise_pool_enabled().get() == true,
+            "Pool is not enabled"
+        );
         let caller = self.blockchain().get_caller();
         let signer = self.signer().get();
         let pool_id = self.pool_id().get();
@@ -196,6 +196,10 @@ pub trait RaisePool:
         signature: ManagedBuffer,
         overcommited: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
     ) -> OperationCompletionStatus {
+        require!(
+            self.raise_pool_enabled().get() == true,
+            "Pool is not enabled"
+        );
         let caller = self.blockchain().get_caller();
         let signer = self.signer().get();
         let pool_id = self.pool_id().get();
@@ -247,6 +251,10 @@ pub trait RaisePool:
 
     #[endpoint(retrieve)]
     fn retrieve(&self, timestamp: u64, signature: ManagedBuffer) {
+        require!(
+            self.raise_pool_enabled().get() == true,
+            "Pool is not enabled"
+        );
         let caller = self.blockchain().get_caller();
         let signer = self.signer().get();
         let pool_id = self.pool_id().get();

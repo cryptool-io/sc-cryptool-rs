@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           44
+// Endpoints:                           42
 // Async Callback (empty):               1
-// Total number of exported functions:  47
+// Total number of exported functions:  45
 
 #![no_std]
 
@@ -37,6 +37,8 @@ multiversx_sc_wasm_adapter::endpoints! {
         getGroupFeeWallet => group_fee_wallet
         getPaymentCurrencies => payment_currencies
         getCurrencyDecimals => currency_decimals
+        getWallatDatabaseAddress => wallet_database_address
+        getSigner => signer
         getAddresses => addresses
         getRefundIndex => refund_index
         getDepositedCurrencies => deposited_currencies
@@ -60,10 +62,6 @@ multiversx_sc_wasm_adapter::endpoints! {
         raisePoolEnabled => raise_pool_enabled
         getOwner => owner
         enableRaisePool => enable_raise_pool
-        registerWallet => register_wallet
-        removeWallet => remove_wallet
-        getSigner => signer
-        getRegisteredWallets => registered_wallets
     )
 }
 

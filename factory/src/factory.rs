@@ -3,27 +3,34 @@
 #[allow(unused_imports)]
 use multiversx_sc::imports::*;
 use permissions_module::Permissions;
+use raise_pool::helper::ProxyTrait as _;
 use raise_pool::ProxyTrait as _;
 mod events;
+mod storage;
 
 pub const DEFAULT_DECIMALS: u32 = 18;
 pub const ALLOWED_TIMESTAMP_DELAY: u64 = 90;
 
 #[multiversx_sc::contract]
 pub trait Factory:
-    permissions_module::PermissionsModule + pausable::PausableModule + events::EventsModule
+    permissions_module::PermissionsModule
+    + pausable::PausableModule
+    + events::EventsModule
+    + crate::storage::StorageModule
 {
     #[init]
     fn init(
         &self,
-        source_contract: ManagedAddress,
+        source_raise_contract: ManagedAddress,
+        wallet_database_address: ManagedAddress,
         signer: ManagedAddress,
         payment_currencies: MultiValueEncoded<MultiValue2<TokenIdentifier, u32>>,
     ) {
         let all_permissions = Permissions::OWNER | Permissions::ADMIN | Permissions::PAUSE;
         self.set_permissions(self.blockchain().get_caller(), all_permissions);
         self.raise_pool_enabled().set(false);
-        self.source_contract().set(source_contract);
+        self.source_raise_contract().set(source_raise_contract);
+        self.wallet_database_address().set(wallet_database_address);
         self.signer().set(signer);
         for payment_currency in payment_currencies {
             let (currency, decimals) = payment_currency.into_tuple();
@@ -39,7 +46,6 @@ pub trait Factory:
     #[upgrade]
     fn upgrade(&self) {}
 
-    #[payable("EGLD")]
     #[endpoint(deployRaisePool)]
     fn deploy_raise_pool(
         &self,
@@ -80,6 +86,7 @@ pub trait Factory:
         }
 
         let signer = self.signer().get();
+        let wallet_database_address = self.wallet_database_address().get();
 
         let (raise_pool_contract_address, ()) = self
             .raise_pool_proxy()
@@ -97,10 +104,11 @@ pub trait Factory:
                 &platform_fee_wallet,
                 &group_fee_wallet,
                 signer,
+                wallet_database_address,
                 &raise_pool_currencies,
             )
             .deploy_from_source(
-                &self.source_contract().get(),
+                &self.source_raise_contract().get(),
                 CodeMetadata::UPGRADEABLE | CodeMetadata::READABLE,
             );
 
@@ -127,20 +135,16 @@ pub trait Factory:
     }
 
     #[endpoint(enableRaisePool)]
-    fn enable_raise_pool(&self, pool_id: u32) {
+    fn enable_raise_pool(&self, pool_id: u32, value: bool) {
         require!(
             !self.pool_id_to_address(&pool_id).is_empty(),
             "Pool not deployed"
         );
         self.require_caller_has_owner_permissions();
-        self.tx()
-            .to(self.pool_id_to_address(&pool_id).get())
-            .raw_call("enableRaisePool")
-            .async_call_and_exit();
+        self.raise_pool_address_proxy(self.pool_id_to_address(&pool_id).get())
+            .enable_raise_pool(value)
+            .execute_on_dest_context::<()>();
     }
-
-    #[proxy]
-    fn raise_pool_proxy(&self) -> raise_pool::Proxy<Self::Api>;
 
     fn validate_signature(
         &self,
@@ -160,36 +164,12 @@ pub trait Factory:
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
     }
 
-    // Storage
+    #[proxy]
+    fn raise_pool_proxy(&self) -> raise_pool::Proxy<Self::Api>;
 
-    #[view(getSourceContract)]
-    #[storage_mapper("source_contract")]
-    fn source_contract(&self) -> SingleValueMapper<ManagedAddress>;
-
-    #[view(getPaymentCurrencies)]
-    #[storage_mapper("payment_currencies")]
-    fn payment_currencies(&self) -> UnorderedSetMapper<TokenIdentifier>;
-
-    #[view(getCurrencyDecimals)]
-    #[storage_mapper("currency_decimals")]
-    fn currency_decimals(&self, currency: &TokenIdentifier) -> SingleValueMapper<u32>;
-
-    #[view(getContractCreationEnabled)]
-    #[storage_mapper("raise_pool_enabled")]
-    fn raise_pool_enabled(&self) -> SingleValueMapper<bool>;
-
-    #[view(getAddressToDeployer)]
-    #[storage_mapper("address_to_deployer")]
-    fn address_to_deployer(
+    #[proxy]
+    fn raise_pool_address_proxy(
         &self,
-        pool_address: &ManagedAddress,
-    ) -> SingleValueMapper<ManagedAddress>;
-
-    #[view(getPoolIdToAddress)]
-    #[storage_mapper("pool_id_to_address")]
-    fn pool_id_to_address(&self, pool_id: &u32) -> SingleValueMapper<ManagedAddress>;
-
-    #[view(getSigner)]
-    #[storage_mapper("signer")]
-    fn signer(&self) -> SingleValueMapper<ManagedAddress>;
+        callee_sc_address: ManagedAddress,
+    ) -> raise_pool::Proxy<Self::Api>;
 }

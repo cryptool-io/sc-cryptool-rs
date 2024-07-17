@@ -32,13 +32,14 @@ import {
   SIGNATURE_DEPLOYER,
   SIGNATURE_DUMMY,
   SIGNATURE_BEFORE,
-  SIGNATURE_WALLET,
 } from "./signatures/deployer.ts";
 
 let world: LSWorld;
+let alice: LSWallet;
 let deployer: LSWallet;
 let factoryContract: LSContract;
 let raisePoolDummyContract: LSContract;
+let walletDababaseContract: LSContract;
 
 beforeEach(async () => {
   world = await LSWorld.start();
@@ -46,6 +47,14 @@ beforeEach(async () => {
     timestamp: TIMESTAMP,
   });
   deployer = await world.createWallet({ address: deployerAddress });
+  alice = await world.createWallet();
+
+  ({ contract: walletDababaseContract } = await deployer.deployContract({
+    code: "file:wallet-database/output/wallet-database.wasm",
+    codeMetadata: [],
+    codeArgs: [e.Addr(deployer)],
+    gasLimit: 10_000_000,
+  }));
 
   ({ contract: raisePoolDummyContract } = await deployer.deployContract({
     code: "file:raise-pool/output/raise-pool.wasm",
@@ -64,6 +73,7 @@ beforeEach(async () => {
       e.Addr(deployer), // PLATFORM FEE WALLET
       e.Addr(deployer), // GROUP FEE WALLET
       e.Addr(deployer), // SIGNATURE DEPLOYER
+      e.Addr(walletDababaseContract), // WALLET DATABASE CONTRACT
       e.Str("Dummy1"), // CURRENCY1
       e.U64(0), // DECIMALS1
       e.Str("Dummy2"), // CURRENCY2
@@ -78,6 +88,7 @@ beforeEach(async () => {
     gasLimit: 10_000_000,
     codeArgs: [
       e.Addr(raisePoolDummyContract),
+      e.Addr(walletDababaseContract), // WALLET DATABASE CONTRACT
       e.Addr(deployer),
       e.Str(CURRENCY1),
       e.U64(DECIMALS1),
@@ -108,6 +119,9 @@ test("Deploy Factory", async () => {
       e.kvs
         .Mapper("currency_decimals", e.Str(CURRENCY2))
         .Value(e.U32(DECIMALS2)),
+      e.kvs
+        .Mapper("wallet_database_address")
+        .Value(e.Addr(walletDababaseContract)),
     ],
   });
 });
@@ -309,6 +323,7 @@ test("Deploy Pool with incorrect decimals", async () => {
       gasLimit: 10_000_000,
       codeArgs: [
         e.Addr(raisePoolDummyContract),
+        e.Addr(walletDababaseContract),
         e.Addr(deployer),
         e.Str(CURRENCY1),
         e.U64(INCORRECT_DECIMALS),
@@ -343,7 +358,10 @@ test("Deploy Pool with not whitelisted currency", async () => {
         e.Str(CURRENCY2),
       ],
     })
-    .assertFail({ code: 4, message: "One of the currencies is not whitelisted" });
+    .assertFail({
+      code: 4,
+      message: "One of the currencies is not whitelisted",
+    });
 });
 
 test("Deploy Pool", async () => {
@@ -392,6 +410,9 @@ test("Deploy Pool", async () => {
       e.kvs
         .Mapper("currency_decimals", e.Str(CURRENCY2))
         .Value(e.U32(DECIMALS2)),
+      e.kvs
+        .Mapper("wallet_database_address")
+        .Value(e.Addr(walletDababaseContract)),
     ],
   });
 
@@ -430,11 +451,14 @@ test("Deploy Pool", async () => {
       e.kvs
         .Mapper("currency_decimals", e.Str(CURRENCY2))
         .Value(e.U32(DECIMALS2)),
-      e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(false)),
+      e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(true)),
       e.kvs.Mapper("signer").Value(e.Addr(deployer)),
       e.kvs.Mapper("pool_id").Value(e.U32(POOL_ID)),
       e.kvs.Mapper("release_state").Value(e.Usize(0)),
       e.kvs.Mapper("owner").Value(e.Addr(deployer)),
+      e.kvs
+        .Mapper("wallet_database_address")
+        .Value(e.Addr(walletDababaseContract)),
     ],
   });
 });

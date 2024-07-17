@@ -16,5 +16,9 @@
     "typescript": "^5.4.5",
     "vitest": "^1.6.0",
     "xsuite": "^0.0.64"
+  },
+  "dependencies": {
+    "@multiversx/sdk-nestjs": "^0.5.5",
+    "axios": "^1.7.2"
   }
 }

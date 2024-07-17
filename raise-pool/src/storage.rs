@@ -64,6 +64,14 @@ pub trait StorageModule {
     #[storage_mapper("currency_decimals")]
     fn currency_decimals(&self, currency: &TokenIdentifier) -> SingleValueMapper<u32>;
 
+    #[view(getWallatDatabaseAddress)]
+    #[storage_mapper("wallet_database_address")]
+    fn wallet_database_address(&self) -> SingleValueMapper<ManagedAddress>;
+
+    #[view(getSigner)]
+    #[storage_mapper("signer")]
+    fn signer(&self) -> SingleValueMapper<ManagedAddress>;
+
     //
 
     #[view(getAddresses)]

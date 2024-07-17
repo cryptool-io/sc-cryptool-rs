@@ -8,6 +8,9 @@ publish = false
 [lib]
 path = "src/raise_pool.rs"
 
+[dependencies.wallet-database]
+path = "../wallet-database"
+
 [dependencies.multiversx-sc]
 version = "0.50.4"
 
