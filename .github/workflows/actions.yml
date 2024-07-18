@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  contracts:
+    name: Contracts
+    uses: multiversx/mx-sc-actions/.github/workflows/contracts.yml@v3.2.0
+    with:
+      rust-toolchain: nightly-2023-12-11
+      pip-mxpy-args: "multiversx-sdk-cli==v9.5.5"
+      sc-meta-version: "0.47.8"
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+
+  tests:
+    name: xSuite Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly-2023-12-11
+          target: wasm32-unknown-unknown
+
+      - name: Install prerequisites
+        run: |
+          pipx install "multiversx-sdk-cli==v9.5.5"
+          
+          wget -O binaryen.tar.gz https://github.com/WebAssembly/binaryen/releases/download/version_112/binaryen-version_112-x86_64-linux.tar.gz
+          tar -xf binaryen.tar.gz
+          cp binaryen-version_112/bin/wasm-opt $HOME/.local/bin
+
+          sudo apt install -y wabt=1.0.27-1
+
+          cargo install wasm-opt
+          cargo install twiggy
+          
+          cargo install multiversx-sc-meta --version 0.47.8 --locked
+          
+          which mxpy
+          which wasm-opt
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:long
