@@ -1,0 +1,33 @@
+[package]
+name = "factory"
+version = "0.0.0"
+authors = ["you"]
+edition = "2021"
+publish = false
+
+[lib]
+path = "src/factory.rs"
+
+[dependencies.raise-pool]
+path = "../raise-pool"
+
+[dependencies.multiversx-sc]
+version = "0.50.4"
+
+[dev-dependencies]
+num-bigint = "0.4"
+
+[dev-dependencies.multiversx-sc-scenario]
+version = "0.50.4"
+
+[dependencies.permissions_module]
+path = "../modules/permissions_module"
+
+[dependencies.pausable]
+path = "../modules/pausable"
+
+[workspace]
+members = [
+    ".",
+    "meta",
+]

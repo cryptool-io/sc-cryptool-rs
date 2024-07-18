@@ -1,0 +1,5 @@
+**/output/**
+**/target/
+/node_modules/
+**/interaction/
+**/tests/wallets/*.pem
