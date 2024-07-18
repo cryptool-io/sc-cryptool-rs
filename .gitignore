@@ -3,4 +3,5 @@
 /node_modules/
 **/interaction/
 **/tests/wallets/*.pem
+!tests/wallets/.gitkeep
 .zed
