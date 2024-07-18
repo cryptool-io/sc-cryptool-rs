@@ -9,7 +9,7 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 ### Deploy a wallet database contract using:
 
 - **init** (&self, signer: ManagedAddress)
-  - We need a wallet database contract to store the wallets that will be used to deposit funds in the raise pools. The signer wallet will be used to validate that wallets were registered.
+  - We need a wallet database contract to store the wallets that will be used to deposit funds in the raise pools. The signer wallet will be used to validate that wallets are going to be registered.
 
 ### Deploy a dummy raise pool SC using:
 
@@ -33,18 +33,18 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
   - This endpoint refunds the deposited amounts to users if the Soft Cap is not exceeded once the End Date is exceeded.
   - If there are more transactions than the blockchain limit, the function returns _interrupted_, so this endpoint needs to be called again. Otherwise, it returns _completed_.
-  - Signature data format: timestamp + pool_id + deployer_address.
+  - Signature data format: signed(timestamp + pool_id + deployer_address).
 
 - **release** (_timestamp: u64, signature: ManagedBuffer, overcommitted: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>_) -> _OperationCompletionStatus_
 
   - Once the End Date is exceeded, calling the release endpoint sends fees to the Platform, Group, and Ambassador Wallets (and potentially to Overcommitter Wallets if applicable).
   - If there are more transactions than the blockchain limit, the function returns _interrupted_, so this endpoint needs to be called again. Otherwise, it returns _completed_. Please keep in mind that if the function returns _interrupted_, the next call needs to have the exact same parameters (so even if the function reaches the _overcommited_ step and returns _interrupted_, the next call needs to have the original overcommited list as parameter)
-  - Signature data format: timestamp + pool_id + deployer_address.
+  - Signature data format: signed(timestamp + pool_id + deployer_address).
 
 - **retrieve** (_timestamp: u64, signature: ManagedBuffer_)
 
   - Once the _release_ has been completed, calling this endpoint sends the remaining deposited funds to the owner wallet.
-  - Signature data format: timestamp + pool_id + deployer_address.
+  - Signature data format: signed(timestamp + pool_id + deployer_address).
 
 ## User Callable Endpoints on Production Wallet Database SC:
 
@@ -52,13 +52,19 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
   - The user needs to register his wallet before being able to deposit.
   - The signature data format is:
-    - user_signature: user address
+    - user_signature: signed(user_address)
 
 - **removeWallet** (_user_signature: ManagedBuffer_)
 
   - The user also has the possibility to remove their signature from the whitelisted addresses.
   - The signature data format is:
-    - user_signature: user address
+    - user_signature: signed(user_address)
+
+## General Callable Endpoints on Production Wallet Database SC:
+
+- **isRegistered** (_address: ManagedAddress_) -> bool
+
+  - Calling this endpoint checks whether or not a wallet is registered
 
 ## User Callable Endpoints on Production Raise Pool SC:
 
@@ -66,9 +72,9 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
   - This is the main endpoint of the pool, used to deposit tokens in the pool.
   - If no ambassador is provided, the signature data format is:
-    - timestamp + pool_id + deployer_address + platform_fee_percentage + group_fee_percentage.
+    - signed(timestamp + pool_id + deployer_address + platform_fee_percentage + group_fee_percentage).
   - If an ambassador is provided, the signature data format is:
-    - timestamp + pool_id + deployer_address + platform_fee_percentage + group_fee_percentage + ambassador_fee + ambassador_address.
+    - signed(timestamp + pool_id + deployer_address + platform_fee_percentage + group_fee_percentage + ambassador_fee + ambassador_address).
 
 ## Testing using xSuite:
 

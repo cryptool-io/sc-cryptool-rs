@@ -3,3 +3,4 @@
 /node_modules/
 **/interaction/
 **/tests/wallets/*.pem
+.zed
