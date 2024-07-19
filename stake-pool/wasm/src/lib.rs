@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           22
+// Endpoints:                           23
 // Async Callback (empty):               1
-// Total number of exported functions:  25
+// Total number of exported functions:  26
 
 #![no_std]
 
@@ -33,6 +33,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         getWalletPendingRewards => wallet_pending_rewards
         getRewadsPerShare => rewards_per_share
         getLastUpdateBlock => last_update_block
+        getDivisionSafetyConstant => division_safety_constant
         addAdmin => add_admin_endpoint
         removeAdmin => remove_admin_endpoint
         updateOwnerOrAdmin => update_owner_or_admin_endpoint

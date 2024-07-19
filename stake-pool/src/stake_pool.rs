@@ -1,5 +1,6 @@
 #![no_std]
 
+use helpers::DIVISION_SAFETY_CONSTANT;
 #[allow(unused_imports)]
 use multiversx_sc::imports::*;
 use permissions_module::Permissions;
@@ -23,13 +24,16 @@ pub trait StakePool:
         let all_permissions = Permissions::OWNER | Permissions::ADMIN | Permissions::PAUSE;
         self.set_permissions(self.blockchain().get_caller(), all_permissions);
         self.token_id().set(token_id);
+        self.division_safety_constant()
+            .set(BigUint::from(DIVISION_SAFETY_CONSTANT));
     }
 
     #[upgrade]
     fn upgrade(&self) {}
 
+    #[payable("*")]
     #[endpoint(addRewards)]
-    fn add_rewards(&self, amount: BigUint, start_timestamp: u64, days: u16) {
+    fn add_rewards(&self, start_timestamp: u64, days: u16) {
         self.require_caller_has_owner_permissions();
         let payment = self.call_value().single_esdt();
         require!(
@@ -46,7 +50,7 @@ pub trait StakePool:
             .set(estimated_block_at_start_timestamp);
         let blocks_per_days = days as u64 * SECONDS_PER_DAY / SECONDS_PER_BLOCK;
         let days_in_seconds = days as u64 * SECONDS_PER_DAY;
-        let rewards_per_block = amount / blocks_per_days;
+        let rewards_per_block = payment.amount / blocks_per_days;
         self.rewards_per_block().set(rewards_per_block);
         self.start_timestamp().set(start_timestamp);
         self.end_timestamp().set(start_timestamp + days_in_seconds);
@@ -72,12 +76,14 @@ pub trait StakePool:
         self.require_state_active();
         let caller = self.blockchain().get_caller();
         require!(
-            self.wallet_amount_staked(&caller).get() >= BigUint::from(0 as u16),
+            self.wallet_amount_staked(&caller).get() >= BigUint::zero(),
             "No staked amount"
         );
         self.update_global_state_general();
         let total_pending_rewards = self.update_user_state_on_claim_rewards(&caller);
-        self.send()
-            .direct_esdt(&caller, &self.token_id().get(), 0, &total_pending_rewards);
+        if total_pending_rewards != BigUint::zero() {
+            self.send()
+                .direct_esdt(&caller, &self.token_id().get(), 0, &total_pending_rewards);
+        }
     }
 }

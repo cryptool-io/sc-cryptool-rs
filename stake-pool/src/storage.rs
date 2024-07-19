@@ -42,4 +42,8 @@ pub trait StorageModule {
     #[view(getLastUpdateBlock)]
     #[storage_mapper("last_update_block")]
     fn last_update_block(&self) -> SingleValueMapper<u64>;
+
+    #[view(getDivisionSafetyConstant)]
+    #[storage_mapper("division_safety_constant")]
+    fn division_safety_constant(&self) -> SingleValueMapper<BigUint>;
 }
