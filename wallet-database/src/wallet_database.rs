@@ -23,7 +23,7 @@ pub trait WalletDatabase: permissions_module::PermissionsModule + pausable::Paus
     }
 
     #[endpoint(registerWallet)]
-    fn register_wallet(&self, user_signature: ManagedBuffer) {
+    fn register_wallet(&self, timestamp: u64, user_signature: ManagedBuffer) {
         let caller = self.blockchain().get_caller();
         require!(
             !self.whitelisted_wallets().contains(&caller),
@@ -33,6 +33,8 @@ pub trait WalletDatabase: permissions_module::PermissionsModule + pausable::Paus
         let signer = self.signer_address().get();
 
         let mut buffer_user = ManagedBuffer::new();
+        let result = timestamp.dep_encode(&mut buffer_user);
+        require!(result.is_ok(), "Could not encode");
         buffer_user.append(&caller.as_managed_buffer());
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer_user, &user_signature);
@@ -42,7 +44,7 @@ pub trait WalletDatabase: permissions_module::PermissionsModule + pausable::Paus
     }
 
     #[endpoint(removeWallet)]
-    fn remove_wallet(&self, user_signature: ManagedBuffer) {
+    fn remove_wallet(&self, timestamp: u64, user_signature: ManagedBuffer) {
         let caller = self.blockchain().get_caller();
         require!(
             self.whitelisted_wallets().contains(&caller),
@@ -51,6 +53,8 @@ pub trait WalletDatabase: permissions_module::PermissionsModule + pausable::Paus
         let signer = self.signer_address().get();
 
         let mut buffer_user = ManagedBuffer::new();
+        let result = timestamp.dep_encode(&mut buffer_user);
+        require!(result.is_ok(), "Could not encode");
         buffer_user.append(&caller.as_managed_buffer());
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer_user, &user_signature);

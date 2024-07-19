@@ -195,7 +195,7 @@ test("Release with wrong signature", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -303,7 +303,7 @@ test("Release by non owner", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -416,7 +416,7 @@ test("Release with too much delay", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -544,7 +544,7 @@ test("Release in 1 call no overcommitment", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -718,7 +718,7 @@ test("Release in 2 calls no overcommitment", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -904,7 +904,7 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -1103,7 +1103,7 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({

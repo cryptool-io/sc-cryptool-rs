@@ -1,28 +1,35 @@
-import fs from 'fs';
-import path from 'path';
-import { UserSecretKey } from '@multiversx/sdk-wallet/out';
-import { BinaryCodec, U32Value, U64Value, BigUIntValue } from "@multiversx/sdk-core"
+import fs from "fs";
+import path from "path";
+import { UserSecretKey } from "@multiversx/sdk-wallet/out";
+import {
+  BinaryCodec,
+  U32Value,
+  U64Value,
+  BigUIntValue,
+} from "@multiversx/sdk-core";
 
-import { 
-    TIMESTAMP,
-    POOL_ID,
-    PLATFORM_FEE1,
-    GROUP_FEE1,
-    AMBASSADOR_FEE,
-    TIMESTAMP_AFTER,
-    AFTER_DEPOSIT_TIMESTAMP
+import {
+  TIMESTAMP,
+  POOL_ID,
+  PLATFORM_FEE1,
+  GROUP_FEE1,
+  AMBASSADOR_FEE,
+  TIMESTAMP_AFTER,
+  AFTER_DEPOSIT_TIMESTAMP,
 } from "../helpers";
 
-import { 
-    deployerAddress,
-    privateKeyDeployer
-} from "./deployer";
+import { deployerAddress, privateKeyDeployer } from "./deployer";
 
 const codec = new BinaryCodec();
 
-const signerPemBob = fs.readFileSync(path.resolve(process.cwd(), 'tests/wallets/bob.pem')).toString();
+const signerPemBob = fs
+  .readFileSync(path.resolve(process.cwd(), "tests/wallets/bob.pem"))
+  .toString();
 const privateKeyBob = UserSecretKey.fromPem(signerPemBob);
-export const bobAddress = privateKeyBob.generatePublicKey().toAddress().pubkey();
+export const bobAddress = privateKeyBob
+  .generatePublicKey()
+  .toAddress()
+  .pubkey();
 const DATA_BOB = Buffer.concat([
   codec.encodeNested(new U64Value(TIMESTAMP)),
   codec.encodeNested(new U32Value(POOL_ID)),
@@ -48,10 +55,12 @@ export const SIGNATURE_BOB_AFTER = privateKeyDeployer.sign(DATA_BOB_AFTER);
 const DATA_BOB_REFUND = Buffer.concat([
   codec.encodeNested(new U64Value(TIMESTAMP)),
   codec.encodeNested(new U32Value(POOL_ID)),
-  bobAddress]);
+  bobAddress,
+]);
 export const SIGNATURE_BOB_REFUND = privateKeyDeployer.sign(DATA_BOB_REFUND);
 
 const DATA_WALLET = Buffer.concat([
+  codec.encodeNested(new U64Value(TIMESTAMP)),
   bobAddress,
 ]);
 export const SIGNATURE_BOB_WALLET = privateKeyDeployer.sign(DATA_WALLET);
@@ -65,4 +74,6 @@ const DATA_BOB_AFTER_DEPOSIT = Buffer.concat([
   codec.encodeNested(new BigUIntValue(Number(AMBASSADOR_FEE))),
   deployerAddress,
 ]);
-export const SIGNATURE_BOB_AFTER_DEPOSIT = privateKeyDeployer.sign(DATA_BOB_AFTER_DEPOSIT);
+export const SIGNATURE_BOB_AFTER_DEPOSIT = privateKeyDeployer.sign(
+  DATA_BOB_AFTER_DEPOSIT,
+);

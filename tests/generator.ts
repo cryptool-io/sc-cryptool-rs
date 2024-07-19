@@ -22,7 +22,7 @@ export function getRandomInt(min: number, max: number): number {
 export function getRandomDeposit(
   minDeposit: number,
   maxDeposit: number,
-  increment: number
+  increment: number,
 ): number {
   const rangeStart = Math.ceil(minDeposit / increment);
   const rangeEnd = Math.floor(maxDeposit / increment);
@@ -52,7 +52,10 @@ export function generateDataAndSignature(ambassadorBool: number): {
   const groupFee = getRandomInt(101, 200);
   const address = generateAddress();
 
-  var whitelist_data = Buffer.concat([address]);
+  var whitelist_data = Buffer.concat([
+    codec.encodeNested(new U64Value(TIMESTAMP)),
+    address,
+  ]);
 
   var deploy_data = Buffer.concat([
     codec.encodeNested(new U64Value(TIMESTAMP)),
@@ -86,7 +89,7 @@ export function generateDataAndSignature(ambassadorBool: number): {
   };
 }
 
-export function generateDataAndSignatureDeployerAmbassador() : {
+export function generateDataAndSignatureDeployerAmbassador(): {
   address: Buffer;
   whitelistSignature: Buffer;
   depositSignature: Buffer;
@@ -99,7 +102,10 @@ export function generateDataAndSignatureDeployerAmbassador() : {
   const address = generateAddress();
   const ambassadorFee = getRandomInt(201, 300);
 
-  var whitelist_data = Buffer.concat([address]);  
+  var whitelist_data = Buffer.concat([
+    codec.encodeNested(new U64Value(TIMESTAMP)),
+    address,
+  ]);
 
   var deploy_data = Buffer.concat([
     codec.encodeNested(new U64Value(TIMESTAMP)),
@@ -109,7 +115,7 @@ export function generateDataAndSignatureDeployerAmbassador() : {
     codec.encodeNested(new BigUIntValue(groupFee)),
     codec.encodeNested(new BigUIntValue(ambassadorFee)),
     deployerAddress,
-    ]);
+  ]);
 
   const whitelistSignature = privateKeyDeployer.sign(whitelist_data);
   const depositSignature = privateKeyDeployer.sign(deploy_data);

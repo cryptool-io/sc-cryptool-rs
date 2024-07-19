@@ -48,17 +48,17 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
 ## User Callable Endpoints on Production Wallet Database SC:
 
-- **registerWallet** (_user_signature: ManagedBuffer_)
+- **registerWallet** (_timestamp: u64, user_signature: ManagedBuffer_)
 
   - The user needs to register his wallet before being able to deposit.
   - The signature data format is:
-    - user_signature: signed(user_address)
+    - user_signature: signed(timestamp + user_address)
 
-- **removeWallet** (_user_signature: ManagedBuffer_)
+- **removeWallet** (_timestamp: u64, user_signature: ManagedBuffer_)
 
   - The user also has the possibility to remove their signature from the whitelisted addresses.
   - The signature data format is:
-    - user_signature: signed(user_address)
+    - user_signature: signed(timestamp + user_address)
 
 ## General Callable Endpoints on Production Wallet Database SC:
 

@@ -197,7 +197,7 @@ test("Refund with wrong signature", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -305,7 +305,7 @@ test("Refund by non owner", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -418,7 +418,7 @@ test("Refund with too much delay", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -530,7 +530,7 @@ test("Refund while refunds not enabled", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -638,7 +638,7 @@ test("Refund while refunds not open", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -746,7 +746,7 @@ test("Refund after soft cap exceeded", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -861,7 +861,7 @@ test("Refund in 1 call", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -998,7 +998,7 @@ test("Refund in 2 calls", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
@@ -1144,7 +1144,7 @@ test("Refund with not enough gas", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
