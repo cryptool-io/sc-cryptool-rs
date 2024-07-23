@@ -270,7 +270,7 @@ test("Deposit with invalid token", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob
@@ -343,7 +343,7 @@ test("Deposit while deposits not open yet", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob
@@ -415,7 +415,7 @@ test("Deposit while deposits closed", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob
@@ -493,7 +493,7 @@ test("Deposit with too much delay", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob
@@ -565,7 +565,7 @@ test("Deposit while deposits closed", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob
@@ -645,7 +645,7 @@ test("Deposit in not enabled pool", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await deployer.callContract({
@@ -730,7 +730,7 @@ test("Deposit amount too low", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob
@@ -807,7 +807,7 @@ test("Deposit amount too high", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob
@@ -885,7 +885,7 @@ test("Deposit but max deposit threshold would be exceeded", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob.callContract({
@@ -991,7 +991,7 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob.callContract({
@@ -1019,7 +1019,7 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_CAROL_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_CAROL_WALLET)],
   });
 
   await carol
@@ -1089,7 +1089,7 @@ test("Deposit with incorect deposit increment", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob
@@ -1164,7 +1164,7 @@ test("Deposit Currency1 with Bob", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob.callContract({
@@ -1328,7 +1328,7 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob.callContract({
@@ -1559,7 +1559,7 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_BOB_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob.callContract({
@@ -1602,7 +1602,7 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
     callee: walletDababaseContract,
     gasLimit: 50_000_000,
     funcName: "registerWallet",
-    funcArgs: [e.TopBuffer(SIGNATURE_CAROL_WALLET)],
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_CAROL_WALLET)],
   });
 
   await carol.callContract({
@@ -1914,7 +1914,7 @@ test("Deposit automatically with random parameters", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     if (ambassadorBool == 1) {
@@ -2219,7 +2219,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
       callee: walletDababaseContract,
       gasLimit: 50_000_000,
       funcName: "registerWallet",
-      funcArgs: [e.TopBuffer(whitelistSignature)],
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
     });
 
     await genericWallet.callContract({
