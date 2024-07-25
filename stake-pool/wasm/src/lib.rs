@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           23
+// Endpoints:                           30
 // Async Callback (empty):               1
-// Total number of exported functions:  26
+// Total number of exported functions:  33
 
 #![no_std]
 
@@ -22,18 +22,25 @@ multiversx_sc_wasm_adapter::endpoints! {
         upgrade => upgrade
         addRewards => add_rewards
         stake => stake
+        unstake => unstake
         claimRewards => claim_rewards
         getTokenId => token_id
         getStartTimestamp => start_timestamp
         getEndTimestamp => end_timestamp
+        getWallatDatabaseAddress => wallet_database_address
+        getTotalRewards => total_rewards
+        getTotalFees => total_fees
         getRewardsPerBlock => rewards_per_block
         getTotalAmountStaked => total_amount_staked
         getWalletAmountStaked => wallet_amount_staked
+        getWalletPerTierAmountStaked => wallet_per_tier_amount_staked
+        getWalletPerTierUpdatedBlock => wallet_per_tier_update_block
         getWalletLastRewardPerShare => wallet_rewards_per_share
         getWalletPendingRewards => wallet_pending_rewards
         getRewadsPerShare => rewards_per_share
         getLastUpdateBlock => last_update_block
         getDivisionSafetyConstant => division_safety_constant
+        isProduceRewardsEnabled => produce_rewards_enabled
         addAdmin => add_admin_endpoint
         removeAdmin => remove_admin_endpoint
         updateOwnerOrAdmin => update_owner_or_admin_endpoint

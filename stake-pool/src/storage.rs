@@ -15,6 +15,18 @@ pub trait StorageModule {
     #[storage_mapper("end_timestamp")]
     fn end_timestamp(&self) -> SingleValueMapper<u64>;
 
+    #[view(getWallatDatabaseAddress)]
+    #[storage_mapper("wallet_database_address")]
+    fn wallet_database_address(&self) -> SingleValueMapper<ManagedAddress>;
+
+    #[view(getTotalRewards)]
+    #[storage_mapper("total_rewards")]
+    fn total_rewards(&self) -> SingleValueMapper<BigUint>;
+
+    #[view(getTotalFees)]
+    #[storage_mapper("total_fees")]
+    fn total_fees(&self) -> SingleValueMapper<BigUint>;
+
     #[view(getRewardsPerBlock)]
     #[storage_mapper("rewards_per_block")]
     fn rewards_per_block(&self) -> SingleValueMapper<BigUint>;
@@ -26,6 +38,22 @@ pub trait StorageModule {
     #[view(getWalletAmountStaked)]
     #[storage_mapper("wallet_amount_staked")]
     fn wallet_amount_staked(&self, wallet: &ManagedAddress) -> SingleValueMapper<BigUint>;
+
+    #[view(getWalletPerTierAmountStaked)]
+    #[storage_mapper("wallet_per_tier_amount_staked")]
+    fn wallet_per_tier_amount_staked(
+        &self,
+        wallet: &ManagedAddress,
+        tier: &u8,
+    ) -> SingleValueMapper<BigUint>;
+
+    #[view(getWalletPerTierUpdatedBlock)]
+    #[storage_mapper("wallet_per_tier_update_block")]
+    fn wallet_per_tier_update_block(
+        &self,
+        wallet: &ManagedAddress,
+        tier: &u8,
+    ) -> SingleValueMapper<u64>;
 
     #[view(getWalletLastRewardPerShare)]
     #[storage_mapper("wallet_rewards_per_share")]
@@ -46,4 +74,8 @@ pub trait StorageModule {
     #[view(getDivisionSafetyConstant)]
     #[storage_mapper("division_safety_constant")]
     fn division_safety_constant(&self) -> SingleValueMapper<BigUint>;
+
+    #[view(isProduceRewardsEnabled)]
+    #[storage_mapper("produce_rewards_enabled")]
+    fn produce_rewards_enabled(&self) -> SingleValueMapper<bool>;
 }
