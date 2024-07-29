@@ -1,6 +1,9 @@
 multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
+use crate::helpers;
+use helpers::Tier;
+
 #[multiversx_sc::module]
 pub trait StorageModule {
     #[view(getTokenId)]
@@ -44,7 +47,7 @@ pub trait StorageModule {
     fn wallet_per_tier_amount_staked(
         &self,
         wallet: &ManagedAddress,
-        tier: &u8,
+        tier: &Tier,
     ) -> SingleValueMapper<BigUint>;
 
     #[view(getWalletPerTierUpdatedBlock)]
@@ -52,7 +55,7 @@ pub trait StorageModule {
     fn wallet_per_tier_update_block(
         &self,
         wallet: &ManagedAddress,
-        tier: &u8,
+        tier: &Tier,
     ) -> SingleValueMapper<u64>;
 
     #[view(getWalletLastRewardPerShare)]

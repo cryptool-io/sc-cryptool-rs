@@ -2,19 +2,48 @@ multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
 pub const DIVISION_SAFETY_CONSTANT: u64 = 1_000_000_000;
-pub const TIER1_DEPOSIT_DURATION: u64 = 60 * 86400;
-pub const TIER2_DEPOSIT_DURATION: u64 = 90 * 86400;
-pub const TIER3_DEPOSIT_DURATION: u64 = 180 * 86400;
-pub const TIER1_DEPOSIT_FEES_PERCENTAGE: u64 = 190;
-pub const TIER2_DEPOSIT_FEES_PERCENTAGE: u64 = 90;
-pub const TIER3_DEPOSIT_FEES_PERCENTAGE: u64 = 0;
-pub const TIER1_WITHDRAW_DURATION: u64 = 30 * 86400;
-pub const TIER1_WITHDRAW_DURATION_INCREMENT: u64 = TIER1_WITHDRAW_DURATION + 1;
-pub const TIER2_WITHDRAW_DURATION: u64 = 90 * 86400;
-pub const TIER1_WITHDRAW_FEES_PERCENTAGE: u64 = 90;
-pub const TIER2_WITHDRAW_FEES_PERCENTAGE: u64 = 190;
-pub const TIER3_WITHDRAW_FEES_PERCENTAGE: u64 = 290;
+
+// Deposit durations
+pub const TIER1_DEPOSIT_DURATION: u64 = 60 * 86400; // 60 days
+pub const TIER2_DEPOSIT_DURATION: u64 = 90 * 86400; // 90 days
+pub const TIER3_DEPOSIT_DURATION: u64 = 180 * 86400; // 180 days
+
+// Deposit fees
+pub const TIER1_DEPOSIT_FEES_PERCENTAGE: u64 = 190; // 1.9%
+pub const TIER2_DEPOSIT_FEES_PERCENTAGE: u64 = 90; // 0.9%
+pub const TIER3_DEPOSIT_FEES_PERCENTAGE: u64 = 0; // 0%
+
+// Withdraw durations
+pub const TIER1_WITHDRAW_DURATION: u64 = 30 * 86400; // 30 days
+pub const TIER1_WITHDRAW_DURATION_INCREMENT: u64 = TIER1_WITHDRAW_DURATION + 1; // 30 days + 1 second
+pub const TIER2_WITHDRAW_DURATION: u64 = 90 * 86400; // 90 days
+
+// Withdraw fees
+pub const TIER1_WITHDRAW_FEES_PERCENTAGE: u64 = 90; // 0.9%
+pub const TIER2_WITHDRAW_FEES_PERCENTAGE: u64 = 190; // 1.9%
+pub const TIER3_WITHDRAW_FEES_PERCENTAGE: u64 = 290; // 2.9%
+
+// Percentage divisor
 pub const PERCENTAGE_DIVISOR: u64 = 10000;
+
+#[derive(
+    TypeAbi,
+    TopEncode,
+    TopDecode,
+    NestedEncode,
+    NestedDecode,
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+)]
+pub enum Tier {
+    One,
+    Two,
+    Three,
+}
 
 #[multiversx_sc::module]
 pub trait HelperModule: crate::storage::StorageModule {
@@ -29,7 +58,7 @@ pub trait HelperModule: crate::storage::StorageModule {
         self.total_amount_staked().update(|old| *old -= amount);
     }
 
-    fn update_user_state_on_stake(&self, payment_amount: &BigUint, tier: &u8) {
+    fn update_user_state_on_stake(&self, payment_amount: &BigUint, tier: &Tier) {
         let caller = self.blockchain().get_caller();
         self.update_user_state_general(&caller);
         self.wallet_amount_staked(&caller)
@@ -41,7 +70,7 @@ pub trait HelperModule: crate::storage::StorageModule {
             .set(current_block);
     }
 
-    fn update_user_state_on_unstake(&self, amount: &BigUint, tier: &u8) {
+    fn update_user_state_on_unstake(&self, amount: &BigUint, tier: &Tier) {
         let caller = self.blockchain().get_caller();
         self.update_user_state_general(&caller);
         self.wallet_amount_staked(&caller)
@@ -58,9 +87,8 @@ pub trait HelperModule: crate::storage::StorageModule {
         let share_diff = &rewards_per_share - &self.wallet_rewards_per_share(&caller).get();
         let current_rewards = self.wallet_amount_staked(&caller).get() * share_diff
             / self.division_safety_constant().get();
-        let total_pending_rewards = self.wallet_pending_rewards(&caller).get() + current_rewards;
+        let total_pending_rewards = self.wallet_pending_rewards(&caller).take() + current_rewards;
         require!(total_pending_rewards > 0, "No rewards accumulated yet");
-        self.wallet_pending_rewards(&caller).set(BigUint::zero());
         self.wallet_rewards_per_share(&caller)
             .set(rewards_per_share);
         total_pending_rewards
@@ -76,7 +104,7 @@ pub trait HelperModule: crate::storage::StorageModule {
         let block_diff: u64 = current_block - self.last_update_block().get();
         let total_amount_staked = self.total_amount_staked().get();
         let reward_per_block = self.rewards_per_block().get();
-        if total_amount_staked != 0 as u64 {
+        if total_amount_staked != 0 {
             self.rewards_per_share().update(|old| {
                 *old += BigUint::from(block_diff)
                     * reward_per_block
@@ -105,11 +133,11 @@ pub trait HelperModule: crate::storage::StorageModule {
             .execute_on_dest_context::<bool>()
     }
 
-    fn deduct_fee(&self, caller: &ManagedAddress, base_amount: &BigUint, tier: &u8) -> BigUint {
+    fn deduct_fee(&self, caller: &ManagedAddress, base_amount: &BigUint, tier: &Tier) -> BigUint {
         let current_block = self.blockchain().get_block_timestamp();
-        let wallet_stake_timestamp = self.wallet_per_tier_update_block(caller, tier).get();
+        let wallet_stake_timestamp = self.wallet_per_tier_update_block(caller, &tier).get();
         let fees_percentage = match tier {
-            0 => {
+            Tier::One => {
                 let target_timestamp = wallet_stake_timestamp + TIER1_DEPOSIT_DURATION;
                 if current_block > target_timestamp {
                     TIER1_DEPOSIT_FEES_PERCENTAGE
@@ -123,7 +151,7 @@ pub trait HelperModule: crate::storage::StorageModule {
                     }
                 }
             }
-            1 => {
+            Tier::Two => {
                 let target_timestamp = wallet_stake_timestamp + TIER2_DEPOSIT_DURATION;
                 if current_block > target_timestamp {
                     TIER2_DEPOSIT_FEES_PERCENTAGE
@@ -137,7 +165,7 @@ pub trait HelperModule: crate::storage::StorageModule {
                     }
                 }
             }
-            2 => {
+            Tier::Three => {
                 let target_timestamp = wallet_stake_timestamp + TIER3_DEPOSIT_DURATION;
                 if current_block > target_timestamp {
                     TIER3_DEPOSIT_FEES_PERCENTAGE
@@ -154,7 +182,6 @@ pub trait HelperModule: crate::storage::StorageModule {
                     }
                 }
             }
-            _ => unreachable!(),
         };
         let fees = base_amount * fees_percentage / PERCENTAGE_DIVISOR;
         self.total_fees().update(|old| *old += &fees);

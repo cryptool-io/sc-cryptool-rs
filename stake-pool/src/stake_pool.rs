@@ -1,12 +1,12 @@
 #![no_std]
 
-use helpers::DIVISION_SAFETY_CONSTANT;
-#[allow(unused_imports)]
-use multiversx_sc::imports::*;
-use permissions_module::Permissions;
 mod events;
 mod helpers;
 mod storage;
+use helpers::Tier;
+use helpers::DIVISION_SAFETY_CONSTANT;
+use multiversx_sc::imports::*;
+use permissions_module::Permissions;
 
 #[multiversx_sc::contract]
 pub trait StakePool:
@@ -47,7 +47,7 @@ pub trait StakePool:
 
     #[payable("*")]
     #[endpoint(addRewards)]
-    fn add_rewards(&self, rewards_per_block: Option<BigUint>) {
+    fn add_rewards(&self, rewards_per_block: OptionalValue<BigUint>) {
         self.require_caller_has_owner_permissions();
         let payment = self.call_value().single_esdt();
         require!(
@@ -56,24 +56,22 @@ pub trait StakePool:
         );
         self.total_rewards().update(|old| *old += payment.amount);
         match rewards_per_block {
-            Some(rewards_per_block) => {
+            OptionalValue::Some(rewards_per_block) => {
                 self.rewards_per_block().set(rewards_per_block);
                 let current_block = self.blockchain().get_block_timestamp();
                 self.last_update_block().set(current_block);
                 self.produce_rewards_enabled().set(true);
             }
-            None => {}
+            OptionalValue::None => {}
         }
     }
 
     #[payable("*")]
     #[endpoint(stake)]
-    fn stake(&self, tier: u8) {
+    fn stake(&self, tier: Tier) {
         self.require_state_active();
-        require!(self.produce_rewards_enabled().get(), "Rewards not enabled");
         let caller = self.blockchain().get_caller();
         require!(self.is_registered(&caller), "Wallet not registered");
-        require!(tier <= 2, "Invalid tier");
         let payment = self.call_value().single_esdt();
         require!(
             payment.token_identifier == self.token_id().get(),
@@ -86,10 +84,9 @@ pub trait StakePool:
     }
 
     #[endpoint(unstake)]
-    fn unstake(&self, amount: BigUint, tier: u8) {
+    fn unstake(&self, amount: BigUint, tier: Tier) {
         self.require_state_active();
         let caller = self.blockchain().get_caller();
-        require!(tier <= 2, "Invalid tier");
         require!(
             self.wallet_per_tier_amount_staked(&caller, &tier).get() >= amount,
             "Not enough to unstake"

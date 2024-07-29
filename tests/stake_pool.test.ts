@@ -23,7 +23,7 @@ import {
   TIER_2,
 } from "./helpers";
 
-import { signerAddress } from "./signatures/signer.ts";
+import { signerAddress } from "./signatures/common.ts";
 import { aliceAddress, SIGNATURE_ALICE } from "./signatures/alice.ts";
 import { bobAddress, SIGNATURE_BOB } from "./signatures/bob.ts";
 import { carolAddress, SIGNATURE_CAROL } from "./signatures/carol.ts";
@@ -122,7 +122,7 @@ test("Complex scenario - check readme for details", async () => {
     callee: contract,
     gasLimit: 50_000_000,
     funcName: "addRewards",
-    funcArgs: [e.Option(e.U(REWARDS_PER_BLOCK))],
+    funcArgs: [e.U(REWARDS_PER_BLOCK)],
     esdts: [{ id: TOKEN_ID, amount: REWARDS }],
   });
 
