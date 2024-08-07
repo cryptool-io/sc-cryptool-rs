@@ -26,6 +26,7 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 - **deployRaisePool** (_pool_id: u32, soft_cap: BigUint, hard_cap: BigUint, min_deposit: BigUint, max_deposit: BigUint, deposit_increments: BigUint, start_date: u64, end_date: u64, refund_enabled: bool, platform_fee_wallet: ManagedAddress, group_fee_wallet: ManagedAddress, signature: ManagedBuffer, timestamp: u64, currencies: MultiValueEncoded<TokenIdentifier>_)
 
   - This endpoint, called on the factory, deploys a new raise pool. Notice the parameters are virtually identical to the dummy deploy except for the owner, which the Factory sets as the caller and the currencies which don't need to have their decimals specified as this was done in the Factory deploy step.
+  - Signature data format: signed(timestamp + pool_id + deployer_address).
 
 ## Owner Callable Endpoints on Production Raise Pool SC:
 
