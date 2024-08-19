@@ -1,13 +1,17 @@
 import { e } from "xsuite";
 
 export const TOKEN_ID = "CTO-123456";
+export const TOKEN_ID_DUMMY = "DUMMY-123456";
 export const TOKEN_DECIMALS = 18;
 export const BLOCK_ZERO = 0;
 export const REWARDS_START_BLOCK = 10;
 export const BLOCK_INCREMENT = 10;
+export const SECONDS_PER_DAY = 86400;
 export const DIVISION_SAFETY_CONSTANT = BigInt(10 ** 9);
 export const REWARDS_DAYS = BigInt(1);
 export const DEFAULT_STAKE_AMOUNT = BigInt(100 * 10 ** TOKEN_DECIMALS);
+// DEFAULT_LEFT_AMOUNT + DEFAULT_UNSTAKE_AMOUNT should equal DEFAULT_STAKE_AMOUNT
+export const DEFAULT_LEFT_AMOUNT = BigInt(50 * 10 ** TOKEN_DECIMALS);
 export const DEFAULT_UNSTAKE_AMOUNT = BigInt(50 * 10 ** TOKEN_DECIMALS);
 export const DEFAULT_WALLET_AMOUNT = BigInt(1000 * 10 ** TOKEN_DECIMALS);
 const SECONDS_IN_DAY = 86400;
@@ -15,9 +19,11 @@ const SECONDS_PER_BLOCK = 6;
 export const REWARDS = BigInt(
   (SECONDS_IN_DAY / SECONDS_PER_BLOCK) * 10 ** TOKEN_DECIMALS,
 );
-export const REWARDS_PER_BLOCK = 1 * 10 ** TOKEN_DECIMALS;
+export const REWARDS_PER_BLOCK = BigInt(1 * 10 ** TOKEN_DECIMALS);
 export const START_TIMESTAMP = 10;
+export const START_TIMESTAMP_DUMMY = 20;
 export const END_TIMESTAMP = 1000;
+export const TIMESTAMP_BEFORE_START = 5;
 export const ZERO = 0n;
 export const TIER_0 = 0;
 export const TIER_1 = 1;

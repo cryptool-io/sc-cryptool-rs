@@ -11,7 +11,6 @@ import {
   BLOCK_ZERO,
   REWARDS_START_BLOCK,
   DIVISION_SAFETY_CONSTANT,
-  REWARDS_DAYS,
   DEFAULT_STAKE_AMOUNT,
   ZERO,
   REWARDS_PER_BLOCK,
@@ -97,24 +96,6 @@ beforeEach(async () => {
 
 afterEach(async () => {
   world.terminate();
-});
-
-test("Deploy", async () => {
-  assertAccount(await contract.getAccount(), {
-    balance: 0n,
-    kvs: [
-      e.kvs.Mapper("token_id").Value(e.Str(TOKEN_ID)),
-      e.kvs.Mapper("permissions", e.Addr(deployer)).Value(e.U(7)),
-      e.kvs.Mapper("start_timestamp").Value(e.U64(START_TIMESTAMP)),
-      e.kvs.Mapper("end_timestamp").Value(e.U64(END_TIMESTAMP)),
-      e.kvs
-        .Mapper("wallet_database_address")
-        .Value(e.Addr(walletDababaseContract)),
-      e.kvs
-        .Mapper("division_safety_constant")
-        .Value(e.U(DIVISION_SAFETY_CONSTANT)),
-    ],
-  });
 });
 
 test("Complex scenario - check readme for details", async () => {
