@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           42
+// Endpoints:                           45
 // Async Callback (empty):               1
-// Total number of exported functions:  45
+// Total number of exported functions:  48
 
 #![no_std]
 
@@ -24,6 +24,8 @@ multiversx_sc_wasm_adapter::endpoints! {
         refund => refund
         release => release
         retrieve => retrieve
+        topUp => top_up
+        distribute => distribute
         getPoolId => pool_id
         getSoftCap => soft_cap
         getHardCap => hard_cap
@@ -61,6 +63,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         getReleaseState => release_state
         raisePoolEnabled => raise_pool_enabled
         getOwner => owner
+        getTopUpAmount => top_up_amount
         enableRaisePool => enable_raise_pool
     )
 }

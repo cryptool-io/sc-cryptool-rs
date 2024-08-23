@@ -286,6 +286,72 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         }
     }
 
+    #[payable("*")]
+    #[endpoint(topUp)]
+    fn top_up(&self, timestamp: u64, signature: ManagedBuffer) {
+        require!(
+            self.raise_pool_enabled().get() == true,
+            "Pool is not enabled"
+        );
+        let caller = self.blockchain().get_caller();
+        let signer = self.signer().get();
+        let pool_id = self.pool_id().get();
+        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
+        require!(caller == self.owner().get(), "Only owner can call top up");
+        require!(
+            timestamp <= self.blockchain().get_block_timestamp(),
+            "Timestamp provided by backend set in the future"
+        );
+
+        let payments = self.call_value().all_esdt_transfers();
+        require!(payments.len() > 0, "No payments provided");
+
+        for payment in payments.iter() {
+            require!(
+                self.payment_currencies()
+                    .contains(&payment.token_identifier),
+                "Invalid token payment"
+            );
+            self.top_up_amount(&payment.token_identifier)
+                .update(|current| *current += &payment.amount);
+        }
+    }
+
+    #[endpoint(distribute)]
+    fn distribute(
+        &self,
+        timestamp: u64,
+        signature: ManagedBuffer,
+        distribute_data: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
+    ) {
+        require!(
+            self.raise_pool_enabled().get() == true,
+            "Pool is not enabled"
+        );
+        let caller = self.blockchain().get_caller();
+        let signer = self.signer().get();
+        let pool_id = self.pool_id().get();
+        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
+        require!(
+            caller == self.owner().get(),
+            "Only owner can call distribute"
+        );
+        require!(
+            timestamp <= self.blockchain().get_block_timestamp(),
+            "Timestamp provided by backend set in the future"
+        );
+        for record in distribute_data {
+            let (address, token, amount) = record.into_tuple();
+            require!(
+                self.top_up_amount(&token).get() >= amount,
+                "Insufficient funds"
+            );
+            self.send().direct_esdt(&address, &token, 0, &amount);
+            self.top_up_amount(&token)
+                .update(|current| *current -= amount);
+        }
+    }
+
     fn release_plaform(&self) {
         let mut payments = ManagedVec::new();
         for token in self.payment_currencies().iter() {

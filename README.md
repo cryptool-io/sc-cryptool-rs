@@ -47,6 +47,16 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
   - Once the _release_ has been completed, calling this endpoint sends the remaining deposited funds to the owner wallet.
   - Signature data format: signed(timestamp + pool_id + deployer_address).
 
+- **topUp** (_timestamp: u64, signature: ManagedBuffer_)
+
+  - This enpdpoint allows the owner to top up the pool with any of the accepted currencies.
+  - Signature data format: signed(timestamp + pool_id + deployer_address).
+
+- **distribute** (_timestamp: u64, signature: ManagedBuffer, distribute_data: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>_)
+
+    - This endpoint allows the owner to airdop tokens to the selected distribution wallets .
+    - Signature data format: signed(timestamp + pool_id + deployer_address).
+
 ## User Callable Endpoints on Production Wallet Database SC:
 
 - **registerWallet** (_timestamp: u64, user_signature: ManagedBuffer_)
