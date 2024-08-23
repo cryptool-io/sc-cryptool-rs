@@ -230,7 +230,7 @@ test("Top up by non owner", async () => {
       funcName: "topUp",
       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_REFUND)],
     })
-    .assertFail({ code: 4, message: "Only owner can call top up" });
+    .assertFail({ code: 4, message: "Only owner can call this function" });
 });
 
 test("Top up with invalid timestamp", async () => {
@@ -650,7 +650,7 @@ test("Distribute by non owner", async () => {
         e.U(CURRENCY1_DEPOSIT_AMOUNT),
       ],
     })
-    .assertFail({ code: 4, message: "Only owner can call distribute" });
+    .assertFail({ code: 4, message: "Only owner can call this function" });
 });
 
 test("Distribute with wrong signature", async () => {

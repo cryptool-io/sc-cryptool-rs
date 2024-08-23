@@ -109,6 +109,30 @@ pub trait HelperModule: crate::storage::StorageModule {
         );
     }
 
+    fn validate_owner_call(&self, timestamp: u64, signature: ManagedBuffer) {
+        require!(
+            self.raise_pool_enabled().get() == true,
+            "Pool is not enabled"
+        );
+        let caller = self.blockchain().get_caller();
+        let signer = self.signer().get();
+        let pool_id = self.pool_id().get();
+        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
+        let caller = self.blockchain().get_caller();
+        require!(
+            caller == self.owner().get(),
+            "Only owner can call this function"
+        );
+        require!(
+            timestamp <= self.blockchain().get_block_timestamp(),
+            "Timestamp provided by backend set in the future"
+        );
+        require!(
+            self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
+            "Function call took too long"
+        );
+    }
+
     fn validate_signature(
         &self,
         timestamp: u64,
