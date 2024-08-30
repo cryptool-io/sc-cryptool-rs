@@ -114,10 +114,13 @@ pub trait HelperModule: crate::storage::StorageModule {
             self.raise_pool_enabled().get() == true,
             "Pool is not enabled"
         );
-        let caller = self.blockchain().get_caller();
-        let signer = self.signer().get();
-        let pool_id = self.pool_id().get();
-        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
+        self.validate_signature(
+            timestamp,
+            &self.pool_id().get(),
+            &self.blockchain().get_caller(),
+            self.signer().get(),
+            signature,
+        );
         let caller = self.blockchain().get_caller();
         require!(
             caller == self.owner().get(),
