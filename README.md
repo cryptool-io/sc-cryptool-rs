@@ -11,11 +11,15 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 - **init** (&self, signer: ManagedAddress)
   - We need a wallet database contract to store the wallets that will be used to deposit funds in the raise pools. The signer wallet will be used to validate that wallets are going to be registered.
 
+      **!!! Check _tests/examples/01.initWalletDatabaseCall.ts_ for an example.**
+
 ### Deploy a dummy raise pool SC using:
 
 - **init** (_owner: ManagedAddress, pool_id: u32, soft_cap: BigUint, hard_cap: BigUint, min_deposit: BigUint, max_deposit: BigUint, deposit_increments: BigUint, start_date: u64, end_date: u64, refund_enabled: bool, platform_fee_wallet: ManagedAddress, group_fee_wallet: ManagedAddress, signer: ManagedAddress, wallet_database_address: ManagedAddress, payment_currencies: MultiValueEncoded<MultiValue2<TokenIdentifier, u32>>_)
 
   - To use the Factory deployer, a dummy raise pool contract needs to be deployed on-chain first. The parameters used for this are not important (they only need to pass the required sanity logic). The Factory wrapper will then be able to take the deployed bytecode, pass in production parameters, and deploy raise pools into production.
+
+      **!!! Check _tests/examples/02.initDummyRaisePoolCall.ts_ for an example.**
 
 ## Owner Callable Endpoints on Production Factory SC:
 
@@ -23,10 +27,14 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
   - Deploy a Factory smart contract with the dummy raise pool as a source contract, the wallet database address, the backend wallet that will be used to validate database data as signer and the accepted currencies for creating the raise pools and their respective decimals.
 
+      **!!! Check _tests/examples/03.initFactoryCall.ts_ for an example.**
+
 - **deployRaisePool** (_pool_id: u32, soft_cap: BigUint, hard_cap: BigUint, min_deposit: BigUint, max_deposit: BigUint, deposit_increments: BigUint, start_date: u64, end_date: u64, refund_enabled: bool, platform_fee_wallet: ManagedAddress, group_fee_wallet: ManagedAddress, signature: ManagedBuffer, timestamp: u64, currencies: MultiValueEncoded<TokenIdentifier>_)
 
   - This endpoint, called on the factory, deploys a new raise pool. Notice the parameters are virtually identical to the dummy deploy except for the owner, which the Factory sets as the caller and the currencies which don't need to have their decimals specified as this was done in the Factory deploy step.
   - Signature data format: signed(timestamp + pool_id + deployer_address).
+
+      **!!! Check _tests/examples/04.deployRaisePoolCall.ts_ for an example.**
 
 ## Owner Callable Endpoints on Production Raise Pool SC:
 
@@ -47,6 +55,16 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
   - Once the _release_ has been completed, calling this endpoint sends the remaining deposited funds to the owner wallet.
   - Signature data format: signed(timestamp + pool_id + deployer_address).
 
+- **topUp** (_timestamp: u64, signature: ManagedBuffer_)
+
+  - This enpdpoint allows the owner to top up the pool with any of the accepted currencies.
+  - Signature data format: signed(timestamp + pool_id + deployer_address).
+
+- **distribute** (_timestamp: u64, signature: ManagedBuffer, distribute_data: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>_)
+
+    - This endpoint allows the owner to airdop tokens to the selected distribution wallets .
+    - Signature data format: signed(timestamp + pool_id + deployer_address).
+
 ## User Callable Endpoints on Production Wallet Database SC:
 
 - **registerWallet** (_timestamp: u64, user_signature: ManagedBuffer_)
@@ -54,6 +72,8 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
   - The user needs to register his wallet before being able to deposit.
   - The signature data format is:
     - user_signature: signed(timestamp + user_address)
+
+      **!!! Check _tests/examples/05.registerWalletCall.ts_ for an example.**
 
 - **removeWallet** (_timestamp: u64, user_signature: ManagedBuffer_)
 
@@ -73,10 +93,10 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
   - This is the main endpoint of the pool, used to deposit tokens in the pool.
   - If no ambassador is provided, the signature data format is:
-    - signed(timestamp + pool_id + deployer_address + platform_fee_percentage + group_fee_percentage).
+    - signed(timestamp + pool_id + caller_address + platform_fee_percentage + group_fee_percentage).
   - If an ambassador is provided, the signature data format is:
-    - signed(timestamp + pool_id + deployer_address + platform_fee_percentage + group_fee_percentage + ambassador_fee + ambassador_address).
+    - signed(timestamp + pool_id + caller_address + platform_fee_percentage + group_fee_percentage + ambassador_fee + ambassador_address).
 
-## Testing using xSuite:
+      **!!! Check _tests/examples/06.depositCallNoAmbassador_ for an example.**
 
-Please add three PEM keys named "deployer", "bob", and "carol" in the wallets folders in order to test the smart contracts in this project.
+      **!!! Check _tests/examples/07.depositCallWithAmbassador_ for an example.**
