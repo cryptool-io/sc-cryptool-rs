@@ -370,7 +370,7 @@ test("Retrieve by non owner", async () => {
       funcName: "retrieve",
       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_REFUND)],
     })
-    .assertFail({ code: 4, message: "Only owner can call retrieve" });
+    .assertFail({ code: 4, message: "Only owner can call this function" });
 });
 
 test("Retrieve with too much delay", async () => {
@@ -497,7 +497,7 @@ test("Retrieve with too much delay", async () => {
       funcName: "retrieve",
       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
     })
-    .assertFail({ code: 4, message: "Retrieve took too long" });
+    .assertFail({ code: 4, message: "Function call took too long" });
 });
 
 test("Retrieve before release", async () => {

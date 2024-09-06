@@ -336,7 +336,7 @@ test("Refund by non owner", async () => {
       funcName: "refund",
       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_REFUND)],
     })
-    .assertFail({ code: 4, message: "Only owner can call refund" });
+    .assertFail({ code: 4, message: "Only owner can call this function" });
 });
 
 test("Refund with too much delay", async () => {
@@ -448,7 +448,7 @@ test("Refund with too much delay", async () => {
       funcName: "refund",
       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
     })
-    .assertFail({ code: 4, message: "Refund took too long" });
+    .assertFail({ code: 4, message: "Function call took too long" });
 });
 
 test("Refund while refunds not enabled", async () => {

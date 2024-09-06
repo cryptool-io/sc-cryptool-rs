@@ -3,7 +3,6 @@
 use multiversx_sc::imports::*;
 pub mod helper;
 pub mod storage;
-use crate::helper::ALLOWED_TIMESTAMP_DELAY;
 use crate::helper::DEFAULT_DECIMALS;
 use storage::ReleaseState;
 
@@ -132,24 +131,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
 
     #[endpoint(refund)]
     fn refund(&self, timestamp: u64, signature: ManagedBuffer) -> OperationCompletionStatus {
-        require!(
-            self.raise_pool_enabled().get() == true,
-            "Pool is not enabled"
-        );
-        let caller = self.blockchain().get_caller();
-        let signer = self.signer().get();
-        let pool_id = self.pool_id().get();
-        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
-        let caller = self.blockchain().get_caller();
-        require!(caller == self.owner().get(), "Only owner can call refund");
-        require!(
-            timestamp <= self.blockchain().get_block_timestamp(),
-            "Timestamp provided by backend set in the future"
-        );
-        require!(
-            self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
-            "Refund took too long"
-        );
+        self.validate_owner_call(timestamp, signature);
         require!(self.refund_enabled().get(), "Refunds are not enabled");
         require!(
             self.blockchain().get_block_timestamp() > self.end_date().get(),
@@ -196,24 +178,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         signature: ManagedBuffer,
         overcommited: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
     ) -> OperationCompletionStatus {
-        require!(
-            self.raise_pool_enabled().get() == true,
-            "Pool is not enabled"
-        );
-        let caller = self.blockchain().get_caller();
-        let signer = self.signer().get();
-        let pool_id = self.pool_id().get();
-        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
-        require!(caller == self.owner().get(), "Only owner can call release");
-        require!(
-            timestamp <= self.blockchain().get_block_timestamp(),
-            "Timestamp provided by backend set in the future"
-        );
-        require!(
-            self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
-            "Release took too long"
-        );
-
+        self.validate_owner_call(timestamp, signature);
         let overcommited_len = overcommited.len();
         loop {
             match self.release_state().get() {
@@ -251,28 +216,13 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
 
     #[endpoint(retrieve)]
     fn retrieve(&self, timestamp: u64, signature: ManagedBuffer) {
-        require!(
-            self.raise_pool_enabled().get() == true,
-            "Pool is not enabled"
-        );
-        let caller = self.blockchain().get_caller();
-        let signer = self.signer().get();
-        let pool_id = self.pool_id().get();
-        self.validate_signature(timestamp, &pool_id, &caller, signer, signature);
-        require!(caller == self.owner().get(), "Only owner can call retrieve");
-        require!(
-            timestamp <= self.blockchain().get_block_timestamp(),
-            "Timestamp provided by backend set in the future"
-        );
-        require!(
-            self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
-            "Retrieve took too long"
-        );
+        self.validate_owner_call(timestamp, signature);
         require!(
             self.release_state().get() == ReleaseState::AllReleased,
             "Release needs to be called first"
         );
 
+        let caller = self.blockchain().get_caller();
         let mut payments = ManagedVec::new();
         for token in self.payment_currencies().iter() {
             let amount = self.total_amount_currency(&token).get();
@@ -283,6 +233,44 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         self.send().direct_multi(&caller, &payments);
         for payment in &payments {
             self.decrease_totals(payment.token_identifier, payment.amount);
+        }
+    }
+
+    #[payable("*")]
+    #[endpoint(topUp)]
+    fn top_up(&self, timestamp: u64, signature: ManagedBuffer) {
+        self.validate_owner_call(timestamp, signature);
+        let payments = self.call_value().all_esdt_transfers();
+        require!(payments.len() > 0, "No payments provided");
+
+        for payment in payments.iter() {
+            require!(
+                self.payment_currencies()
+                    .contains(&payment.token_identifier),
+                "Invalid token payment"
+            );
+            self.top_up_amount(&payment.token_identifier)
+                .update(|current| *current += &payment.amount);
+        }
+    }
+
+    #[endpoint(distribute)]
+    fn distribute(
+        &self,
+        timestamp: u64,
+        signature: ManagedBuffer,
+        distribute_data: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
+    ) {
+        self.validate_owner_call(timestamp, signature);
+        for record in distribute_data {
+            let (address, token, amount) = record.into_tuple();
+            require!(
+                self.top_up_amount(&token).get() >= amount,
+                "Insufficient funds"
+            );
+            self.send().direct_esdt(&address, &token, 0, &amount);
+            self.top_up_amount(&token)
+                .update(|current| *current -= amount);
         }
     }
 
