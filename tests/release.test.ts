@@ -334,7 +334,7 @@ test("Release by non owner", async () => {
       funcName: "release",
       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_REFUND)],
     })
-    .assertFail({ code: 4, message: "Only owner can call release" });
+    .assertFail({ code: 4, message: "Only owner can call this function" });
 });
 
 test("Release with too much delay", async () => {
@@ -446,7 +446,7 @@ test("Release with too much delay", async () => {
       funcName: "release",
       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
     })
-    .assertFail({ code: 4, message: "Release took too long" });
+    .assertFail({ code: 4, message: "Function call took too long" });
 });
 
 test("Release in 1 call no overcommitment", async () => {
