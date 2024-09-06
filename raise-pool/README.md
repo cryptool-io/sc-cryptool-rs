@@ -33,6 +33,6 @@
 
   - This is the main endpoint of the pool, used to deposit tokens in the pool.
   - If no ambassador is provided, the signature data format is:
-    - signed(timestamp + pool_id + deployer_address + platform_fee_percentage + group_fee_percentage).
+    - signed(timestamp + pool_id + caller_address + platform_fee_percentage + group_fee_percentage).
   - If an ambassador is provided, the signature data format is:
-    - signed(timestamp + pool_id + deployer_address + platform_fee_percentage + group_fee_percentage + ambassador_fee + ambassador_address).
+    - signed(timestamp + pool_id + caller_address + platform_fee_percentage + group_fee_percentage + ambassador_fee + ambassador_address).
