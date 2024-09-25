@@ -63,7 +63,7 @@ pub trait WalletDatabase: permissions_module::PermissionsModule + pausable::Paus
         self.registered_wallets().swap_remove(&caller);
     }
 
-    #[endpoint(isRegistered)]
+    #[view(isRegistered)]
     fn is_registered(&self, address: &ManagedAddress) -> bool {
         self.whitelisted_wallets().contains(address)
     }
