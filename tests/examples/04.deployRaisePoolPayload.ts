@@ -31,7 +31,7 @@ function getTransactionPayload() {
   const END_DATE = 1818110409;
 
   const transactionPayload = [
-    new U32Value(POOL_ID),
+    StringValue.fromUTF8(POOL_ID),
     new U64Value(SOFT_CAP),
     new U64Value(HARD_CAP),
     new U64Value(MIN_DEPOSIT),

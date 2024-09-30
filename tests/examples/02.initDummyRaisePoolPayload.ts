@@ -10,6 +10,7 @@ import {
   VariadicValue,
   TokenIdentifierType,
   VariadicType,
+  StringValue,
   CompositeValue,
 } from "@multiversx/sdk-core";
 
@@ -38,7 +39,7 @@ function getTransactionPayload() {
 
   const transactionPayload = [
     new AddressValue(new Address(deployerAddressBech32)),
-    new U32Value(POOL_ID),
+    StringValue.fromUTF8(POOL_ID),
     new U64Value(SOFT_CAP),
     new U64Value(HARD_CAP),
     new BigUIntValue(MIN_DEPOSIT),

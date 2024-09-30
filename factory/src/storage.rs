@@ -32,7 +32,7 @@ pub trait StorageModule {
 
     #[view(getPoolIdToAddress)]
     #[storage_mapper("pool_id_to_address")]
-    fn pool_id_to_address(&self, pool_id: &u32) -> SingleValueMapper<ManagedAddress>;
+    fn pool_id_to_address(&self, pool_id: &ManagedBuffer) -> SingleValueMapper<ManagedAddress>;
 
     #[view(getSigner)]
     #[storage_mapper("signer")]

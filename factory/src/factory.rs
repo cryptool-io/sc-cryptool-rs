@@ -49,7 +49,7 @@ pub trait Factory:
     #[endpoint(deployRaisePool)]
     fn deploy_raise_pool(
         &self,
-        pool_id: u32,
+        pool_id: ManagedBuffer,
         soft_cap: BigUint,
         hard_cap: BigUint,
         min_deposit: BigUint,
@@ -92,7 +92,7 @@ pub trait Factory:
             .raise_pool_proxy()
             .init(
                 &caller,
-                pool_id,
+                pool_id.clone(),
                 &soft_cap,
                 &hard_cap,
                 &min_deposit,
@@ -135,7 +135,7 @@ pub trait Factory:
     }
 
     #[endpoint(enableRaisePool)]
-    fn enable_raise_pool(&self, pool_id: u32, value: bool) {
+    fn enable_raise_pool(&self, pool_id: ManagedBuffer, value: bool) {
         require!(
             !self.pool_id_to_address(&pool_id).is_empty(),
             "Pool not deployed"
@@ -149,7 +149,7 @@ pub trait Factory:
     fn validate_signature(
         &self,
         timestamp: u64,
-        pool_id: &u32,
+        pool_id: &ManagedBuffer,
         caller: &ManagedAddress,
         signature: ManagedBuffer,
     ) {

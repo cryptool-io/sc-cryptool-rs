@@ -75,7 +75,7 @@ beforeEach(async () => {
     codeMetadata: [],
     codeArgs: [
       e.Addr(deployer), // POOL OWNER
-      e.U64(0), // POOL ID
+      e.Str("0"), // POOL ID
       e.U64(0), // SOFT CAP
       e.U64(10), // HARD CAP
       e.U64(1), // MIN DEPOSIT
@@ -126,7 +126,7 @@ test("Refund with wrong signature", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -148,7 +148,7 @@ test("Refund with wrong signature", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -234,7 +234,7 @@ test("Refund by non owner", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -256,7 +256,7 @@ test("Refund by non owner", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -347,7 +347,7 @@ test("Refund with too much delay", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -369,7 +369,7 @@ test("Refund with too much delay", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -459,7 +459,7 @@ test("Refund while refunds not enabled", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -481,7 +481,7 @@ test("Refund while refunds not enabled", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -567,7 +567,7 @@ test("Refund while refunds not open", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -589,7 +589,7 @@ test("Refund while refunds not open", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -675,7 +675,7 @@ test("Refund after soft cap exceeded", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(LOW_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -697,7 +697,7 @@ test("Refund after soft cap exceeded", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -787,7 +787,7 @@ test("Refund in 1 call", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -809,7 +809,7 @@ test("Refund in 1 call", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -924,7 +924,7 @@ test("Refund in 2 calls", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -946,7 +946,7 @@ test("Refund in 2 calls", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -1070,7 +1070,7 @@ test("Refund with not enough gas", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -1092,7 +1092,7 @@ test("Refund with not enough gas", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];

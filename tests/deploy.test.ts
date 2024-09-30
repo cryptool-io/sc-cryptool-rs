@@ -61,7 +61,7 @@ beforeEach(async () => {
     codeMetadata: [],
     codeArgs: [
       e.Addr(deployer), // POOL OWNER
-      e.U64(0), // POOL ID
+      e.Str("0"), // POOL ID
       e.U64(0), // SOFT CAP
       e.U64(10), // HARD CAP
       e.U64(1), // MIN DEPOSIT
@@ -133,7 +133,7 @@ test("Deploy Pool with incorrect min deposit", async () => {
       gasLimit: 50_000_000,
       funcName: "deployRaisePool",
       funcArgs: [
-        e.U32(POOL_ID),
+        e.Str(POOL_ID),
         e.U64(SOFT_CAP),
         e.U64(HARD_CAP),
         e.U64(MIN_DEPOSIT_INCORRECT),
@@ -160,7 +160,7 @@ test("Deploy Pool with incorrect max deposit", async () => {
       gasLimit: 50_000_000,
       funcName: "deployRaisePool",
       funcArgs: [
-        e.U32(POOL_ID),
+        e.Str(POOL_ID),
         e.U64(SOFT_CAP),
         e.U64(HARD_CAP),
         e.U64(MIN_DEPOSIT),
@@ -187,7 +187,7 @@ test("Deploy Pool with invalid Signature", async () => {
       gasLimit: 50_000_000,
       funcName: "deployRaisePool",
       funcArgs: [
-        e.U32(POOL_ID),
+        e.Str(POOL_ID),
         e.U64(SOFT_CAP),
         e.U64(HARD_CAP),
         e.U64(MIN_DEPOSIT),
@@ -214,7 +214,7 @@ test("Deploy Pool with too much delay", async () => {
       gasLimit: 50_000_000,
       funcName: "deployRaisePool",
       funcArgs: [
-        e.U32(POOL_ID),
+        e.Str(POOL_ID),
         e.U64(SOFT_CAP),
         e.U64(HARD_CAP),
         e.U64(MIN_DEPOSIT),
@@ -241,7 +241,7 @@ test("Deploy Pool with invalid Soft, Hard Cap pair", async () => {
       gasLimit: 50_000_000,
       funcName: "deployRaisePool",
       funcArgs: [
-        e.U32(POOL_ID),
+        e.Str(POOL_ID),
         e.U64(SOFT_CAP),
         e.U64(HARD_CAP_INVALID),
         e.U64(MIN_DEPOSIT),
@@ -268,7 +268,7 @@ test("Deploy Pool with invalid Min, Max Deposit pair", async () => {
       gasLimit: 50_000_000,
       funcName: "deployRaisePool",
       funcArgs: [
-        e.U32(POOL_ID),
+        e.Str(POOL_ID),
         e.U64(SOFT_CAP),
         e.U64(HARD_CAP),
         e.U64(MIN_DEPOSIT),
@@ -295,7 +295,7 @@ test("Deploy Pool with invalid Start, End Date pair", async () => {
       gasLimit: 50_000_000,
       funcName: "deployRaisePool",
       funcArgs: [
-        e.U32(POOL_ID),
+        e.Str(POOL_ID),
         e.U64(SOFT_CAP),
         e.U64(HARD_CAP),
         e.U64(MIN_DEPOSIT),
@@ -341,7 +341,7 @@ test("Deploy Pool with not whitelisted currency", async () => {
       gasLimit: 50_000_000,
       funcName: "deployRaisePool",
       funcArgs: [
-        e.U32(POOL_ID),
+        e.Str(POOL_ID),
         e.U64(SOFT_CAP),
         e.U64(HARD_CAP),
         e.U64(MIN_DEPOSIT),
@@ -370,7 +370,7 @@ test("Deploy Pool", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(SOFT_CAP),
       e.U64(HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -395,7 +395,7 @@ test("Deploy Pool", async () => {
       e.kvs.Mapper("source_contract").Value(e.Addr(raisePoolDummyContract)),
       e.kvs.Mapper("permissions", e.Addr(deployer)).Value(e.U64(7)),
       e.kvs
-        .Mapper("pool_id_to_address", e.U32(POOL_ID))
+        .Mapper("pool_id_to_address", e.Str(POOL_ID))
         .Value(e.Addr(RAISE_POOL_DUMMY_ADDRESS)),
       e.kvs
         .Mapper("address_to_deployer", e.Addr(RAISE_POOL_DUMMY_ADDRESS))
@@ -419,7 +419,7 @@ test("Deploy Pool", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -453,7 +453,7 @@ test("Deploy Pool", async () => {
         .Value(e.U32(DECIMALS2)),
       e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(true)),
       e.kvs.Mapper("signer").Value(e.Addr(deployer)),
-      e.kvs.Mapper("pool_id").Value(e.U32(POOL_ID)),
+      e.kvs.Mapper("pool_id").Value(e.Str(POOL_ID)),
       e.kvs.Mapper("release_state").Value(e.Usize(0)),
       e.kvs.Mapper("owner").Value(e.Addr(deployer)),
       e.kvs

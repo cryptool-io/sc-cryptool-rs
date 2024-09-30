@@ -32,11 +32,7 @@ import {
   SIGNATURE_DUMMY,
 } from "./signatures/deployer.ts";
 
-import {
-  bobAddress,
-  SIGNATURE_BOB_AFTER,
-  SIGNATURE_BOB_REFUND,
-} from "./signatures/bob.ts";
+import { bobAddress, SIGNATURE_BOB_REFUND } from "./signatures/bob.ts";
 
 import {
   generateDataAndSignature,
@@ -74,7 +70,7 @@ beforeEach(async () => {
     codeMetadata: [],
     codeArgs: [
       e.Addr(deployer), // POOL OWNER
-      e.U64(0), // POOL ID
+      e.Str("0"), // POOL ID
       e.U64(0), // SOFT CAP
       e.U64(10), // HARD CAP
       e.U64(1), // MIN DEPOSIT
@@ -128,7 +124,7 @@ test("Retrieve with wrong signature", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(LOW_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -150,7 +146,7 @@ test("Retrieve with wrong signature", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -255,7 +251,7 @@ test("Retrieve by non owner", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(LOW_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -277,7 +273,7 @@ test("Retrieve by non owner", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -384,7 +380,7 @@ test("Retrieve with too much delay", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(LOW_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -406,7 +402,7 @@ test("Retrieve with too much delay", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -511,7 +507,7 @@ test("Retrieve before release", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(LOW_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -533,7 +529,7 @@ test("Retrieve before release", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -631,7 +627,7 @@ test("Retrieve after release in 3 calls with half deposit as overcommitment", as
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(LOW_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -653,7 +649,7 @@ test("Retrieve after release in 3 calls with half deposit as overcommitment", as
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];

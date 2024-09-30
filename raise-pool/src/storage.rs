@@ -14,7 +14,7 @@ pub enum ReleaseState {
 pub trait StorageModule {
     #[view(getPoolId)]
     #[storage_mapper("pool_id")]
-    fn pool_id(&self) -> SingleValueMapper<u32>;
+    fn pool_id(&self) -> SingleValueMapper<ManagedBuffer>;
 
     #[view(getSoftCap)]
     #[storage_mapper("soft_cap")]

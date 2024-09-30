@@ -139,7 +139,7 @@ pub trait HelperModule: crate::storage::StorageModule {
     fn validate_signature(
         &self,
         timestamp: u64,
-        pool_id: &u32,
+        pool_id: &ManagedBuffer,
         caller: &ManagedAddress,
         signer: ManagedAddress,
         signature: ManagedBuffer,
@@ -157,7 +157,7 @@ pub trait HelperModule: crate::storage::StorageModule {
     fn validate_deploy_signature(
         &self,
         timestamp: u64,
-        pool_id: &u32,
+        pool_id: &ManagedBuffer,
         caller: &ManagedAddress,
         platform_fee_percentage: &BigUint,
         group_fee_percentage: &BigUint,

@@ -2,9 +2,9 @@ import { UserSecretKey } from "@multiversx/sdk-wallet/out";
 import { Mnemonic } from "@multiversx/sdk-wallet";
 import {
   BinaryCodec,
-  U32Value,
   U64Value,
   BigUIntValue,
+  StringValue,
 } from "@multiversx/sdk-core";
 
 import { privateKeyDeployer, deployerAddress } from "./signatures/deployer";
@@ -59,7 +59,7 @@ export function generateDataAndSignature(ambassadorBool: number): {
 
   var deploy_data = Buffer.concat([
     codec.encodeNested(new U64Value(TIMESTAMP)),
-    codec.encodeNested(new U32Value(POOL_ID)),
+    codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
     address,
     codec.encodeNested(new BigUIntValue(platformFee)),
     codec.encodeNested(new BigUIntValue(groupFee)),
@@ -109,7 +109,7 @@ export function generateDataAndSignatureDeployerAmbassador(): {
 
   var deploy_data = Buffer.concat([
     codec.encodeNested(new U64Value(TIMESTAMP)),
-    codec.encodeNested(new U32Value(POOL_ID)),
+    codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
     address,
     codec.encodeNested(new BigUIntValue(platformFee)),
     codec.encodeNested(new BigUIntValue(groupFee)),

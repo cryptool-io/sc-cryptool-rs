@@ -67,7 +67,7 @@ export const AMOUNT = 100000000;
 //
 const DATA_DEPLOYER = Buffer.concat([
   codec.encodeNested(new U64Value(TIMESTAMP)),
-  codec.encodeNested(new U32Value(POOL_ID)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
   deployerAddress,
 ]);
 export const DATA_DEPLOYER_SIGNED = privateKeySigner
@@ -89,7 +89,7 @@ export const SIGNATURE_REGISTER_BOB_WALLET = privateKeySigner
 //
 var DATA_DEPLOY_BOB_WALLET_NO_AMBASSADOR = Buffer.concat([
   codec.encodeNested(new U64Value(TIMESTAMP)),
-  codec.encodeNested(new U32Value(POOL_ID)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
   bobAddress,
   codec.encodeNested(new BigUIntValue(PLATFORM_FEE)),
   codec.encodeNested(new BigUIntValue(GROUP_FEE)),
@@ -103,7 +103,7 @@ export const SIGNATURE_DEPLOY_BOB_WALLET_NO_AMBASSADOR = privateKeySigner
 //
 var DATA_DEPLOY_BOB_WALLET_WITH_AMBASSADOR = Buffer.concat([
   codec.encodeNested(new U64Value(TIMESTAMP)),
-  codec.encodeNested(new U32Value(POOL_ID)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
   bobAddress,
   codec.encodeNested(new BigUIntValue(PLATFORM_FEE)),
   codec.encodeNested(new BigUIntValue(GROUP_FEE)),
