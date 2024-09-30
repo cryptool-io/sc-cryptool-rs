@@ -3,9 +3,9 @@ import path from "path";
 import { UserSecretKey } from "@multiversx/sdk-wallet/out";
 import {
   BinaryCodec,
-  U32Value,
   U64Value,
   BigUIntValue,
+  StringValue,
 } from "@multiversx/sdk-core";
 
 import {
@@ -32,7 +32,7 @@ export const bobAddress = privateKeyBob
   .pubkey();
 const DATA_BOB = Buffer.concat([
   codec.encodeNested(new U64Value(TIMESTAMP)),
-  codec.encodeNested(new U32Value(POOL_ID)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
   bobAddress,
   codec.encodeNested(new BigUIntValue(Number(PLATFORM_FEE1))),
   codec.encodeNested(new BigUIntValue(Number(GROUP_FEE1))),
@@ -43,7 +43,7 @@ export const SIGNATURE_BOB_WITH_AMBASSADOR = privateKeyDeployer.sign(DATA_BOB);
 
 const DATA_BOB_AFTER = Buffer.concat([
   codec.encodeNested(new U64Value(TIMESTAMP_AFTER)),
-  codec.encodeNested(new U32Value(POOL_ID)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
   bobAddress,
   codec.encodeNested(new BigUIntValue(Number(PLATFORM_FEE1))),
   codec.encodeNested(new BigUIntValue(Number(GROUP_FEE1))),
@@ -54,7 +54,7 @@ export const SIGNATURE_BOB_AFTER = privateKeyDeployer.sign(DATA_BOB_AFTER);
 
 const DATA_BOB_REFUND = Buffer.concat([
   codec.encodeNested(new U64Value(TIMESTAMP)),
-  codec.encodeNested(new U32Value(POOL_ID)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
   bobAddress,
 ]);
 export const SIGNATURE_BOB_REFUND = privateKeyDeployer.sign(DATA_BOB_REFUND);
@@ -67,7 +67,7 @@ export const SIGNATURE_BOB_WALLET = privateKeyDeployer.sign(DATA_WALLET);
 
 const DATA_BOB_AFTER_DEPOSIT = Buffer.concat([
   codec.encodeNested(new U64Value(AFTER_DEPOSIT_TIMESTAMP)),
-  codec.encodeNested(new U32Value(POOL_ID)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
   bobAddress,
   codec.encodeNested(new BigUIntValue(Number(PLATFORM_FEE1))),
   codec.encodeNested(new BigUIntValue(Number(GROUP_FEE1))),

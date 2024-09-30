@@ -15,7 +15,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
     fn init(
         &self,
         owner: ManagedAddress,
-        pool_id: u32,
+        pool_id: ManagedBuffer,
         soft_cap: BigUint,
         hard_cap: BigUint,
         min_deposit: BigUint,

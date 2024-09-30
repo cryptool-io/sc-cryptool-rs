@@ -81,7 +81,7 @@ beforeEach(async () => {
     codeMetadata: [],
     codeArgs: [
       e.Addr(deployer), // POOL OWNER
-      e.U64(0), // POOL ID
+      e.Str("0"), // POOL ID
       e.U64(0), // SOFT CAP
       e.U64(10), // HARD CAP
       e.U64(1), // MIN DEPOSIT
@@ -130,7 +130,7 @@ test("Top up with wrong signature", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -152,7 +152,7 @@ test("Top up with wrong signature", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -182,7 +182,7 @@ test("Top up by non owner", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -204,7 +204,7 @@ test("Top up by non owner", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -239,7 +239,7 @@ test("Top up with invalid timestamp", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -261,7 +261,7 @@ test("Top up with invalid timestamp", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -301,7 +301,7 @@ test("Top up with no payment", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -323,7 +323,7 @@ test("Top up with no payment", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -353,7 +353,7 @@ test("Top up with wrong token", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(HIGH_SOFT_CAP),
       e.U64(HIGH_HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -375,7 +375,7 @@ test("Top up with wrong token", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -406,7 +406,7 @@ test("Top up", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(SOFT_CAP),
       e.U64(HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -428,7 +428,7 @@ test("Top up", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -481,7 +481,7 @@ test("Top up", async () => {
         .Value(e.U32(DECIMALS3)),
       e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(false)),
       e.kvs.Mapper("signer").Value(e.Addr(deployer)),
-      e.kvs.Mapper("pool_id").Value(e.U32(POOL_ID)),
+      e.kvs.Mapper("pool_id").Value(e.Str(POOL_ID)),
       e.kvs.Mapper("release_state").Value(e.Usize(0)),
       e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(true)),
       e.kvs.Mapper("owner").Value(e.Addr(deployer)),
@@ -512,7 +512,7 @@ test("Distribute with wrong signature", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(SOFT_CAP),
       e.U64(HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -534,7 +534,7 @@ test("Distribute with wrong signature", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -584,7 +584,7 @@ test("Distribute by non owner", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(SOFT_CAP),
       e.U64(HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -606,7 +606,7 @@ test("Distribute by non owner", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -659,7 +659,7 @@ test("Distribute with wrong signature", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(SOFT_CAP),
       e.U64(HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -681,7 +681,7 @@ test("Distribute with wrong signature", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -731,7 +731,7 @@ test("Distribute", async () => {
     gasLimit: 50_000_000,
     funcName: "deployRaisePool",
     funcArgs: [
-      e.U32(POOL_ID),
+      e.Str(POOL_ID),
       e.U64(SOFT_CAP),
       e.U64(HARD_CAP),
       e.U64(MIN_DEPOSIT),
@@ -753,7 +753,7 @@ test("Distribute", async () => {
   const raisePoolAddressResult = await deployer.query({
     callee: factoryContract,
     funcName: "getPoolIdToAddress",
-    funcArgs: [e.U32(POOL_ID)],
+    funcArgs: [e.Str(POOL_ID)],
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
@@ -841,7 +841,7 @@ test("Distribute", async () => {
         .Value(e.U32(DECIMALS3)),
       e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(false)),
       e.kvs.Mapper("signer").Value(e.Addr(deployer)),
-      e.kvs.Mapper("pool_id").Value(e.U32(POOL_ID)),
+      e.kvs.Mapper("pool_id").Value(e.Str(POOL_ID)),
       e.kvs.Mapper("release_state").Value(e.Usize(0)),
       e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(true)),
       e.kvs.Mapper("owner").Value(e.Addr(deployer)),

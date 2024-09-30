@@ -6,7 +6,7 @@ pub trait EventsModule {
     #[event("raisePoolDeployedEvent")]
     fn raise_pool_deployed_event(
         self,
-        #[indexed] pool_id: u32,
+        #[indexed] pool_id: ManagedBuffer,
         #[indexed] soft_cap: BigUint,
         #[indexed] hard_cap: BigUint,
         #[indexed] min_deposit: BigUint,
