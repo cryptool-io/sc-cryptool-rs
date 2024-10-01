@@ -572,6 +572,7 @@ test("Release in 1 call no overcommitment", async () => {
     currencies.push(currency);
     ambassadorFees.push(ambassadorFeeAmountInCurrency);
 
+    /*
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
         depositAmount,
@@ -582,6 +583,7 @@ test("Release in 1 call no overcommitment", async () => {
         " ",
       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
+    */
   }
 
   await world.setCurrentBlockInfo({
@@ -617,9 +619,11 @@ test("Release in 1 call no overcommitment", async () => {
     assertAccount(await world.getAccount(ambassadorWallets[i]), {
       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
     });
+    /*
     console.log(
       `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`,
     );
+    */
   }
 }, 200000);
 
@@ -746,6 +750,7 @@ test("Release in 2 calls no overcommitment", async () => {
     currencies.push(currency);
     ambassadorFees.push(ambassadorFeeAmountInCurrency);
 
+    /*
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
         depositAmount,
@@ -756,6 +761,7 @@ test("Release in 2 calls no overcommitment", async () => {
         " ",
       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
+    */
   }
 
   await world.setCurrentBlockInfo({
@@ -802,9 +808,11 @@ test("Release in 2 calls no overcommitment", async () => {
     assertAccount(await world.getAccount(ambassadorWallets[i]), {
       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
     });
+    /*
     console.log(
       `Ambassador amount sent to Id: ${String(i + 1).padStart(2, " ")}`,
     );
+    */
   }
 }, 200000);
 
@@ -933,6 +941,7 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
     ambassadorFees.push(ambassadorFeeAmountInCurrency);
     overcommiterWallets.push(genericWallet);
 
+    /*
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
         depositAmount,
@@ -943,6 +952,7 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
         " ",
       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
+    */
   }
 
   await world.setCurrentBlockInfo({
@@ -988,9 +998,11 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
     assertAccount(await world.getAccount(ambassadorWallets[i]), {
       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
     });
+    /*
     console.log(
       `Ambassador amount sent to Id: ${String(i + 1).padStart(2, " ")}`,
     );
+    */
 
     assertAccount(await world.getAccount(overcommiterWallets[i]), {
       kvs: [
@@ -999,11 +1011,13 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
         ]),
       ],
     });
+    /*
     console.log(
       `Overcommiter sent half the deposited amount to Id: ${String(
         i + 1,
       ).padStart(2, " ")}`,
     );
+    */
   }
 }, 200000);
 
@@ -1132,6 +1146,7 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
     ambassadorFees.push(ambassadorFeeAmountInCurrency);
     overcommiterWallets.push(genericWallet);
 
+    /*
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
         depositAmount,
@@ -1142,6 +1157,7 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
         " ",
       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
+    */
   }
 
   await world.setCurrentBlockInfo({
@@ -1209,9 +1225,11 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
     assertAccount(await world.getAccount(ambassadorWallets[i]), {
       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
     });
+    /*
     console.log(
       `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`,
     );
+     */
 
     assertAccount(await world.getAccount(overcommiterWallets[i]), {
       kvs: [
@@ -1220,10 +1238,12 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
         ]),
       ],
     });
+    /*
     console.log(
       `Half the deposited amunt sent sent to Overcommiter Id: ${String(
         i + 1,
       ).padStart(2, " ")}`,
     );
+    */
   }
 }, 200000);

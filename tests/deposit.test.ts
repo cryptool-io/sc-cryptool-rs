@@ -1947,6 +1947,7 @@ test("Deposit automatically with random parameters", async () => {
       });
     }
 
+    /*
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
         depositAmount,
@@ -1957,6 +1958,7 @@ test("Deposit automatically with random parameters", async () => {
         " ",
       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
+     */
 
     walletsKvs.push(
       e.kvs
@@ -2237,6 +2239,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
       esdts: [{ id: currency, amount: depositAmountInCurrency }],
     });
 
+    /*
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
         depositAmount,
@@ -2247,6 +2250,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
         " ",
       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
+     */
 
     walletsKvs.push(
       e.kvs
@@ -2317,7 +2321,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
         BigInt(current.toString()) + BigInt(ambassadorFeeInCurrency.toString());
     }
     const currencyEncoded = e.Str(currenciesArray[currencyRand]);
-    console.log(currenciesArray[currencyRand]);
+    // console.log(currenciesArray[currencyRand]);
     const indexCurrency = ambassadorCurrencies.findIndex(
       (cEncoded) => cEncoded.toTopHex() === currencyEncoded.toTopHex(),
     );

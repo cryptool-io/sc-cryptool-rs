@@ -750,6 +750,7 @@ test("Retrieve after release in 3 calls with half deposit as overcommitment", as
     ambassadorFees.push(ambassadorFeeAmountInCurrency);
     overcommiterWallets.push(genericWallet);
 
+    /*
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
         depositAmount,
@@ -760,6 +761,7 @@ test("Retrieve after release in 3 calls with half deposit as overcommitment", as
         " ",
       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
+    */
   }
 
   await world.setCurrentBlockInfo({
@@ -827,9 +829,11 @@ test("Retrieve after release in 3 calls with half deposit as overcommitment", as
     assertAccount(await world.getAccount(ambassadorWallets[i]), {
       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
     });
+    /*
     console.log(
       `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`,
     );
+    */
 
     assertAccount(await world.getAccount(overcommiterWallets[i]), {
       kvs: [
@@ -838,11 +842,13 @@ test("Retrieve after release in 3 calls with half deposit as overcommitment", as
         ]),
       ],
     });
+    /*
     console.log(
       `Half the deposited amunt sent sent to Overcommiter Id: ${String(
         i + 1,
       ).padStart(2, " ")}`,
     );
+    */
   }
 
   await deployer.callContract({

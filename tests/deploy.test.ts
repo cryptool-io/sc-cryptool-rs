@@ -364,6 +364,59 @@ test("Deploy Pool with not whitelisted currency", async () => {
     });
 });
 
+test("Deploy Pool with same pool id twice", async () => {
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(SOFT_CAP),
+      e.U64(HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+    ],
+  });
+
+  await deployer
+    .callContract({
+      callee: factoryContract,
+      gasLimit: 50_000_000,
+      funcName: "deployRaisePool",
+      funcArgs: [
+        e.Str(POOL_ID),
+        e.U64(SOFT_CAP),
+        e.U64(HARD_CAP),
+        e.U64(MIN_DEPOSIT),
+        e.U64(MAX_DEPOSIT),
+        e.U64(DEPOSIT_INCREMENTS),
+        e.U64(START_DATE),
+        e.U64(END_DATE),
+        e.U64(REFUND_ENABLED),
+        e.Addr(deployer),
+        e.Addr(deployer),
+        e.TopBuffer(SIGNATURE_DEPLOYER),
+        e.U64(TIMESTAMP),
+        e.Str(CURRENCY1),
+        e.Str(CURRENCY2),
+      ],
+    })
+    .assertFail({
+      code: 4,
+      message: "Pool ID already exists",
+    });
+});
+
 test("Deploy Pool", async () => {
   await deployer.callContract({
     callee: factoryContract,
@@ -413,6 +466,7 @@ test("Deploy Pool", async () => {
       e.kvs
         .Mapper("wallet_database_address")
         .Value(e.Addr(walletDababaseContract)),
+      e.kvs.Mapper("pool_ids").UnorderedSet([e.Str(POOL_ID)]),
     ],
   });
 

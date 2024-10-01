@@ -883,6 +883,7 @@ test("Refund in 1 call", async () => {
     depositedAmounts.push(depositAmountInCurrency);
     currencies.push(currency);
 
+    /*
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
         depositAmount,
@@ -893,6 +894,7 @@ test("Refund in 1 call", async () => {
         " ",
       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
+    */
   }
 
   await world.setCurrentBlockInfo({
@@ -912,7 +914,7 @@ test("Refund in 1 call", async () => {
     assertAccount(await await world.getAccount(wallets[i]), {
       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: depositedAmounts[i] }])],
     });
-    console.log(`Returned amount to Id: ${String(i + 1).padStart(2, " ")}`);
+    // console.log(`Returned amount to Id: ${String(i + 1).padStart(2, " ")}`);
   }
 }, 200000);
 
@@ -1020,6 +1022,7 @@ test("Refund in 2 calls", async () => {
     depositedAmounts.push(depositAmountInCurrency);
     currencies.push(currency);
 
+    /*
     console.log(
       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
         depositAmount,
@@ -1030,6 +1033,7 @@ test("Refund in 2 calls", async () => {
         " ",
       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
+    */
   }
 
   await world.setCurrentBlockInfo({
@@ -1058,7 +1062,7 @@ test("Refund in 2 calls", async () => {
     assertAccount(await await world.getAccount(wallets[i]), {
       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: depositedAmounts[i] }])],
     });
-    console.log(`Returned amount to Id: ${String(i + 1).padStart(2, " ")}`);
+    // console.log(`Returned amount to Id: ${String(i + 1).padStart(2, " ")}`);
   }
 }, 200000);
 

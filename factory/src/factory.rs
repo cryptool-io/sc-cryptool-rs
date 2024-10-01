@@ -67,6 +67,10 @@ pub trait Factory:
         let caller = self.blockchain().get_caller();
         self.validate_signature(timestamp, &pool_id, &caller, signature);
         require!(
+            !self.pool_ids().contains(&pool_id),
+            "Pool ID already exists"
+        );
+        require!(
             timestamp <= self.blockchain().get_block_timestamp(),
             "Timestamp provided by backend set in the future"
         );
@@ -116,7 +120,7 @@ pub trait Factory:
             .set(caller);
         self.pool_id_to_address(&pool_id)
             .set(&raise_pool_contract_address);
-
+        self.pool_ids().insert(pool_id.clone());
         self.raise_pool_deployed_event(
             pool_id,
             soft_cap,
