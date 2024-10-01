@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           19
+// Endpoints:                           20
 // Async Callback (empty):               1
-// Total number of exported functions:  22
+// Total number of exported functions:  23
 
 #![no_std]
 
@@ -39,6 +39,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         getAddressToDeployer => address_to_deployer
         getPoolIdToAddress => pool_id_to_address
         getSigner => signer
+        getPoolIds => pool_ids
     )
 }
 

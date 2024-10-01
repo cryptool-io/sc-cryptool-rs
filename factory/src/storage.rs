@@ -37,4 +37,8 @@ pub trait StorageModule {
     #[view(getSigner)]
     #[storage_mapper("signer")]
     fn signer(&self) -> SingleValueMapper<ManagedAddress>;
+
+    #[view(getPoolIds)]
+    #[storage_mapper("pool_ids")]
+    fn pool_ids(&self) -> UnorderedSetMapper<ManagedBuffer>;
 }
