@@ -259,9 +259,9 @@ pub trait HelperModule: crate::storage::StorageModule {
         &self,
         caller: &ManagedAddress,
         payment: &EsdtTokenPayment,
-        ambassador: MultiValue2<BigUint, ManagedAddress>,
+        ambassador_percentage: BigUint,
+        ambassador_wallet: ManagedAddress,
     ) {
-        let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
         self.ambassadors().insert(ambassador_wallet.clone());
         let ambassador_amount = (&payment.amount * &ambassador_percentage) / MAX_PERCENTAGE;
         self.address_ambassador_fee(&caller, &payment.token_identifier)

@@ -41,8 +41,9 @@ export const MAX_DEPOSIT_INVALID = 500;
 export const END_DATE_INVALID = 150;
 export const RAISE_POOL_DUMMY_ADDRESS =
   "erd1qqqqqqqqqqqqqpgqzyg3zygqqqqqqqqqqqqq2qqqqqqqqqqqqqqqtstllp";
-export const PLATFORM_FEE1 = BigInt(100);
+export const PLATFORM_FEE1 = BigInt(300);
 export const GROUP_FEE1 = BigInt(200);
-export const AMBASSADOR_FEE = BigInt(300);
+export const AMBASSADOR_FEE = BigInt(100);
+export const BIG_AMBASSADOR_FEE = BigInt(400);
 export const PLATFORM_FEE2 = BigInt(300);
 export const GROUP_FEE2 = BigInt(400);

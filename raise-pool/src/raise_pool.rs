@@ -71,11 +71,12 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         &self,
         timestamp: u64,
         signature: ManagedBuffer,
-        platform_fee_percentage: BigUint,
+        mut platform_fee_percentage: BigUint,
         group_fee_percentage: BigUint,
         ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>,
     ) {
         let caller = self.blockchain().get_caller();
+        let payment = self.call_value().single_esdt();
         let signer = self.signer().get();
         let pool_id = self.pool_id().get();
 
@@ -90,8 +91,27 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             ambassador.clone(),
         );
 
+        let ambassador_percentage = ambassador
+            .into_option()
+            .map(|ambassador| {
+                let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
+                require!(
+                    platform_fee_percentage >= ambassador_percentage,
+                    "Ambassador fee cannot be higher than platform fee"
+                );
+                self.update_ambassador_fee(
+                    &caller,
+                    &payment,
+                    ambassador_percentage.clone(),
+                    ambassador_wallet,
+                );
+                ambassador_percentage
+            })
+            .unwrap_or(BigUint::from(0u64)); // Return 0 if None
+
+        platform_fee_percentage -= ambassador_percentage;
+
         require!(self.is_registered(&caller), "Wallet not registered");
-        let payment = self.call_value().single_esdt();
         self.validate_deposit(&payment, &timestamp);
         self.update_general(&caller, &payment);
 
@@ -120,13 +140,6 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             &payment_denomination,
             &group_fee_percentage,
         );
-
-        match ambassador.into_option() {
-            Some(ambassador) => {
-                self.update_ambassador_fee(&caller, &payment, ambassador);
-            }
-            None => {}
-        }
     }
 
     #[endpoint(refund)]

@@ -699,7 +699,9 @@ test("Retrieve after release in 3 calls with half deposit as overcommitment", as
       (BigInt(depositAmountInCurrency) * BigInt(ambassadorFee)) /
       MAX_PERCENTAGE;
     const platformFeeAmountInCurrency =
-      (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
+      (BigInt(depositAmountInCurrency) *
+        (BigInt(platformFee) - BigInt(ambassadorFee))) /
+      MAX_PERCENTAGE;
     currenciesPlatformFees[currencyRand] += platformFeeAmountInCurrency;
     const groupFeeAmountInCurrency =
       (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;

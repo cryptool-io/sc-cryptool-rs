@@ -16,6 +16,7 @@ import {
   AMBASSADOR_FEE,
   TIMESTAMP_AFTER,
   AFTER_DEPOSIT_TIMESTAMP,
+  BIG_AMBASSADOR_FEE,
 } from "../helpers";
 
 import { deployerAddress, privateKeyDeployer } from "./deployer";
@@ -30,6 +31,7 @@ export const bobAddress = privateKeyBob
   .generatePublicKey()
   .toAddress()
   .pubkey();
+
 const DATA_BOB = Buffer.concat([
   codec.encodeNested(new U64Value(TIMESTAMP)),
   codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
@@ -40,6 +42,19 @@ const DATA_BOB = Buffer.concat([
   deployerAddress,
 ]);
 export const SIGNATURE_BOB_WITH_AMBASSADOR = privateKeyDeployer.sign(DATA_BOB);
+
+const DATA_BOB_WITH_AMBASSADOR_BIG_FEE = Buffer.concat([
+  codec.encodeNested(new U64Value(TIMESTAMP)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
+  bobAddress,
+  codec.encodeNested(new BigUIntValue(Number(PLATFORM_FEE1))),
+  codec.encodeNested(new BigUIntValue(Number(GROUP_FEE1))),
+  codec.encodeNested(new BigUIntValue(Number(BIG_AMBASSADOR_FEE))),
+  deployerAddress,
+]);
+export const SIGNATURE_BOB_WITH_AMBASSADOR_BIG_FEE = privateKeyDeployer.sign(
+  DATA_BOB_WITH_AMBASSADOR_BIG_FEE,
+);
 
 const DATA_BOB_AFTER = Buffer.concat([
   codec.encodeNested(new U64Value(TIMESTAMP_AFTER)),

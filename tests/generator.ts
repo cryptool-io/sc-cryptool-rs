@@ -48,7 +48,7 @@ export function generateDataAndSignature(ambassadorBool: number): {
   ambassadorFee: number;
   ambassadorAddress: Uint8Array;
 } {
-  const platformFee = getRandomInt(0, 100);
+  const platformFee = getRandomInt(401, 500);
   const groupFee = getRandomInt(101, 200);
   const address = generateAddress();
 
@@ -67,7 +67,7 @@ export function generateDataAndSignature(ambassadorBool: number): {
   var ambassadorFee = 0;
   var ambassadorAddress = new Uint8Array(0);
   if (ambassadorBool == 1) {
-    ambassadorFee = getRandomInt(201, 300);
+    ambassadorFee = getRandomInt(10, 100);
     ambassadorAddress = generateAddress();
     deploy_data = Buffer.concat([
       deploy_data,
@@ -97,10 +97,10 @@ export function generateDataAndSignatureDeployerAmbassador(): {
   groupFee: number;
   ambassadorFee: number;
 } {
-  const platformFee = getRandomInt(0, 100);
+  const platformFee = getRandomInt(401, 500);
   const groupFee = getRandomInt(101, 200);
   const address = generateAddress();
-  const ambassadorFee = getRandomInt(201, 300);
+  const ambassadorFee = getRandomInt(10, 100);
 
   var whitelist_data = Buffer.concat([
     codec.encodeNested(new U64Value(TIMESTAMP)),

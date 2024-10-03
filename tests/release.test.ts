@@ -530,7 +530,9 @@ test("Release in 1 call no overcommitment", async () => {
       (BigInt(depositAmountInCurrency) * BigInt(ambassadorFee)) /
       MAX_PERCENTAGE;
     currenciesPlatformFees[currencyRand] +=
-      (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
+      (BigInt(depositAmountInCurrency) *
+        (BigInt(platformFee) - BigInt(ambassadorFee))) /
+      MAX_PERCENTAGE;
     currenciesGroupFees[currencyRand] +=
       (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
 
@@ -708,7 +710,9 @@ test("Release in 2 calls no overcommitment", async () => {
       (BigInt(depositAmountInCurrency) * BigInt(ambassadorFee)) /
       MAX_PERCENTAGE;
     currenciesPlatformFees[currencyRand] +=
-      (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
+      (BigInt(depositAmountInCurrency) *
+        (BigInt(platformFee) - BigInt(ambassadorFee))) /
+      MAX_PERCENTAGE;
     currenciesGroupFees[currencyRand] +=
       (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
 
@@ -898,7 +902,9 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
       (BigInt(depositAmountInCurrency) * BigInt(ambassadorFee)) /
       MAX_PERCENTAGE;
     currenciesPlatformFees[currencyRand] +=
-      (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
+      (BigInt(depositAmountInCurrency) *
+        (BigInt(platformFee) - BigInt(ambassadorFee))) /
+      MAX_PERCENTAGE;
     currenciesGroupFees[currencyRand] +=
       (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
 
@@ -1103,7 +1109,9 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
       (BigInt(depositAmountInCurrency) * BigInt(ambassadorFee)) /
       MAX_PERCENTAGE;
     currenciesPlatformFees[currencyRand] +=
-      (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
+      (BigInt(depositAmountInCurrency) *
+        (BigInt(platformFee) - BigInt(ambassadorFee))) /
+      MAX_PERCENTAGE;
     currenciesGroupFees[currencyRand] +=
       (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
 

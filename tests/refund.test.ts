@@ -911,7 +911,7 @@ test("Refund in 1 call", async () => {
   expect(state.returnData[0]).toBe(Buffer.from("completed").toString("hex"));
 
   for (let i = 0; i < numberOfDeposits; i++) {
-    assertAccount(await await world.getAccount(wallets[i]), {
+    assertAccount(await world.getAccount(wallets[i]), {
       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: depositedAmounts[i] }])],
     });
     // console.log(`Returned amount to Id: ${String(i + 1).padStart(2, " ")}`);

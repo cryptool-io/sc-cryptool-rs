@@ -47,6 +47,7 @@ import {
   DUMMY_TOKEN,
   HIGH_HARD_CAP,
   AFTER_DEPOSIT_TIMESTAMP,
+  BIG_AMBASSADOR_FEE,
 } from "./helpers.ts";
 
 import {
@@ -61,6 +62,7 @@ import {
   SIGNATURE_BOB_AFTER,
   SIGNATURE_BOB_WALLET,
   SIGNATURE_BOB_AFTER_DEPOSIT,
+  SIGNATURE_BOB_WITH_AMBASSADOR_BIG_FEE,
 } from "./signatures/bob.ts";
 
 import {
@@ -1113,6 +1115,81 @@ test("Deposit with incorect deposit increment", async () => {
     });
 });
 
+test("Deposit with ambassador fee bigger than platform fee", async () => {
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(SOFT_CAP),
+      e.U64(HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await world.setCurrentBlockInfo({
+    timestamp: DEPOSIT_TIMESTAMP,
+  });
+
+  bob = await world.createWallet({
+    address: bobAddress,
+    balance: 100_000,
+    kvs: [e.kvs.Esdts([{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }])],
+  });
+
+  await bob.callContract({
+    callee: walletDababaseContract,
+    gasLimit: 50_000_000,
+    funcName: "registerWallet",
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
+  });
+
+  await bob
+    .callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "deposit",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR_BIG_FEE),
+        e.U(PLATFORM_FEE1),
+        e.U(GROUP_FEE1),
+        e.U(BIG_AMBASSADOR_FEE),
+        e.Addr(deployer),
+      ],
+      esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
+    })
+    .assertFail({
+      code: 4,
+      message: "Ambassador fee cannot be higher than platform fee",
+    });
+});
+
 test("Deposit Currency1 with Bob", async () => {
   await deployer.callContract({
     callee: factoryContract,
@@ -1223,17 +1300,26 @@ test("Deposit Currency1 with Bob", async () => {
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
+          e.U(
+            (CURRENCY1_DEPOSIT_AMOUNT * (PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+              MAX_PERCENTAGE,
+          ),
         ),
       e.kvs
         .Mapper("platform_fee", e.Str(CURRENCY1))
         .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
+          e.U(
+            (CURRENCY1_DEPOSIT_AMOUNT * (PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+              MAX_PERCENTAGE,
+          ),
         ),
       e.kvs
         .Mapper("total_platform_fee")
         .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
+          e.U(
+            (CURRENCY1_DEPOSIT_AMOUNT * (PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+              MAX_PERCENTAGE,
+          ),
         ),
       e.kvs
         .Mapper("address_group_fee", e.Addr(bob), e.Str(CURRENCY1))
@@ -1366,9 +1452,11 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
   const total_deposited_amount =
     BigInt(CURRENCY1_DEPOSIT_AMOUNT) + denominated_currency2;
   const total_platform_fee =
-    (BigInt(CURRENCY1_DEPOSIT_AMOUNT) * BigInt(PLATFORM_FEE1)) /
+    (BigInt(CURRENCY1_DEPOSIT_AMOUNT) *
+      BigInt(PLATFORM_FEE1 - AMBASSADOR_FEE)) /
       BigInt(MAX_PERCENTAGE) +
-    (denominated_currency2 * BigInt(PLATFORM_FEE1)) / BigInt(MAX_PERCENTAGE);
+    (denominated_currency2 * BigInt(PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+      BigInt(MAX_PERCENTAGE);
   const total_group_fee =
     (BigInt(CURRENCY1_DEPOSIT_AMOUNT) * BigInt(GROUP_FEE1)) /
       BigInt(MAX_PERCENTAGE) +
@@ -1421,22 +1509,34 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
+          e.U(
+            (CURRENCY1_DEPOSIT_AMOUNT * (PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+              MAX_PERCENTAGE,
+          ),
         ),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY2))
         .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
+          e.U(
+            (CURRENCY2_DEPOSIT_AMOUNT * (PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+              MAX_PERCENTAGE,
+          ),
         ),
       e.kvs
         .Mapper("platform_fee", e.Str(CURRENCY1))
         .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
+          e.U(
+            (CURRENCY1_DEPOSIT_AMOUNT * (PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+              MAX_PERCENTAGE,
+          ),
         ),
       e.kvs
         .Mapper("platform_fee", e.Str(CURRENCY2))
         .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
+          e.U(
+            (CURRENCY2_DEPOSIT_AMOUNT * (PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+              MAX_PERCENTAGE,
+          ),
         ),
       e.kvs.Mapper("total_platform_fee").Value(e.U(total_platform_fee)),
       e.kvs
@@ -1627,9 +1727,11 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
     denominated_currency2 +
     denominated_currency3;
   const total_platform_fee =
-    (BigInt(CURRENCY1_DEPOSIT_AMOUNT) * BigInt(PLATFORM_FEE1)) /
+    (BigInt(CURRENCY1_DEPOSIT_AMOUNT) *
+      BigInt(PLATFORM_FEE1 - AMBASSADOR_FEE)) /
       BigInt(MAX_PERCENTAGE) +
-    (denominated_currency2 * BigInt(PLATFORM_FEE1)) / BigInt(MAX_PERCENTAGE) +
+    (denominated_currency2 * BigInt(PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+      BigInt(MAX_PERCENTAGE) +
     (denominated_currency3 * BigInt(PLATFORM_FEE2)) / BigInt(MAX_PERCENTAGE);
   const total_group_fee =
     (BigInt(CURRENCY1_DEPOSIT_AMOUNT) * BigInt(GROUP_FEE1)) /
@@ -1699,12 +1801,18 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
+          e.U(
+            (CURRENCY1_DEPOSIT_AMOUNT * (PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+              MAX_PERCENTAGE,
+          ),
         ),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY2))
         .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
+          e.U(
+            (CURRENCY2_DEPOSIT_AMOUNT * (PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+              MAX_PERCENTAGE,
+          ),
         ),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(carol), e.Str(CURRENCY3))
@@ -1714,12 +1822,18 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
       e.kvs
         .Mapper("platform_fee", e.Str(CURRENCY1))
         .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
+          e.U(
+            (CURRENCY1_DEPOSIT_AMOUNT * (PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+              MAX_PERCENTAGE,
+          ),
         ),
       e.kvs
         .Mapper("platform_fee", e.Str(CURRENCY2))
         .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
+          e.U(
+            (CURRENCY2_DEPOSIT_AMOUNT * (PLATFORM_FEE1 - AMBASSADOR_FEE)) /
+              MAX_PERCENTAGE,
+          ),
         ),
       e.kvs
         .Mapper("platform_fee", e.Str(CURRENCY3))
@@ -1958,7 +2072,7 @@ test("Deposit automatically with random parameters", async () => {
         " ",
       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
-     */
+    */
 
     walletsKvs.push(
       e.kvs
@@ -1974,7 +2088,11 @@ test("Deposit automatically with random parameters", async () => {
       e.kvs
         .Mapper("address_platform_fee", e.Addr(genericWallet), e.Str(currency))
         .Value(
-          e.U((depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE),
+          e.U(
+            (depositAmountInCurrency *
+              (BigInt(platformFee) - BigInt(ambassadorFee))) /
+              MAX_PERCENTAGE,
+          ),
         ),
     );
     walletsKvs.push(
@@ -1989,9 +2107,13 @@ test("Deposit automatically with random parameters", async () => {
     totalAmount += depositAmountDenominated;
     currenciesTotal[currencyRand] += depositAmountInCurrency;
     currenciesPlatformFees[currencyRand] +=
-      (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
+      (depositAmountInCurrency *
+        (BigInt(platformFee) - BigInt(ambassadorFee))) /
+      MAX_PERCENTAGE;
     totalPlatformFee +=
-      (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
+      (depositAmountDenominated *
+        (BigInt(platformFee) - BigInt(ambassadorFee))) /
+      MAX_PERCENTAGE;
     currenciesGroupFees[currencyRand] +=
       (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
     totalGroupFee +=
@@ -2266,7 +2388,11 @@ test("Deposit automatically with deployer as ambassador", async () => {
       e.kvs
         .Mapper("address_platform_fee", e.Addr(genericWallet), e.Str(currency))
         .Value(
-          e.U((depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE),
+          e.U(
+            (depositAmountInCurrency *
+              (BigInt(platformFee) - BigInt(ambassadorFee))) /
+              MAX_PERCENTAGE,
+          ),
         ),
     );
     walletsKvs.push(
@@ -2281,9 +2407,13 @@ test("Deposit automatically with deployer as ambassador", async () => {
     totalAmount += depositAmountDenominated;
     currenciesTotal[currencyRand] += depositAmountInCurrency;
     currenciesPlatformFees[currencyRand] +=
-      (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
+      (depositAmountInCurrency *
+        (BigInt(platformFee) - BigInt(ambassadorFee))) /
+      MAX_PERCENTAGE;
     totalPlatformFee +=
-      (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
+      (depositAmountDenominated *
+        (BigInt(platformFee) - BigInt(ambassadorFee))) /
+      MAX_PERCENTAGE;
     currenciesGroupFees[currencyRand] +=
       (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
     totalGroupFee +=
