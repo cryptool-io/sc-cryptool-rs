@@ -188,5 +188,9 @@ pub trait StorageModule {
 
     #[view(getTopUpAmount)]
     #[storage_mapper("top_up_amount")]
-    fn top_up_amount(&self, token: &TokenIdentifier) -> SingleValueMapper<BigUint>;
+    fn top_up_amount(&self) -> SingleValueMapper<BigUint>;
+
+    #[view(getTopUpToken)]
+    #[storage_mapper("top_up_token")]
+    fn top_up_token(&self) -> SingleValueMapper<TokenIdentifier>;
 }

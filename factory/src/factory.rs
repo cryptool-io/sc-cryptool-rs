@@ -3,7 +3,6 @@
 #[allow(unused_imports)]
 use multiversx_sc::imports::*;
 use permissions_module::Permissions;
-use raise_pool::helper::ProxyTrait as _;
 use raise_pool::ProxyTrait as _;
 mod events;
 mod storage;
