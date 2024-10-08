@@ -46,3 +46,4 @@ export const GROUP_FEE1 = BigInt(200);
 export const AMBASSADOR_FEE = BigInt(300);
 export const PLATFORM_FEE2 = BigInt(300);
 export const GROUP_FEE2 = BigInt(400);
+export const CURRENCY1_DISTRIBUTE_AMOUNT = BigInt(300 * 10 ** DECIMALS1);

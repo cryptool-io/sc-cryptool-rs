@@ -9,12 +9,6 @@ pub const DEFAULT_DECIMALS: u32 = 18;
 
 #[multiversx_sc::module]
 pub trait HelperModule: crate::storage::StorageModule {
-    #[only_owner]
-    #[endpoint(enableRaisePool)]
-    fn enable_raise_pool(&self, value: bool) {
-        self.raise_pool_enabled().set(value);
-    }
-
     fn validate_init(
         &self,
         soft_cap: &BigUint,
@@ -65,10 +59,7 @@ pub trait HelperModule: crate::storage::StorageModule {
             timestamp - backend_timestamp < ALLOWED_TIMESTAMP_DELAY,
             "Deposit took too long"
         );
-        require!(
-            self.raise_pool_enabled().get() == true,
-            "Pool is not enabled"
-        );
+        require!(self.raise_pool_enabled().get(), "Pool is not enabled");
         let min_deposit_denominated = self.match_denomination(self.min_deposit().get(), payment);
         require!(
             min_deposit_denominated <= payment.amount,
@@ -109,11 +100,12 @@ pub trait HelperModule: crate::storage::StorageModule {
         );
     }
 
+    fn validate_owner_call_on_enabled_pool(&self, timestamp: u64, signature: ManagedBuffer) {
+        require!(self.raise_pool_enabled().get(), "Pool is not enabled");
+        self.validate_owner_call(timestamp, signature);
+    }
+
     fn validate_owner_call(&self, timestamp: u64, signature: ManagedBuffer) {
-        require!(
-            self.raise_pool_enabled().get() == true,
-            "Pool is not enabled"
-        );
         self.validate_signature(
             timestamp,
             &self.pool_id().get(),

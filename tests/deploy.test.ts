@@ -25,6 +25,7 @@ import {
   MAX_DEPOSIT_INCORRECT,
   INCORRECT_DECIMALS,
   CURRENCY3,
+  TIMESTAMP_AFTER,
 } from "./helpers.ts";
 
 import {
@@ -483,6 +484,18 @@ test("Deploy Pool", async () => {
     world,
   });
 
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
     kvs: [
@@ -513,6 +526,254 @@ test("Deploy Pool", async () => {
       e.kvs
         .Mapper("wallet_database_address")
         .Value(e.Addr(walletDababaseContract)),
+    ],
+  });
+});
+
+test("Deploy Pool and change to wrong start date", async () => {
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(SOFT_CAP),
+      e.U64(HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
+  await deployer
+    .callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "setStartTimestamp",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.TopBuffer(SIGNATURE_DEPLOYER),
+        e.U64(TIMESTAMP_AFTER),
+      ],
+    })
+    .assertFail({ code: 4, message: "Invalid timestamp" });
+});
+
+test("Deploy Pool and change to wrong end date", async () => {
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(SOFT_CAP),
+      e.U64(HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
+  await deployer
+    .callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "setEndTimestamp",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.TopBuffer(SIGNATURE_DEPLOYER),
+        e.U64(TIMESTAMP_BEFORE),
+      ],
+    })
+    .assertFail({ code: 4, message: "Invalid timestamp" });
+});
+
+test("Deploy Pool and change start date", async () => {
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(SOFT_CAP),
+      e.U64(HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
+  await deployer.callContract({
+    callee: raisePoolContract,
+    gasLimit: 50_000_000,
+    funcName: "setStartTimestamp",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP_BEFORE),
+    ],
+  });
+});
+
+test("Deploy Pool and change end date", async () => {
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(SOFT_CAP),
+      e.U64(HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
+  await deployer.callContract({
+    callee: raisePoolContract,
+    gasLimit: 50_000_000,
+    funcName: "setEndTimestamp",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP_AFTER),
     ],
   });
 });

@@ -54,7 +54,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             self.payment_currencies().insert(currency.clone());
             self.currency_decimals(&currency).set(decimals);
         }
-        self.raise_pool_enabled().set(true);
+        self.raise_pool_enabled().set(false);
         self.wallet_database_address().set(wallet_database_address);
         self.signer().set(signer);
         self.pool_id().set(pool_id);
@@ -131,7 +131,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
 
     #[endpoint(refund)]
     fn refund(&self, timestamp: u64, signature: ManagedBuffer) -> OperationCompletionStatus {
-        self.validate_owner_call(timestamp, signature);
+        self.validate_owner_call_on_enabled_pool(timestamp, signature);
         require!(self.refund_enabled().get(), "Refunds are not enabled");
         require!(
             self.blockchain().get_block_timestamp() > self.end_date().get(),
@@ -179,6 +179,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         overcommited: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
     ) -> OperationCompletionStatus {
         self.validate_owner_call(timestamp, signature);
+        self.enable_raise_pool(false);
         let overcommited_len = overcommited.len();
         loop {
             match self.release_state().get() {
@@ -239,19 +240,18 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
     #[payable("*")]
     #[endpoint(topUp)]
     fn top_up(&self, timestamp: u64, signature: ManagedBuffer) {
-        self.validate_owner_call(timestamp, signature);
-        let payments = self.call_value().all_esdt_transfers();
-        require!(payments.len() > 0, "No payments provided");
-
-        for payment in payments.iter() {
+        self.validate_owner_call_on_enabled_pool(timestamp, signature);
+        let payment = self.call_value().single_esdt();
+        if self.top_up_token().is_empty() {
+            self.top_up_token().set(payment.token_identifier);
+        } else {
             require!(
-                self.payment_currencies()
-                    .contains(&payment.token_identifier),
-                "Invalid token payment"
+                self.top_up_token().get() == payment.token_identifier,
+                "Only one token can be used for top-up"
             );
-            self.top_up_amount(&payment.token_identifier)
-                .update(|current| *current += &payment.amount);
         }
+        self.top_up_amount()
+            .update(|current| *current += &payment.amount);
     }
 
     #[endpoint(distribute)]
@@ -259,19 +259,41 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         &self,
         timestamp: u64,
         signature: ManagedBuffer,
-        distribute_data: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
+        distribute_data: MultiValueEncoded<MultiValue2<ManagedAddress, BigUint>>,
     ) {
-        self.validate_owner_call(timestamp, signature);
+        self.validate_owner_call_on_enabled_pool(timestamp, signature);
         for record in distribute_data {
-            let (address, token, amount) = record.into_tuple();
-            require!(
-                self.top_up_amount(&token).get() >= amount,
-                "Insufficient funds"
-            );
+            let (address, amount) = record.into_tuple();
+            let token = self.top_up_token().get();
             self.send().direct_esdt(&address, &token, 0, &amount);
-            self.top_up_amount(&token)
-                .update(|current| *current -= amount);
+            self.top_up_amount().update(|current| *current -= amount);
         }
+    }
+
+    #[only_owner]
+    #[endpoint(enableRaisePool)]
+    fn enable_raise_pool(&self, value: bool) {
+        if value {
+            require!(
+                self.release_state().get() == ReleaseState::None,
+                "Release in progress or already completed, cannot enable pool"
+            )
+        }
+        self.raise_pool_enabled().set(value);
+    }
+
+    #[endpoint(setStartTimestamp)]
+    fn set_start_date(&self, timestamp: u64, signature: ManagedBuffer, new_start_date: u64) {
+        self.validate_owner_call_on_enabled_pool(timestamp, signature);
+        require!(new_start_date < self.end_date().get(), "Invalid timestamp");
+        self.start_date().set(new_start_date);
+    }
+
+    #[endpoint(setEndTimestamp)]
+    fn set_end_date(&self, timestamp: u64, signature: ManagedBuffer, new_end_date: u64) {
+        self.validate_owner_call_on_enabled_pool(timestamp, signature);
+        require!(new_end_date > self.start_date().get(), "Invalid timestamp");
+        self.end_date().set(new_end_date);
     }
 
     fn release_plaform(&self) {

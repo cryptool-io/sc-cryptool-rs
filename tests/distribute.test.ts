@@ -33,6 +33,7 @@ import {
   CURRENCY2_DEPOSIT_AMOUNT,
   CURRENCY3_DEPOSIT_AMOUNT,
   DUMMY_TOKEN,
+  CURRENCY1_DISTRIBUTE_AMOUNT,
 } from "./helpers.ts";
 
 import { bobAddress, SIGNATURE_BOB_REFUND } from "./signatures/bob.ts";
@@ -162,6 +163,18 @@ test("Top up with wrong signature", async () => {
     world,
   });
 
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -212,6 +225,18 @@ test("Top up by non owner", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -269,6 +294,18 @@ test("Top up with invalid timestamp", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -333,6 +370,18 @@ test("Top up with no payment", async () => {
     world,
   });
 
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -344,10 +393,10 @@ test("Top up with no payment", async () => {
       funcName: "topUp",
       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
     })
-    .assertFail({ code: 4, message: "No payments provided" });
+    .assertFail({ code: 4, message: "incorrect number of ESDT transfers" });
 });
 
-test("Top up with wrong token", async () => {
+test("Top up twice with different tokens", async () => {
   await deployer.callContract({
     callee: factoryContract,
     gasLimit: 50_000_000,
@@ -385,8 +434,28 @@ test("Top up with wrong token", async () => {
     world,
   });
 
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
+  });
+
+  await deployer.callContract({
+    callee: raisePoolContract,
+    gasLimit: 50_000_000,
+    funcName: "topUp",
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
+    esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
   });
 
   await deployer
@@ -395,12 +464,12 @@ test("Top up with wrong token", async () => {
       gasLimit: 50_000_000,
       funcName: "topUp",
       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
-      esdts: [{ id: DUMMY_TOKEN, amount: CURRENCY1_DEPOSIT_AMOUNT }],
+      esdts: [{ id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT }],
     })
-    .assertFail({ code: 4, message: "Invalid token payment" });
+    .assertFail({ code: 4, message: "Only one token can be used for top-up" });
 });
 
-test("Top up", async () => {
+test("Top up twice", async () => {
   await deployer.callContract({
     callee: factoryContract,
     gasLimit: 50_000_000,
@@ -438,6 +507,18 @@ test("Top up", async () => {
     world,
   });
 
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -447,11 +528,15 @@ test("Top up", async () => {
     gasLimit: 50_000_000,
     funcName: "topUp",
     funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
-    esdts: [
-      { id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT },
-      { id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT },
-      { id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT },
-    ],
+    esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT / BigInt(2) }],
+  });
+
+  await deployer.callContract({
+    callee: raisePoolContract,
+    gasLimit: 50_000_000,
+    funcName: "topUp",
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
+    esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT / BigInt(2) }],
   });
 
   assertAccount(await raisePoolContract.getAccount(), {
@@ -488,20 +573,9 @@ test("Top up", async () => {
       e.kvs
         .Mapper("wallet_database_address")
         .Value(e.Addr(walletDababaseContract)),
-      e.kvs
-        .Mapper("top_up_amount", e.Str(CURRENCY1))
-        .Value(e.U(CURRENCY1_DEPOSIT_AMOUNT)),
-      e.kvs
-        .Mapper("top_up_amount", e.Str(CURRENCY2))
-        .Value(e.U(CURRENCY2_DEPOSIT_AMOUNT)),
-      e.kvs
-        .Mapper("top_up_amount", e.Str(CURRENCY3))
-        .Value(e.U(CURRENCY3_DEPOSIT_AMOUNT)),
-      e.kvs.Esdts([
-        { id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT },
-        { id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT },
-        { id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT },
-      ]),
+      e.kvs.Mapper("top_up_amount").Value(e.U(CURRENCY1_DEPOSIT_AMOUNT)),
+      e.kvs.Mapper("top_up_token").Value(e.Str(CURRENCY1)),
+      e.kvs.Esdts([{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }]),
     ],
   });
 });
@@ -544,6 +618,18 @@ test("Distribute with wrong signature", async () => {
     world,
   });
 
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -553,11 +639,7 @@ test("Distribute with wrong signature", async () => {
     gasLimit: 50_000_000,
     funcName: "topUp",
     funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
-    esdts: [
-      { id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT },
-      { id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT },
-      { id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT },
-    ],
+    esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
   });
 
   alice = await world.createWallet();
@@ -616,6 +698,18 @@ test("Distribute by non owner", async () => {
     world,
   });
 
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -625,11 +719,7 @@ test("Distribute by non owner", async () => {
     gasLimit: 50_000_000,
     funcName: "topUp",
     funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
-    esdts: [
-      { id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT },
-      { id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT },
-      { id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT },
-    ],
+    esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
   });
 
   bob = await world.createWallet({
@@ -653,7 +743,7 @@ test("Distribute by non owner", async () => {
     .assertFail({ code: 4, message: "Only owner can call this function" });
 });
 
-test("Distribute with wrong signature", async () => {
+test("Distribute too much amount", async () => {
   await deployer.callContract({
     callee: factoryContract,
     gasLimit: 50_000_000,
@@ -691,6 +781,18 @@ test("Distribute with wrong signature", async () => {
     world,
   });
 
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -700,11 +802,7 @@ test("Distribute with wrong signature", async () => {
     gasLimit: 50_000_000,
     funcName: "topUp",
     funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
-    esdts: [
-      { id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT },
-      { id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT },
-      { id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT },
-    ],
+    esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
   });
 
   alice = await world.createWallet();
@@ -722,7 +820,7 @@ test("Distribute with wrong signature", async () => {
         e.U(CURRENCY1_DEPOSIT_AMOUNT * BigInt(2)),
       ],
     })
-    .assertFail({ code: 4, message: "Insufficient funds" });
+    .assertFail({ code: 10, message: "insufficient funds" });
 });
 
 test("Distribute", async () => {
@@ -763,6 +861,18 @@ test("Distribute", async () => {
     world,
   });
 
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -772,11 +882,7 @@ test("Distribute", async () => {
     gasLimit: 50_000_000,
     funcName: "topUp",
     funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
-    esdts: [
-      { id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT },
-      { id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT },
-      { id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT },
-    ],
+    esdts: [{ id: CURRENCY1, amount: CURRENCY1_DISTRIBUTE_AMOUNT }],
   });
 
   alice = await world.createWallet();
@@ -791,27 +897,36 @@ test("Distribute", async () => {
       e.U64(TIMESTAMP),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.Addr(alice),
-      e.Str(CURRENCY1),
-      e.U(CURRENCY1_DEPOSIT_AMOUNT),
+      e.U(CURRENCY1_DISTRIBUTE_AMOUNT / BigInt(3)),
       e.Addr(bob),
-      e.Str(CURRENCY2),
-      e.U(CURRENCY2_DEPOSIT_AMOUNT),
+      e.U(CURRENCY1_DISTRIBUTE_AMOUNT / BigInt(3)),
       e.Addr(carol),
-      e.Str(CURRENCY3),
-      e.U(CURRENCY3_DEPOSIT_AMOUNT),
+      e.U(CURRENCY1_DISTRIBUTE_AMOUNT / BigInt(3)),
     ],
   });
 
   assertAccount(await world.getAccount(alice), {
-    kvs: [e.kvs.Esdts([{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }])],
+    kvs: [
+      e.kvs.Esdts([
+        { id: CURRENCY1, amount: CURRENCY1_DISTRIBUTE_AMOUNT / BigInt(3) },
+      ]),
+    ],
   });
 
   assertAccount(await world.getAccount(bob), {
-    kvs: [e.kvs.Esdts([{ id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT }])],
+    kvs: [
+      e.kvs.Esdts([
+        { id: CURRENCY1, amount: CURRENCY1_DISTRIBUTE_AMOUNT / BigInt(3) },
+      ]),
+    ],
   });
 
   assertAccount(await world.getAccount(carol), {
-    kvs: [e.kvs.Esdts([{ id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT }])],
+    kvs: [
+      e.kvs.Esdts([
+        { id: CURRENCY1, amount: CURRENCY1_DISTRIBUTE_AMOUNT / BigInt(3) },
+      ]),
+    ],
   });
 
   assertAccount(await raisePoolContract.getAccount(), {
@@ -848,6 +963,7 @@ test("Distribute", async () => {
       e.kvs
         .Mapper("wallet_database_address")
         .Value(e.Addr(walletDababaseContract)),
+      e.kvs.Mapper("top_up_token").Value(e.Str(CURRENCY1)),
     ],
   });
 });

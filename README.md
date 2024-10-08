@@ -36,6 +36,11 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
       **!!! Check _tests/examples/04.deployRaisePoolCall.ts_ for an example.**
 
+- **enableRaisePool** (_timestamp: u64, pool_id: ManagedBuffer, signature: ManagedBuffer, value: bool,_)
+
+  - This endpoint, called on the factory, eanbles or disables the pool.
+  - Signature data format: signed(timestamp + pool_id + deployer_address).
+
 ## Owner Callable Endpoints on Production Raise Pool SC:
 
 - **refund** (_timestamp: u64, signature: ManagedBuffer_) -> _OperationCompletionStatus_
@@ -57,12 +62,12 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
 - **topUp** (_timestamp: u64, signature: ManagedBuffer_)
 
-  - This enpdpoint allows the owner to top up the pool with any of the accepted currencies.
+  - This enpdpoint allows the owner to top up the pool with a token. The token is registered on the first call, any subsequent calls will be able to top up the pool with the same token.
   - Signature data format: signed(timestamp + pool_id + deployer_address).
 
-- **distribute** (_timestamp: u64, signature: ManagedBuffer, distribute_data: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>_)
+- **distribute** (_timestamp: u64, signature: ManagedBuffer, distribute_data: MultiValueEncoded<MultiValue2<ManagedAddress, BigUint>>_)
 
-    - This endpoint allows the owner to airdop tokens to the selected distribution wallets .
+    - This endpoint allows the owner to distribute tokens to the selected distribution wallets.
     - Signature data format: signed(timestamp + pool_id + deployer_address).
 
 ## User Callable Endpoints on Production Wallet Database SC:
@@ -81,7 +86,7 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
   - The signature data format is:
     - user_signature: signed(timestamp + user_address)
 
-## General Callable Endpoints on Production Wallet Database SC:
+## General View Endpoints on Production Wallet Database SC:
 
 - **isRegistered** (_address: ManagedAddress_) -> bool
 

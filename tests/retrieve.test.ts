@@ -156,6 +156,18 @@ test("Retrieve with wrong signature", async () => {
     world,
   });
 
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -281,6 +293,18 @@ test("Retrieve by non owner", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -412,6 +436,18 @@ test("Retrieve with too much delay", async () => {
     world,
   });
 
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -539,6 +575,18 @@ test("Retrieve before release", async () => {
     world,
   });
 
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -657,6 +705,18 @@ test("Retrieve after release in 3 calls with half deposit as overcommitment", as
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
   });
 
   await world.setCurrentBlockInfo({
