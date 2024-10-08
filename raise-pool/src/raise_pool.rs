@@ -54,7 +54,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             self.payment_currencies().insert(currency.clone());
             self.currency_decimals(&currency).set(decimals);
         }
-        self.raise_pool_enabled().set(true);
+        self.raise_pool_enabled().set(false);
         self.wallet_database_address().set(wallet_database_address);
         self.signer().set(signer);
         self.pool_id().set(pool_id);
