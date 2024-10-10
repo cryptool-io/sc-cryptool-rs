@@ -238,22 +238,6 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
     }
 
     #[payable("*")]
-    #[endpoint(topUp)]
-    fn top_up(&self, timestamp: u64, signature: ManagedBuffer) {
-        self.validate_owner_call_on_enabled_pool(timestamp, signature);
-        let payment = self.call_value().single_esdt();
-        if self.top_up_token().is_empty() {
-            self.top_up_token().set(payment.token_identifier);
-        } else {
-            require!(
-                self.top_up_token().get() == payment.token_identifier,
-                "Only one token can be used for top-up"
-            );
-        }
-        self.top_up_amount()
-            .update(|current| *current += &payment.amount);
-    }
-
     #[endpoint(distribute)]
     fn distribute(
         &self,
@@ -261,13 +245,38 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         signature: ManagedBuffer,
         distribute_data: MultiValueEncoded<MultiValue2<ManagedAddress, BigUint>>,
     ) {
-        self.validate_owner_call_on_enabled_pool(timestamp, signature);
+        self.validate_owner_call(timestamp, signature);
+        let payments = self.call_value().all_esdt_transfers();
+
+        require!(
+            payments.len() == 2,
+            "Two payments are expected, one for EGLD and one for ESDT"
+        );
+
+        let mut payments_iter = payments.iter();
+        let egld_payment = payments_iter.next();
+        let esdt_payment = payments_iter.next();
+
+        let (_, _, egld_amount) = egld_payment.unwrap().into_tuple();
+        self.send()
+            .direct_egld(&self.platform_fee_wallet().get(), &egld_amount);
+
+        let (token, _, _) = esdt_payment.unwrap().into_tuple();
         for record in distribute_data {
             let (address, amount) = record.into_tuple();
-            let token = self.top_up_token().get();
             self.send().direct_esdt(&address, &token, 0, &amount);
-            self.top_up_amount().update(|current| *current -= amount);
         }
+    }
+
+    #[endpoint(setPlatformFeeWallet)]
+    fn set_platform_fee_wallet(
+        &self,
+        timestamp: u64,
+        signature: ManagedBuffer,
+        wallet: ManagedAddress,
+    ) {
+        self.validate_owner_call(timestamp, signature);
+        self.platform_fee_wallet().set(wallet);
     }
 
     #[only_owner]

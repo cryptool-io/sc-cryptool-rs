@@ -67,7 +67,9 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
 - **distribute** (_timestamp: u64, signature: ManagedBuffer, distribute_data: MultiValueEncoded<MultiValue2<ManagedAddress, BigUint>>_)
 
-    - This endpoint allows the owner to distribute tokens to the selected distribution wallets.
+    - This enpdpoint allows the owner to send a token amount to the contract and then distribute tokens to the distribution wallets sent as parameters.
+    - The payment sent to the endpoint must also include the Egld fee payment, as an Esdt.
+      So in total 2 payments are made when calling this endpoint, first one with Egld as an Esdt and then the Esdt to be distributed.
     - Signature data format: signed(timestamp + pool_id + deployer_address).
 
 ## User Callable Endpoints on Production Wallet Database SC:
