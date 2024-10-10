@@ -60,11 +60,6 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
   - Once the _release_ has been completed, calling this endpoint sends the remaining deposited funds to the owner wallet.
   - Signature data format: signed(timestamp + pool_id + deployer_address).
 
-- **topUp** (_timestamp: u64, signature: ManagedBuffer_)
-
-  - This enpdpoint allows the owner to top up the pool with a token. The token is registered on the first call, any subsequent calls will be able to top up the pool with the same token.
-  - Signature data format: signed(timestamp + pool_id + deployer_address).
-
 - **distribute** (_timestamp: u64, signature: ManagedBuffer, distribute_data: MultiValueEncoded<MultiValue2<ManagedAddress, BigUint>>_)
 
     - This enpdpoint allows the owner to send a token amount to the contract and then distribute tokens to the distribution wallets sent as parameters.
