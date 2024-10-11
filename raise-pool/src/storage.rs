@@ -185,12 +185,4 @@ pub trait StorageModule {
     #[view(getOwner)]
     #[storage_mapper("owner")]
     fn owner(&self) -> SingleValueMapper<ManagedAddress>;
-
-    #[view(getTopUpAmount)]
-    #[storage_mapper("top_up_amount")]
-    fn top_up_amount(&self) -> SingleValueMapper<BigUint>;
-
-    #[view(getTopUpToken)]
-    #[storage_mapper("top_up_token")]
-    fn top_up_token(&self) -> SingleValueMapper<TokenIdentifier>;
 }
