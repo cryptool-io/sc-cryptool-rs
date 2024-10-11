@@ -48,6 +48,10 @@ pub trait StorageModule {
     #[storage_mapper("refund_enabled")]
     fn refund_enabled(&self) -> SingleValueMapper<bool>;
 
+    #[view(getRefundDeadline)]
+    #[storage_mapper("refund_deadline")]
+    fn refund_deadline(&self) -> SingleValueMapper<u64>;
+
     #[view(getPlatfromFeeWallet)]
     #[storage_mapper("platform_fee_wallet")]
     fn platform_fee_wallet(&self) -> SingleValueMapper<ManagedAddress>;

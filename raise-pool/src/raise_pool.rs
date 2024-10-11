@@ -24,6 +24,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         start_date: u64,
         end_date: u64,
         refund_enabled: bool,
+        refund_deadline: u64,
         platform_fee_wallet: ManagedAddress,
         group_fee_wallet: ManagedAddress,
         signer: ManagedAddress,
@@ -47,6 +48,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         self.start_date().set(start_date);
         self.end_date().set(end_date);
         self.refund_enabled().set(refund_enabled);
+        self.refund_deadline().set(refund_deadline);
         self.platform_fee_wallet().set(platform_fee_wallet);
         self.group_fee_wallet().set(group_fee_wallet);
         for payment_currency in payment_currencies {
@@ -77,11 +79,10 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
     ) {
         let caller = self.blockchain().get_caller();
         let signer = self.signer().get();
-        let pool_id = self.pool_id().get();
 
-        self.validate_deploy_signature(
+        self.validate_deposit_signature(
             timestamp,
-            &pool_id,
+            &self.pool_id().get(),
             &caller,
             &platform_fee_percentage,
             &group_fee_percentage,
@@ -268,6 +269,49 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         }
     }
 
+    #[payable("*")]
+    #[endpoint(refundPartial)]
+    fn refund_partial(
+        &self,
+        timestamp: u64,
+        signature: ManagedBuffer,
+        distribute_data: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
+    ) {
+        self.validate_owner_call(timestamp, signature);
+
+        for record in distribute_data {
+            let (address, token, amount) = record.into_tuple();
+            self.send_tokens(address, token, amount);
+        }
+    }
+
+    #[payable("*")]
+    #[endpoint(userRefund)]
+    fn user_refund(
+        &self,
+        timestamp: u64,
+        signature: ManagedBuffer,
+        token: TokenIdentifier,
+        amount: BigUint,
+    ) {
+        require!(self.refund_enabled().get(), "Refund is not enabled");
+        require!(
+            self.refund_deadline().get() > self.blockchain().get_block_timestamp(),
+            "Refund deadline has passed"
+        );
+        let caller = self.blockchain().get_caller();
+        self.validate_user_refund_call(
+            timestamp,
+            &self.pool_id().get(),
+            &caller,
+            &token,
+            &amount,
+            self.signer().get(),
+            signature,
+        );
+        self.send_tokens(caller, token, amount);
+    }
+
     #[endpoint(setPlatformFeeWallet)]
     fn set_platform_fee_wallet(
         &self,
@@ -303,6 +347,12 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         self.validate_owner_call_on_enabled_pool(timestamp, signature);
         require!(new_end_date > self.start_date().get(), "Invalid timestamp");
         self.end_date().set(new_end_date);
+    }
+
+    #[endpoint(setRefundEnabled)]
+    fn set_refund_enabled(&self, timestamp: u64, signature: ManagedBuffer, value: bool) {
+        self.validate_owner_call(timestamp, signature);
+        self.refund_enabled().set(value);
     }
 
     fn release_plaform(&self) {
@@ -393,14 +443,8 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
                 return OperationCompletionStatus::InterruptedBeforeOutOfGas;
             }
             let overcommitment_data = overcommited_iter.next().unwrap();
-            let (overcommiter, token_identifier, amount) = overcommitment_data.into_tuple();
-            self.send()
-                .direct_esdt(&overcommiter, &token_identifier, 0, &amount);
-
-            self.deposited_amount(&overcommiter, &token_identifier)
-                .update(|current| *current -= &amount);
-            self.decrease_totals(token_identifier, amount);
-
+            let (overcommiter, token, amount) = overcommitment_data.into_tuple();
+            self.send_tokens(overcommiter, token, amount);
             overcommited_index += 1;
             tx_index += 1;
         }

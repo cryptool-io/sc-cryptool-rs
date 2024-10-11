@@ -146,7 +146,7 @@ pub trait HelperModule: crate::storage::StorageModule {
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
     }
 
-    fn validate_deploy_signature(
+    fn validate_deposit_signature(
         &self,
         timestamp: u64,
         pool_id: &ManagedBuffer,
@@ -180,6 +180,31 @@ pub trait HelperModule: crate::storage::StorageModule {
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
     }
 
+    fn validate_user_refund_call(
+        &self,
+        timestamp: u64,
+        pool_id: &ManagedBuffer,
+        caller: &ManagedAddress,
+        token: &TokenIdentifier,
+        amount: &BigUint,
+        signer: ManagedAddress,
+        signature: ManagedBuffer,
+    ) {
+        let mut buffer = ManagedBuffer::new();
+        let result = timestamp.dep_encode(&mut buffer);
+        require!(result.is_ok(), "Could not encode");
+        let result = pool_id.dep_encode(&mut buffer);
+        require!(result.is_ok(), "Could not encode");
+        buffer.append(caller.as_managed_buffer());
+        require!(result.is_ok(), "Could not encode");
+        let result = token.dep_encode(&mut buffer);
+        require!(result.is_ok(), "Could not encode");
+        let result = amount.dep_encode(&mut buffer);
+        require!(result.is_ok(), "Could not encode");
+        self.crypto()
+            .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
+    }
+
     fn denominate_payment(&self, payment: &EsdtTokenPayment) -> BigUint {
         match self.currency_decimals(&payment.token_identifier).get() {
             decimals if decimals != DEFAULT_DECIMALS => {
@@ -201,6 +226,17 @@ pub trait HelperModule: crate::storage::StorageModule {
             .update(|current| *current -= &payment_denomination);
         self.total_amount_currency(&token_identifier)
             .update(|current| *current -= &amount);
+    }
+
+    fn send_tokens(&self, address: ManagedAddress, token: TokenIdentifier, amount: BigUint) {
+        require!(
+            self.deposited_amount(&address, &token).get() >= amount,
+            "Insufficient funds to withdraw"
+        );
+        self.deposited_amount(&address, &token)
+            .update(|current| *current -= &amount);
+        self.send().direct_esdt(&address, &token, 0, &amount);
+        self.decrease_totals(token, amount);
     }
 
     fn update_general(&self, caller: &ManagedAddress, payment: &EsdtTokenPayment) {

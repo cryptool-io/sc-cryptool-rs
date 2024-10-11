@@ -71,6 +71,7 @@ beforeEach(async () => {
       e.U64(121), // START DATE
       e.U64(122), // END DATE
       e.U64(1), // REFUND ENABLED
+      e.U64(122), // REFUND DEADLINE
       e.Addr(deployer), // PLATFORM FEE WALLET
       e.Addr(deployer), // GROUP FEE WALLET
       e.Addr(deployer), // SIGNATURE DEPLOYER
@@ -143,6 +144,7 @@ test("Deploy Pool with incorrect min deposit", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -170,6 +172,7 @@ test("Deploy Pool with incorrect max deposit", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -197,6 +200,7 @@ test("Deploy Pool with invalid Signature", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DUMMY),
@@ -224,6 +228,7 @@ test("Deploy Pool with too much delay", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_BEFORE),
@@ -251,6 +256,7 @@ test("Deploy Pool with invalid Soft, Hard Cap pair", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -278,6 +284,7 @@ test("Deploy Pool with invalid Min, Max Deposit pair", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -305,6 +312,7 @@ test("Deploy Pool with invalid Start, End Date pair", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE_INVALID),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -351,6 +359,7 @@ test("Deploy Pool with not whitelisted currency", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -380,6 +389,7 @@ test("Deploy Pool with same pool id twice", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -404,6 +414,7 @@ test("Deploy Pool with same pool id twice", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -433,6 +444,7 @@ test("Deploy Pool", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -507,6 +519,7 @@ test("Deploy Pool", async () => {
       e.kvs.Mapper("start_date").Value(e.U64(START_DATE)),
       e.kvs.Mapper("end_date").Value(e.U64(END_DATE)),
       e.kvs.Mapper("refund_enabled").Value(e.Bool(Boolean(REFUND_ENABLED))),
+      e.kvs.Mapper("refund_deadline").Value(e.U64(END_DATE)),
       e.kvs.Mapper("platform_fee_wallet").Value(e.Addr(deployer)),
       e.kvs.Mapper("group_fee_wallet").Value(e.Addr(deployer)),
       e.kvs
