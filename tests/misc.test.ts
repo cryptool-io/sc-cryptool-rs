@@ -71,6 +71,7 @@ beforeEach(async () => {
       e.U64(121), // START DATE
       e.U64(122), // END DATE
       e.U64(1), // REFUND ENABLED
+      e.U64(122), // END DATE
       e.Addr(deployer), // PLATFORM FEE WALLET
       e.Addr(deployer), // GROUP FEE WALLET
       e.Addr(deployer), // SIGNATURE DEPLOYER
@@ -118,6 +119,7 @@ test("Change to wrong start date", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(122), // END DATE
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -181,6 +183,7 @@ test("Change to wrong end date", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(122), // END DATE
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -244,6 +247,7 @@ test("Change start date", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(122), // END DATE
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -305,6 +309,7 @@ test("Change end date", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -366,6 +371,7 @@ test("Change platform fee wallet", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -451,6 +457,7 @@ test("Change platform fee wallet", async () => {
       e.kvs.Mapper("start_date").Value(e.U64(START_DATE)),
       e.kvs.Mapper("end_date").Value(e.U64(END_DATE)),
       e.kvs.Mapper("refund_enabled").Value(e.Bool(Boolean(REFUND_ENABLED))),
+      e.kvs.Mapper("refund_deadline").Value(e.U64(END_DATE)),
       e.kvs.Mapper("platform_fee_wallet").Value(e.Addr(alice)),
       e.kvs.Mapper("group_fee_wallet").Value(e.Addr(deployer)),
       e.kvs

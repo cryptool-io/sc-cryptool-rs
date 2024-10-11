@@ -82,6 +82,7 @@ beforeEach(async () => {
       e.U64(121), // START DATE
       e.U64(122), // END DATE
       e.U64(1), // REFUND ENABLED
+      e.U64(122), // REFUND DEADLINE
       e.Addr(deployer), // PLATFORM FEE WALLET
       e.Addr(deployer), // GROUP FEE WALLET
       e.Addr(deployer), // SIGNATURE DEPLOYER
@@ -133,6 +134,7 @@ test("Release with wrong signature", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -253,6 +255,7 @@ test("Release by non owner", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -378,6 +381,7 @@ test("Release with too much delay", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -505,6 +509,7 @@ test("Enable pool after release", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(platformWallet),
       e.Addr(groupWallet),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -712,6 +717,7 @@ test("Release in 1 call no overcommitment", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(platformWallet),
       e.Addr(groupWallet),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -902,6 +908,7 @@ test("Release in 2 calls no overcommitment", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(platformWallet),
       e.Addr(groupWallet),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -1103,6 +1110,7 @@ test("Release in 1 call with half deposit as overcommitment", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(platformWallet),
       e.Addr(groupWallet),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -1320,6 +1328,7 @@ test("Release in 3 calls with half deposit as overcommitment", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(platformWallet),
       e.Addr(groupWallet),
       e.TopBuffer(SIGNATURE_DEPLOYER),

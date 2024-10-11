@@ -79,6 +79,7 @@ beforeEach(async () => {
       e.U64(121), // START DATE
       e.U64(122), // END DATE
       e.U64(1), // REFUND ENABLED
+      e.U64(122), // REFUND DEADLINE
       e.Addr(deployer), // PLATFORM FEE WALLET
       e.Addr(deployer), // GROUP FEE WALLET
       e.Addr(deployer), // SIGNATURE DEPLOYER
@@ -133,6 +134,7 @@ test("Retrieve with wrong signature", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(platformWallet),
       e.Addr(groupWallet),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -272,6 +274,7 @@ test("Retrieve by non owner", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(platformWallet),
       e.Addr(groupWallet),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -413,6 +416,7 @@ test("Retrieve with too much delay", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(platformWallet),
       e.Addr(groupWallet),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -552,6 +556,7 @@ test("Retrieve before release", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(platformWallet),
       e.Addr(groupWallet),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -684,6 +689,7 @@ test("Retrieve after release in 3 calls with half deposit as overcommitment", as
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(platformWallet),
       e.Addr(groupWallet),
       e.TopBuffer(SIGNATURE_DEPLOYER),
