@@ -94,39 +94,46 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         require!(self.is_registered(&caller), "Wallet not registered");
         let payment = self.call_value().single_esdt();
         self.validate_deposit(&payment, &timestamp);
-        self.update_general(&caller, &payment);
+        self.increase_general(&caller, &payment);
 
-        let payment_denomination = self.denominate_payment(&payment);
+        let payment_denomination =
+            self.denominate_payment(&payment.token_identifier, &payment.amount);
         require!(
             self.total_amount().get() + &payment_denomination
                 <= self.hard_cap().get() * 10_u64.pow(DEFAULT_DECIMALS),
             "Hard cap threshold would be exceeded"
         );
 
-        self.total_amount()
-            .update(|current| *current += &payment_denomination);
-        self.total_amount_currency(&payment.token_identifier)
-            .update(|current| *current += &payment.amount);
+        self.increase_totals(&payment.token_identifier, &payment.amount);
 
-        self.update_platform_fee(
+        self.increase_platform_fee(
             &caller,
             &payment,
             &payment_denomination,
             &platform_fee_percentage,
         );
 
-        self.update_group_fee(
+        self.increase_group_fee(
             &caller,
             &payment,
             &payment_denomination,
             &group_fee_percentage,
         );
 
-        match ambassador.into_option() {
-            Some(ambassador) => {
-                self.update_ambassador_fee(&caller, &payment, ambassador);
+        if let Some(ambassador) = ambassador.into_option() {
+            let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
+            if !self.address_to_ambassador(&caller).is_empty() {
+                require!(
+                    self.address_to_ambassador(&caller).get() == ambassador_wallet,
+                    "Ambassador wallet mismatch"
+                );
             }
-            None => {}
+            self.increase_ambassador_fee(
+                &caller,
+                &payment,
+                ambassador_percentage,
+                ambassador_wallet,
+            );
         }
     }
 
@@ -234,7 +241,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         }
         self.send().direct_multi(&caller, &payments);
         for payment in &payments {
-            self.decrease_totals(payment.token_identifier, payment.amount);
+            self.decrease_totals(&payment.token_identifier, &payment.amount);
         }
     }
 
@@ -269,37 +276,15 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         }
     }
 
-    #[payable("*")]
-    #[endpoint(refundPartial)]
-    fn refund_partial(
-        &self,
-        timestamp: u64,
-        signature: ManagedBuffer,
-        distribute_data: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
-    ) {
-        self.validate_owner_call(timestamp, signature);
-
-        for record in distribute_data {
-            let (address, token, amount) = record.into_tuple();
-            self.send_tokens(address, token, amount);
-        }
-    }
-
-    #[payable("*")]
     #[endpoint(userRefund)]
-    fn user_refund(
-        &self,
-        timestamp: u64,
-        signature: ManagedBuffer,
-        token: TokenIdentifier,
-        amount: BigUint,
-    ) {
+    fn user_refund(&self, timestamp: u64, signature: ManagedBuffer, token: TokenIdentifier) {
         require!(self.refund_enabled().get(), "Refund is not enabled");
         require!(
             self.refund_deadline().get() > self.blockchain().get_block_timestamp(),
             "Refund deadline has passed"
         );
         let caller = self.blockchain().get_caller();
+        let amount = self.deposited_amount(&caller, &token).take();
         self.validate_user_refund_call(
             timestamp,
             &self.pool_id().get(),
@@ -309,7 +294,19 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             self.signer().get(),
             signature,
         );
-        self.send_tokens(caller, token, amount);
+        self.release_token_user(&caller, &token, &amount);
+    }
+
+    #[endpoint(adminRefund)]
+    fn admin_refund(&self, timestamp: u64, signature: ManagedBuffer, address: ManagedAddress) {
+        self.validate_owner_call(timestamp, signature);
+        let mut payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
+        for token in self.deposited_currencies(&address).iter() {
+            let amount = self.deposited_amount(&address, &token).get();
+            let payment = self.release_token_admin(&address, &token, &amount);
+            payments.push(payment);
+        }
+        self.send().direct_multi(&address, &payments);
     }
 
     #[endpoint(setPlatformFeeWallet)]
@@ -366,7 +363,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         self.send()
             .direct_multi(&self.platform_fee_wallet().get(), &payments);
         for payment in &payments {
-            self.decrease_totals(payment.token_identifier, payment.amount);
+            self.decrease_totals(&payment.token_identifier, &payment.amount);
         }
     }
 
@@ -381,7 +378,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         self.send()
             .direct_multi(&self.group_fee_wallet().get(), &payments);
         for payment in &payments {
-            self.decrease_totals(payment.token_identifier, payment.amount);
+            self.decrease_totals(&payment.token_identifier, &payment.amount);
         }
     }
 
@@ -415,7 +412,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             }
             self.send().direct_multi(&ambassador, &payments);
             for payment in &payments {
-                self.decrease_totals(payment.token_identifier, payment.amount);
+                self.decrease_totals(&payment.token_identifier, &payment.amount);
             }
             release_ambassador_index += 1;
             tx_index += 1;
@@ -444,7 +441,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             }
             let overcommitment_data = overcommited_iter.next().unwrap();
             let (overcommiter, token, amount) = overcommitment_data.into_tuple();
-            self.send_tokens(overcommiter, token, amount);
+            // self.return_tokens(overcommiter, token, amount);
             overcommited_index += 1;
             tx_index += 1;
         }

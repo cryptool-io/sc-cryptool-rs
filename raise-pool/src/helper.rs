@@ -75,11 +75,11 @@ pub trait HelperModule: crate::storage::StorageModule {
         let mut total_caller_amount = BigUint::zero();
         for currency in self.deposited_currencies(&caller).iter() {
             let deposited_amount = self.deposited_amount(&caller, &currency).get();
-            let payment = EsdtTokenPayment::new(currency, 0, deposited_amount);
-            let denominated_amount = self.denominate_payment(&payment);
+            let denominated_amount = self.denominate_payment(&currency, &deposited_amount);
             total_caller_amount += denominated_amount;
         }
-        let payment_denomination = self.denominate_payment(&payment);
+        let payment_denomination =
+            self.denominate_payment(&payment.token_identifier, &payment.amount);
         require!(
             total_caller_amount + &payment_denomination
                 <= self.max_deposit().get() * 10_u64.pow(DEFAULT_DECIMALS),
@@ -93,7 +93,7 @@ pub trait HelperModule: crate::storage::StorageModule {
         );
 
         let increment = self.deposit_increments().get();
-        let increment_denominted = self.match_denomination(increment, &payment);
+        let increment_denominted = self.match_denomination(increment, payment);
         require!(
             &payment.amount % &increment_denominted == 0,
             "Payment amount is not a multiple of the deposit increment"
@@ -141,7 +141,7 @@ pub trait HelperModule: crate::storage::StorageModule {
         require!(result.is_ok(), "Could not encode");
         let result = pool_id.dep_encode(&mut buffer);
         require!(result.is_ok(), "Could not encode");
-        buffer.append(&caller.as_managed_buffer());
+        buffer.append(caller.as_managed_buffer());
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
     }
@@ -162,19 +162,16 @@ pub trait HelperModule: crate::storage::StorageModule {
         require!(result.is_ok(), "Could not encode");
         let result = pool_id.dep_encode(&mut buffer);
         require!(result.is_ok(), "Could not encode");
-        buffer.append(&caller.as_managed_buffer());
+        buffer.append(caller.as_managed_buffer());
         let result = platform_fee_percentage.dep_encode(&mut buffer);
         require!(result.is_ok(), "Could not encode");
         let result = group_fee_percentage.dep_encode(&mut buffer);
         require!(result.is_ok(), "Could not encode");
-        match ambassador.into_option() {
-            Some(ambassador) => {
-                let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
-                let result = ambassador_percentage.dep_encode(&mut buffer);
-                require!(result.is_ok(), "Could not encode");
-                buffer.append(&ambassador_wallet.as_managed_buffer());
-            }
-            None => {}
+        if let Some(ambassador) = ambassador.into_option() {
+            let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
+            let result = ambassador_percentage.dep_encode(&mut buffer);
+            require!(result.is_ok(), "Could not encode");
+            buffer.append(ambassador_wallet.as_managed_buffer());
         }
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
@@ -205,12 +202,12 @@ pub trait HelperModule: crate::storage::StorageModule {
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
     }
 
-    fn denominate_payment(&self, payment: &EsdtTokenPayment) -> BigUint {
-        match self.currency_decimals(&payment.token_identifier).get() {
+    fn denominate_payment(&self, token: &TokenIdentifier, amount: &BigUint) -> BigUint {
+        match self.currency_decimals(token).get() {
             decimals if decimals != DEFAULT_DECIMALS => {
-                &payment.amount * 10_u64.pow(DEFAULT_DECIMALS - decimals)
+                amount * 10_u64.pow(DEFAULT_DECIMALS - decimals)
             }
-            _ => payment.amount.clone(),
+            _ => amount.clone(),
         }
     }
 
@@ -219,37 +216,41 @@ pub trait HelperModule: crate::storage::StorageModule {
         amount * 10_u64.pow(decimals)
     }
 
-    fn decrease_totals(&self, token_identifier: TokenIdentifier, amount: BigUint) {
-        let payment = EsdtTokenPayment::new(token_identifier.clone(), 0, amount.clone());
-        let payment_denomination = self.denominate_payment(&payment);
+    fn increase_totals(&self, token_identifier: &TokenIdentifier, amount: &BigUint) {
+        let payment_denomination = self.denominate_payment(token_identifier, amount);
         self.total_amount()
-            .update(|current| *current -= &payment_denomination);
-        self.total_amount_currency(&token_identifier)
-            .update(|current| *current -= &amount);
+            .update(|current| *current += payment_denomination);
+        self.total_amount_currency(token_identifier)
+            .update(|current| *current += amount);
     }
 
-    fn send_tokens(&self, address: ManagedAddress, token: TokenIdentifier, amount: BigUint) {
-        require!(
-            self.deposited_amount(&address, &token).get() >= amount,
-            "Insufficient funds to withdraw"
-        );
-        self.deposited_amount(&address, &token)
-            .update(|current| *current -= &amount);
-        self.send().direct_esdt(&address, &token, 0, &amount);
-        self.decrease_totals(token, amount);
+    fn decrease_totals(&self, token_identifier: &TokenIdentifier, amount: &BigUint) {
+        let payment_denomination = self.denominate_payment(token_identifier, amount);
+        self.total_amount()
+            .update(|current| *current -= payment_denomination);
+        self.total_amount_currency(token_identifier)
+            .update(|current| *current -= amount);
     }
 
-    fn update_general(&self, caller: &ManagedAddress, payment: &EsdtTokenPayment) {
-        self.addresses().insert(caller.clone());
-        self.deposited_currencies(&caller)
+    fn increase_general(&self, address: &ManagedAddress, payment: &EsdtTokenPayment) {
+        self.addresses().insert(address.clone());
+        self.deposited_currencies(address)
             .insert(payment.token_identifier.clone());
-        self.deposited_amount(&caller, &payment.token_identifier)
+        self.deposited_amount(address, &payment.token_identifier)
             .update(|current| *current += &payment.amount);
     }
 
-    fn update_platform_fee(
+    fn remove_general(&self, address: &ManagedAddress, token: &TokenIdentifier) {
+        if self.deposited_currencies(address).is_empty() {
+            self.addresses().swap_remove(address);
+        }
+        self.deposited_currencies(address).swap_remove(token);
+        self.deposited_amount(address, token).clear();
+    }
+
+    fn increase_platform_fee(
         &self,
-        caller: &ManagedAddress,
+        address: &ManagedAddress,
         payment: &EsdtTokenPayment,
         payment_denomination: &BigUint,
         platform_fee_percentage: &BigUint,
@@ -257,7 +258,7 @@ pub trait HelperModule: crate::storage::StorageModule {
         let platform_fee_amount = (&payment.amount * platform_fee_percentage) / MAX_PERCENTAGE;
         let denominated_platform_fee_amount =
             (payment_denomination * platform_fee_percentage) / MAX_PERCENTAGE;
-        self.address_platform_fee(&caller, &payment.token_identifier)
+        self.address_platform_fee(address, &payment.token_identifier)
             .update(|current| *current += &platform_fee_amount);
         self.platform_fee(&payment.token_identifier)
             .update(|current| *current += &platform_fee_amount);
@@ -265,9 +266,18 @@ pub trait HelperModule: crate::storage::StorageModule {
             .update(|current| *current += &denominated_platform_fee_amount);
     }
 
-    fn update_group_fee(
+    fn remove_platform_fee(&self, address: &ManagedAddress, token: &TokenIdentifier) {
+        let fee_amount = self.address_platform_fee(address, token).take();
+        let fee_amount_denominated = self.denominate_payment(token, &fee_amount);
+        self.platform_fee(token)
+            .update(|current| *current -= fee_amount);
+        self.total_platform_fee()
+            .update(|current| *current -= fee_amount_denominated);
+    }
+
+    fn increase_group_fee(
         &self,
-        caller: &ManagedAddress,
+        address: &ManagedAddress,
         payment: &EsdtTokenPayment,
         payment_denomination: &BigUint,
         group_fee_percentage: &BigUint,
@@ -275,7 +285,7 @@ pub trait HelperModule: crate::storage::StorageModule {
         let group_fee_amount = (&payment.amount * group_fee_percentage) / MAX_PERCENTAGE;
         let denominated_group_fee_amount =
             (payment_denomination * group_fee_percentage) / MAX_PERCENTAGE;
-        self.address_group_fee(&caller, &payment.token_identifier)
+        self.address_group_fee(address, &payment.token_identifier)
             .update(|current| *current += &group_fee_amount);
         self.group_fee(&payment.token_identifier)
             .update(|current| *current += &group_fee_amount);
@@ -283,16 +293,25 @@ pub trait HelperModule: crate::storage::StorageModule {
             .update(|current| *current += &denominated_group_fee_amount);
     }
 
-    fn update_ambassador_fee(
+    fn remove_group_fee(&self, address: &ManagedAddress, token: &TokenIdentifier) {
+        let fee_amount = self.address_group_fee(address, token).take();
+        let fee_amount_denominated = self.denominate_payment(token, &fee_amount);
+        self.group_fee(token)
+            .update(|current| *current -= fee_amount);
+        self.total_group_fee()
+            .update(|current| *current -= fee_amount_denominated);
+    }
+
+    fn increase_ambassador_fee(
         &self,
-        caller: &ManagedAddress,
+        address: &ManagedAddress,
         payment: &EsdtTokenPayment,
-        ambassador: MultiValue2<BigUint, ManagedAddress>,
+        ambassador_percentage: BigUint,
+        ambassador_wallet: ManagedAddress,
     ) {
-        let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
         self.ambassadors().insert(ambassador_wallet.clone());
         let ambassador_amount = (&payment.amount * &ambassador_percentage) / MAX_PERCENTAGE;
-        self.address_ambassador_fee(&caller, &payment.token_identifier)
+        self.address_ambassador_fee(address, &payment.token_identifier)
             .update(|current| *current += &ambassador_amount);
         self.ambassador_fee(&payment.token_identifier)
             .update(|current| *current += &ambassador_amount);
@@ -300,6 +319,56 @@ pub trait HelperModule: crate::storage::StorageModule {
             .update(|current| *current += &ambassador_amount);
         self.ambassador_currencies(&ambassador_wallet)
             .insert(payment.token_identifier.clone());
+        if self.address_to_ambassador(address).is_empty() {
+            self.address_to_ambassador(address)
+                .set(ambassador_wallet.clone());
+        }
+    }
+
+    fn decrease_ambassador_fee(&self, address: &ManagedAddress, token: &TokenIdentifier) {
+        let ambassador_amount = self.address_ambassador_fee(address, token).take();
+        let ambassador_wallet = self.address_to_ambassador(address).get();
+        self.ambassador_fee(token)
+            .update(|current| *current -= &ambassador_amount);
+        self.referral_ambassador_fee(&ambassador_wallet, token)
+            .update(|current| *current -= &ambassador_amount);
+        if self
+            .referral_ambassador_fee(&ambassador_wallet, token)
+            .get()
+            == 0
+        {
+            self.ambassador_currencies(&ambassador_wallet)
+                .swap_remove(token);
+        }
+    }
+
+    fn release_token_user(
+        &self,
+        address: &ManagedAddress,
+        token: &TokenIdentifier,
+        amount: &BigUint,
+    ) {
+        self.deposited_currencies(address).swap_remove(token);
+        self.decrease_totals(token, amount);
+        self.remove_general(address, token);
+        self.send().direct_esdt(address, token, 0, amount);
+    }
+
+    fn release_token_admin(
+        &self,
+        address: &ManagedAddress,
+        token: &TokenIdentifier,
+        amount: &BigUint,
+    ) -> EsdtTokenPayment {
+        self.deposited_currencies(address).swap_remove(token);
+        self.decrease_totals(token, amount);
+        self.remove_general(address, token);
+        self.remove_platform_fee(address, token);
+        self.remove_group_fee(address, token);
+        if !self.address_to_ambassador(address).is_empty() {
+            self.decrease_ambassador_fee(address, token);
+        }
+        EsdtTokenPayment::new(token.clone(), 0, amount.clone())
     }
 
     fn is_registered(&self, address: &ManagedAddress) -> bool {

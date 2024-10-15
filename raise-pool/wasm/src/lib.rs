@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           50
+// Endpoints:                           51
 // Async Callback (empty):               1
-// Total number of exported functions:  53
+// Total number of exported functions:  54
 
 #![no_std]
 
@@ -25,8 +25,8 @@ multiversx_sc_wasm_adapter::endpoints! {
         release => release
         retrieve => retrieve
         distribute => distribute
-        refundPartial => refund_partial
         userRefund => user_refund
+        adminRefund => admin_refund
         setPlatformFeeWallet => set_platform_fee_wallet
         enableRaisePool => enable_raise_pool
         setStartTimestamp => set_start_date
@@ -66,6 +66,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         getAmbassadorFee => ambassador_fee
         getAmbassadorCurrencies => ambassador_currencies
         getReferralAmbassadorFee => referral_ambassador_fee
+        getAddressToAmbassador => address_to_ambassador
         getOvercommitedIndex => overcommited_index
         getReleaseState => release_state
         raisePoolEnabled => raise_pool_enabled

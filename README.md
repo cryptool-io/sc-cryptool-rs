@@ -67,6 +67,17 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
       So in total 2 payments are made when calling this endpoint, first one with Egld as an Esdt and then the Esdt to be distributed.
     - Signature data format: signed(timestamp + pool_id + deployer_address).
 
+- **refundPartial** (_timestamp: u64, signature: ManagedBuffer, distribute_data: MMultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>_)
+
+    - This enpdpoint allows the owner to refund token amounts to wallet that deposited funds according to distribute data
+    - Signature data format: signed(timestamp + pool_id + deployer_address).
+
+- **user_refund**(_timestamp: u64, signature: ManagedBuffer, token: TokenIdentifier, amount: BigUint_)
+
+    - This enpdpoint allows the user to refund part or all of his deposited funds.
+    - Only available if the refund is enabled and the refund deadline has not passed.
+    - Signature data format: signed(timestamp + pool_id + deployer_address + token + amount).
+
 ## User Callable Endpoints on Production Wallet Database SC:
 
 - **registerWallet** (_timestamp: u64, user_signature: ManagedBuffer_)

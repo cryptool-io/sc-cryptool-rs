@@ -80,7 +80,7 @@ pub trait StorageModule {
 
     #[view(getAddresses)]
     #[storage_mapper("addresses")]
-    fn addresses(&self) -> SetMapper<ManagedAddress>;
+    fn addresses(&self) -> UnorderedSetMapper<ManagedAddress>;
 
     #[view(getRefundIndex)]
     #[storage_mapper("refund_index")]
@@ -173,6 +173,10 @@ pub trait StorageModule {
         ambassador: &ManagedAddress,
         token: &TokenIdentifier,
     ) -> SingleValueMapper<BigUint>;
+
+    #[view(getAddressToAmbassador)]
+    #[storage_mapper("address_to_ambassador")]
+    fn address_to_ambassador(&self, address: &ManagedAddress) -> SingleValueMapper<ManagedAddress>;
 
     #[view(getOvercommitedIndex)]
     #[storage_mapper("overcommited_index")]
