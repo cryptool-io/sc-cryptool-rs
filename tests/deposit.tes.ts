@@ -1289,7 +1289,7 @@ test("Deposit Currency1 with Bob", async () => {
       e.kvs.Mapper("pool_id").Value(e.Str(POOL_ID)),
       e.kvs.Mapper("release_state").Value(e.Usize(0)),
       e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(true)),
-      e.kvs.Mapper("addresses").Set([[1, e.Addr(bob)]]),
+      e.kvs.Mapper("addresses").UnorderedSet([e.Addr(bob)]),
       e.kvs
         .Mapper("deposited_currencies", e.Addr(bob))
         .UnorderedSet([e.Str(CURRENCY1)]),
@@ -1330,6 +1330,9 @@ test("Deposit Currency1 with Bob", async () => {
         .Value(
           e.U((CURRENCY1_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
         ),
+      e.kvs
+        .Mapper("address_to_ambassador", e.Addr(bob))
+        .Value(e.Addr(deployer)),
       e.kvs
         .Mapper("ambassador_fee", e.Str(CURRENCY1))
         .Value(
@@ -1495,7 +1498,7 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
       e.kvs.Mapper("pool_id").Value(e.Str(POOL_ID)),
       e.kvs.Mapper("release_state").Value(e.Usize(0)),
       e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(true)),
-      e.kvs.Mapper("addresses").Set([[1, e.Addr(bob)]]),
+      e.kvs.Mapper("addresses").UnorderedSet([e.Addr(bob)]),
       e.kvs
         .Mapper("deposited_currencies", e.Addr(bob))
         .UnorderedSet([e.Str(CURRENCY1), e.Str(CURRENCY2)]),
@@ -1533,6 +1536,9 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
           e.U((CURRENCY2_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
         ),
       e.kvs.Mapper("total_platform_fee").Value(e.U(total_platform_fee)),
+      e.kvs
+        .Mapper("address_to_ambassador", e.Addr(bob))
+        .Value(e.Addr(deployer)),
       e.kvs
         .Mapper("address_group_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(e.U((CURRENCY1_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
@@ -1775,10 +1781,7 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
       e.kvs.Mapper("pool_id").Value(e.Str(POOL_ID)),
       e.kvs.Mapper("release_state").Value(e.Usize(0)),
       e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(true)),
-      e.kvs.Mapper("addresses").Set([
-        [1, e.Addr(bob)],
-        [2, e.Addr(carol)],
-      ]),
+      e.kvs.Mapper("addresses").UnorderedSet([e.Addr(bob), e.Addr(carol)]),
       e.kvs
         .Mapper("deposited_currencies", e.Addr(bob))
         .UnorderedSet([e.Str(CURRENCY1), e.Str(CURRENCY2)]),
@@ -1804,6 +1807,9 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
       e.kvs
         .Mapper("total_amount_currency", e.Str(CURRENCY3))
         .Value(e.U(CURRENCY3_DEPOSIT_AMOUNT)),
+      e.kvs
+        .Mapper("address_to_ambassador", e.Addr(bob))
+        .Value(e.Addr(deployer)),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(
@@ -1987,7 +1993,7 @@ test("Deposit automatically with random parameters", async () => {
 
   type TripleBigIntArray = [BigInt, BigInt, BigInt];
   var walletsKvs: Kvs[] = [];
-  var addresses: [number | bigint, Encodable][] = [];
+  var addresses: Encodable[] = [];
   var totalAmount: bigint = BigInt(0);
   var totalPlatformFee: bigint = BigInt(0);
   var totalGroupFee: bigint = BigInt(0);
@@ -2106,7 +2112,7 @@ test("Deposit automatically with random parameters", async () => {
           e.U((depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE),
         ),
     );
-    addresses.push([i + 1, e.Addr(genericWallet)]);
+    addresses.push(e.Addr(genericWallet));
 
     totalAmount += depositAmountDenominated;
     currenciesTotal[currencyRand] += depositAmountInCurrency;
@@ -2133,6 +2139,12 @@ test("Deposit automatically with random parameters", async () => {
                 MAX_PERCENTAGE,
             ),
           ),
+      );
+
+      walletsKvs.push(
+        e.kvs
+          .Mapper("address_to_ambassador", e.Addr(genericWallet))
+          .Value(e.Addr(ambassadorAddress)),
       );
 
       const ambassadorFeeInCurrency =
@@ -2167,7 +2179,7 @@ test("Deposit automatically with random parameters", async () => {
   }
 
   const amountsKvs = [
-    e.kvs.Mapper("addresses").Set(addresses),
+    e.kvs.Mapper("addresses").UnorderedSet(addresses),
     e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
     e.kvs
       .Mapper("platform_fee", e.Str(CURRENCY1))
@@ -2309,7 +2321,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
 
   type TripleBigIntArray = [BigInt, BigInt, BigInt];
   var walletsKvs: Kvs[] = [];
-  var addresses: [number | bigint, Encodable][] = [];
+  var addresses: Encodable[] = [];
   var totalAmount: bigint = BigInt(0);
   var totalPlatformFee: bigint = BigInt(0);
   var totalGroupFee: bigint = BigInt(0);
@@ -2412,7 +2424,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
           e.U((depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE),
         ),
     );
-    addresses.push([i + 1, e.Addr(genericWallet)]);
+    addresses.push(e.Addr(genericWallet));
 
     totalAmount += depositAmountDenominated;
     currenciesTotal[currencyRand] += depositAmountInCurrency;
@@ -2437,6 +2449,12 @@ test("Deposit automatically with deployer as ambassador", async () => {
             (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE,
           ),
         ),
+    );
+
+    walletsKvs.push(
+      e.kvs
+        .Mapper("address_to_ambassador", e.Addr(genericWallet))
+        .Value(e.Addr(deployer)),
     );
 
     const ambassadorFeeInCurrency =
@@ -2484,7 +2502,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
   }
 
   const amountsKvs = [
-    e.kvs.Mapper("addresses").Set(addresses),
+    e.kvs.Mapper("addresses").UnorderedSet(addresses),
     e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
     e.kvs
       .Mapper("platform_fee", e.Str(CURRENCY1))

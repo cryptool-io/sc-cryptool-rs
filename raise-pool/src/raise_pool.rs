@@ -168,8 +168,8 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             let address = addresses_iter.next().unwrap();
             let mut payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
             for token_identifier in self.deposited_currencies(&address).iter() {
-                let amount = self.deposited_amount(&address, &token_identifier).get();
-                payments.push(EsdtTokenPayment::new(token_identifier, 0, amount));
+                let payment = self.release_token_admin(&address, &token_identifier);
+                payments.push(payment);
             }
             self.send().direct_multi(&address, &payments);
             refund_index += 1;
@@ -302,8 +302,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         self.validate_owner_call(timestamp, signature);
         let mut payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
         for token in self.deposited_currencies(&address).iter() {
-            let amount = self.deposited_amount(&address, &token).get();
-            let payment = self.release_token_admin(&address, &token, &amount);
+            let payment = self.release_token_admin(&address, &token);
             payments.push(payment);
         }
         self.send().direct_multi(&address, &payments);

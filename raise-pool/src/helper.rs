@@ -358,17 +358,17 @@ pub trait HelperModule: crate::storage::StorageModule {
         &self,
         address: &ManagedAddress,
         token: &TokenIdentifier,
-        amount: &BigUint,
     ) -> EsdtTokenPayment {
+        let amount = self.deposited_amount(address, token).get();
         self.deposited_currencies(address).swap_remove(token);
-        self.decrease_totals(token, amount);
+        self.decrease_totals(token, &amount);
         self.remove_general(address, token);
         self.remove_platform_fee(address, token);
         self.remove_group_fee(address, token);
         if !self.address_to_ambassador(address).is_empty() {
             self.decrease_ambassador_fee(address, token);
         }
-        EsdtTokenPayment::new(token.clone(), 0, amount.clone())
+        EsdtTokenPayment::new(token.clone(), 0, amount)
     }
 
     fn is_registered(&self, address: &ManagedAddress) -> bool {

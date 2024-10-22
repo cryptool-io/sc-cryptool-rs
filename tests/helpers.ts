@@ -47,6 +47,6 @@ export const AMBASSADOR_FEE = BigInt(300);
 export const PLATFORM_FEE2 = BigInt(300);
 export const GROUP_FEE2 = BigInt(400);
 export const CURRENCY1_DISTRIBUTE_AMOUNT = BigInt(300 * 10 ** DECIMALS1);
-export const EGLD_AS_ESDT = "ELRONDesdtEGLD-000000";
+export const EGLD_AS_ESDT = "EGLD-000000";
 export const ONE_EGLD = BigInt(10 ** 18);
 export const ONE_TENTH_EGLD = BigInt(10 ** 17);

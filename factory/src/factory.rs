@@ -172,7 +172,7 @@ pub trait Factory:
         require!(result.is_ok(), "Could not encode");
         let result = pool_id.dep_encode(&mut buffer);
         require!(result.is_ok(), "Could not encode");
-        buffer.append(&caller.as_managed_buffer());
+        buffer.append(caller.as_managed_buffer());
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
     }

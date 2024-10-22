@@ -55,7 +55,10 @@ let raisePoolDummyContract: LSContract;
 let walletDababaseContract: LSContract;
 
 beforeEach(async () => {
-  world = await LSWorld.start();
+  world = await LSWorld.start({
+    binaryPath:
+      "/home/andrei/buidly/cryptool/xSuite/xsuite-lightsimulnet-linux-amd64/bin/lsproxy",
+  });
   await world.setCurrentBlockInfo({
     timestamp: TIMESTAMP,
   });
@@ -557,13 +560,6 @@ test("Distribute", async () => {
   bob = await world.createWallet();
   carol = await world.createWallet();
 
-  // SIMULATE EGLD AS ESDT TRANSFER
-  await deployer.transfer({
-    receiver: raisePoolContract,
-    gasLimit: 50_000_000,
-    value: ONE_TENTH_EGLD,
-  });
-
   await deployer.callContract({
     callee: raisePoolContract,
     gasLimit: 50_000_000,
@@ -614,7 +610,7 @@ test("Distribute", async () => {
 
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
-    hasKvs: [
+    kvs: [
       e.kvs.Mapper("soft_cap").Value(e.I(SOFT_CAP)),
       e.kvs.Mapper("hard_cap").Value(e.I(HARD_CAP)),
       e.kvs.Mapper("min_deposit").Value(e.I(MIN_DEPOSIT)),
@@ -647,11 +643,6 @@ test("Distribute", async () => {
       e.kvs
         .Mapper("wallet_database_address")
         .Value(e.Addr(walletDababaseContract)),
-      // DUMMY VALUE AS XSUITE NOT YET UPDATED TO RECEIVE AND SEND EGLD AS ESDT (WHY THE RANDOM VALUE ???)
-      // NOT MAPPED CORRECTLY
-      // e.kvs
-      //   .Mapper("ELRONDesdtEGLD-000000")
-      //   .Value(e.U(21803166151409151951634432)),
     ],
   });
 });
