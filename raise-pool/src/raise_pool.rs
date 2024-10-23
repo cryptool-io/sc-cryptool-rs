@@ -165,7 +165,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
                 return OperationCompletionStatus::InterruptedBeforeOutOfGas;
             }
 
-            let address = addresses_iter.next().unwrap();
+            let address = addresses_iter.next().clone().unwrap();
             let mut payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
             for token_identifier in self.deposited_currencies(&address).iter() {
                 let payment = self.release_token_admin(&address, &token_identifier);
@@ -175,7 +175,8 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             refund_index += 1;
             tx_index += 1;
         }
-        self.refund_index().set(addresses_len);
+        self.refund_index().set(0);
+        self.addresses().clear();
         OperationCompletionStatus::Completed
     }
 

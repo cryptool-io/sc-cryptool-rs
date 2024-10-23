@@ -241,9 +241,6 @@ pub trait HelperModule: crate::storage::StorageModule {
     }
 
     fn remove_general(&self, address: &ManagedAddress, token: &TokenIdentifier) {
-        if self.deposited_currencies(address).is_empty() {
-            self.addresses().swap_remove(address);
-        }
         self.deposited_currencies(address).swap_remove(token);
         self.deposited_amount(address, token).clear();
     }
