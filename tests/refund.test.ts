@@ -95,7 +95,7 @@ beforeEach(async () => {
       e.Str("Dummy2"), // CURRENCY2
       e.U64(0), // DECIMALS2
     ],
-    gasLimit: 10_000_000,
+    gasLimit: 50_000_000,
   }));
 
   ({ contract: factoryContract } = await deployer.deployContract({
@@ -859,8 +859,8 @@ afterEach(async () => {
 //     .assertFail({ code: 4, message: "Soft cap exceeded" });
 // });
 
-test("Refund in 1 call", async () => {
-  const numberOfDeposits = 1;
+test("Refund in 1 call with ambassador", async () => {
+  const numberOfDeposits = 140;
 
   await deployer.callContract({
     callee: factoryContract,
@@ -918,8 +918,8 @@ test("Refund in 1 call", async () => {
 
   const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
+  var ambassadorsSet: [number, Encodable][] = [];
   var wallets: Encodable[] = [];
-  var walletsKvs: Kvs[] = [];
   var currencies: string[] = [];
   var depositedAmounts: bigint[] = [];
 
@@ -976,6 +976,7 @@ test("Refund in 1 call", async () => {
     wallets.push(genericWallet);
     depositedAmounts.push(depositAmountInCurrency);
     currencies.push(currency);
+    ambassadorsSet.push([i + 1, e.Addr(ambassadorAddress)]);
 
     /*
     console.log(
@@ -997,7 +998,7 @@ test("Refund in 1 call", async () => {
 
   let state = await deployer.callContract({
     callee: raisePoolContract,
-    gasLimit: 500_000_000,
+    gasLimit: 5_000_000_000,
     funcName: "refund",
     funcArgs: [e.U64(TIMESTAMP_AFTER), e.TopBuffer(SIGNATURE_AFTER)],
   });
@@ -1031,6 +1032,8 @@ test("Refund in 1 call", async () => {
     e.kvs
       .Mapper("wallet_database_address")
       .Value(e.Addr(walletDababaseContract)),
+    e.kvs.Mapper("refund_index").Value(e.U64(0)),
+    e.kvs.Mapper("ambassadors").Set(ambassadorsSet),
   ];
 
   for (let i = 0; i < numberOfDeposits; i++) {
@@ -1042,7 +1045,7 @@ test("Refund in 1 call", async () => {
 
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
-    kvs: [...baseKvs, ...walletsKvs],
+    kvs: [...baseKvs],
   });
 }, 200000);
 
