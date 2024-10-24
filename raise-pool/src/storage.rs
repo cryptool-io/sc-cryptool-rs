@@ -141,7 +141,7 @@ pub trait StorageModule {
 
     #[view(getAmbassadors)]
     #[storage_mapper("ambassadors")]
-    fn ambassadors(&self) -> SetMapper<ManagedAddress>;
+    fn ambassadors(&self) -> UnorderedSetMapper<ManagedAddress>;
 
     #[view(getReleaseAmbassadorIndex)]
     #[storage_mapper("release_ambassador_index")]

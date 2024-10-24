@@ -299,14 +299,22 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
     }
 
     #[endpoint(adminRefund)]
-    fn admin_refund(&self, timestamp: u64, signature: ManagedBuffer, address: ManagedAddress) {
+    fn admin_refund(
+        &self,
+        timestamp: u64,
+        signature: ManagedBuffer,
+        addresses: MultiValueEncoded<ManagedAddress>,
+    ) {
         self.validate_owner_call(timestamp, signature);
-        let mut payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
-        for token in self.deposited_currencies(&address).iter() {
-            let payment = self.release_token_admin(&address, &token);
-            payments.push(payment);
+        for address in addresses {
+            let mut payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
+            for token in self.deposited_currencies(&address).iter() {
+                let payment = self.release_token_admin(&address, &token);
+                payments.push(payment);
+            }
+            self.addresses().swap_remove(&address);
+            self.send().direct_multi(&address, &payments);
         }
-        self.send().direct_multi(&address, &payments);
     }
 
     #[endpoint(setPlatformFeeWallet)]

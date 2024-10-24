@@ -337,6 +337,11 @@ pub trait HelperModule: crate::storage::StorageModule {
             self.ambassador_currencies(&ambassador_wallet)
                 .swap_remove(token);
             self.address_to_ambassador(address).clear();
+            self.referral_ambassador_fee(&ambassador_wallet, token)
+                .clear();
+        }
+        if self.ambassador_currencies(&ambassador_wallet).is_empty() {
+            self.ambassadors().swap_remove(&ambassador_wallet);
         }
     }
 
