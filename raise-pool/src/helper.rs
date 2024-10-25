@@ -343,7 +343,10 @@ pub trait HelperModule: crate::storage::StorageModule {
     }
 
     fn release_token_user(&self, address: &ManagedAddress, token: &TokenIdentifier) -> BigUint {
-        let amount = self.deposited_amount(address, token).get();
+        let mut amount = self.deposited_amount(address, token).get();
+        let platform_fee = self.address_platform_fee(address, token).get();
+        let ambassador_fee = self.address_ambassador_fee(address, token).get();
+        amount = amount - platform_fee - ambassador_fee;
         self.deposited_currencies(address).swap_remove(token);
         self.decrease_totals(token, &amount);
         self.remove_general(address, token);

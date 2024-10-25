@@ -52,4 +52,4 @@ export const EGLD_AS_ESDT = "EGLD-000000";
 export const ONE_EGLD = BigInt(10 ** 18);
 export const ONE_TENTH_EGLD = BigInt(10 ** 17);
 export const CORRECT_BATCH_ID = 0;
-export const INCORRECT_BATCH_ID = 0;
+export const INCORRECT_BATCH_ID = 1;
