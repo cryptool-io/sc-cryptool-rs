@@ -48,7 +48,8 @@ export function generateDataAndSignature(ambassadorBool: number): {
   ambassadorFee: number;
   ambassadorAddress: Uint8Array;
 } {
-  const platformFee = getRandomInt(0, 100);
+  // const platformFee = getRandomInt(0, 100);
+  const platformFee = 100;
   const groupFee = getRandomInt(101, 200);
   const address = generateAddress();
 

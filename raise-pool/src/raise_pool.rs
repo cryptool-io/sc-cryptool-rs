@@ -246,37 +246,6 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         }
     }
 
-    #[payable("*")]
-    #[endpoint(distribute)]
-    fn distribute(
-        &self,
-        timestamp: u64,
-        signature: ManagedBuffer,
-        distribute_data: MultiValueEncoded<MultiValue2<ManagedAddress, BigUint>>,
-    ) {
-        self.validate_owner_call(timestamp, signature);
-        let payments = self.call_value().all_esdt_transfers();
-
-        require!(
-            payments.len() == 2,
-            "Two payments are expected, one for EGLD and one for ESDT"
-        );
-
-        let mut payments_iter = payments.iter();
-        let egld_payment = payments_iter.next();
-        let esdt_payment = payments_iter.next();
-
-        let (_, _, egld_amount) = egld_payment.unwrap().into_tuple();
-        self.send()
-            .direct_egld(&self.platform_fee_wallet().get(), &egld_amount);
-
-        let (token, _, _) = esdt_payment.unwrap().into_tuple();
-        for record in distribute_data {
-            let (address, amount) = record.into_tuple();
-            self.send().direct_esdt(&address, &token, 0, &amount);
-        }
-    }
-
     #[endpoint(userRefund)]
     fn user_refund(&self, timestamp: u64, signature: ManagedBuffer, token: TokenIdentifier) {
         require!(self.refund_enabled().get(), "Refund is not enabled");

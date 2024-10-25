@@ -8,10 +8,14 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
 ### Deploy a wallet database contract using:
 
-- **init** (&self, signer: ManagedAddress)
+- **init** (_&self, signer: ManagedAddress_)
   - We need a wallet database contract to store the wallets that will be used to deposit funds in the raise pools. The signer wallet will be used to validate that wallets are going to be registered.
 
       **!!! Check _tests/examples/01.initWalletDatabaseCall.ts_ for an example.**
+
+### Deploy a distribution contract using:
+- **init** (_&self, platform_fee_wallet: ManagedAddress, signer: ManagedAddress_)
+  - For distribution purposes a general distribution contract can be deployed, using 2 wallets as parameters, one as platform fee where all the fees will be sent to and a signer wallet
 
 ### Deploy a dummy raise pool SC using:
 
@@ -49,7 +53,7 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
   - If there are more transactions than the blockchain limit, the function returns _interrupted_, so this endpoint needs to be called again. Otherwise, it returns _completed_.
   - Signature data format: signed(timestamp + pool_id + deployer_address).
 
-- **release** (_timestamp: u64, signature: ManagedBuffer, overcommitted: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>_) -> _OperationCompletionStatus_
+- **release** (_timestamp: u64, signature: ManagedBuffer, overcommitted: MultiValueEncoded<ManagedAddress>_) -> _OperationCompletionStatus_
 
   - Once the End Date is exceeded, calling the release endpoint sends fees to the Platform, Group, and Ambassador Wallets (and potentially to Overcommitter Wallets if applicable).
   - If there are more transactions than the blockchain limit, the function returns _interrupted_, so this endpoint needs to be called again. Otherwise, it returns _completed_. Please keep in mind that if the function returns _interrupted_, the next call needs to have the exact same parameters (so even if the function reaches the _overcommited_ step and returns _interrupted_, the next call needs to have the original overcommited list as parameter)
@@ -60,23 +64,28 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
   - Once the _release_ has been completed, calling this endpoint sends the remaining deposited funds to the owner wallet.
   - Signature data format: signed(timestamp + pool_id + deployer_address).
 
-- **distribute** (_timestamp: u64, signature: ManagedBuffer, distribute_data: MultiValueEncoded<MultiValue2<ManagedAddress, BigUint>>_)
+- **userRefund**(_timestamp: u64, signature: ManagedBuffer, token: TokenIdentifier )
 
-    - This enpdpoint allows the owner to send a token amount to the contract and then distribute tokens to the distribution wallets sent as parameters.
-    - The payment sent to the endpoint must also include the Egld fee payment, as an Esdt.
-      So in total 2 payments are made when calling this endpoint, first one with Egld as an Esdt and then the Esdt to be distributed.
-    - Signature data format: signed(timestamp + pool_id + deployer_address).
-
-- **refundPartial** (_timestamp: u64, signature: ManagedBuffer, distribute_data: MMultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>_)
-
-    - This enpdpoint allows the owner to refund token amounts to wallet that deposited funds according to distribute data
-    - Signature data format: signed(timestamp + pool_id + deployer_address).
-
-- **user_refund**(_timestamp: u64, signature: ManagedBuffer, token: TokenIdentifier, amount: BigUint_)
-
-    - This enpdpoint allows the user to refund part or all of his deposited funds.
+    - This enpdpoint allows the user to refund  all of his deposited funds in the respective token.
     - Only available if the refund is enabled and the refund deadline has not passed.
-    - Signature data format: signed(timestamp + pool_id + deployer_address + token + amount).
+    - The platform and ambassador fees are kept, only the group fees are returned
+    - Signature data format: signed(timestamp + pool_id + user_address + token).
+
+- **adminRefund** (_timestamp: u64, signature: ManagedBuffer, addresses: MMultiValueEncoded<ManagedAddress>_)
+
+    - This enpdpoint allows the admin to fully refund token all amounts to respective wallets  
+    - The full deposited amount is returned to the user and all storages that were updated due to the deposit are cleared
+    - Signature data format: signed(timestamp + pool_id + admin_address).
+
+## Owner Callable Endpoints on Production Distribution SC:
+
+- **distribute** (_pool_id: ManagedBuffer, batch_id: u32, timestamp: u64, signature: ManagedBuffer, distribute_data: MultiValueEncoded<MultiValue2<ManagedAddress, BigUint>>_,
+    ) 
+    - This enpdpoint allows the admin to distribute tokens to the respective addresses
+    - The addresses that receive the funds should be registered in the wallet database
+    - The sum of the amounts that will be sent to the addresses should sum to the total payment made to this endpoint
+    - Signature data format: signed(timestamp + pool_id + batch_id + admin_address).
+
 
 ## User Callable Endpoints on Production Wallet Database SC:
 
