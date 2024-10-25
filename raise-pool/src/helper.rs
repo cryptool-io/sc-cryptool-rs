@@ -183,7 +183,6 @@ pub trait HelperModule: crate::storage::StorageModule {
         pool_id: &ManagedBuffer,
         caller: &ManagedAddress,
         token: &TokenIdentifier,
-        amount: &BigUint,
         signer: ManagedAddress,
         signature: ManagedBuffer,
     ) {
@@ -195,8 +194,6 @@ pub trait HelperModule: crate::storage::StorageModule {
         buffer.append(caller.as_managed_buffer());
         require!(result.is_ok(), "Could not encode");
         let result = token.dep_encode(&mut buffer);
-        require!(result.is_ok(), "Could not encode");
-        let result = amount.dep_encode(&mut buffer);
         require!(result.is_ok(), "Could not encode");
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
@@ -345,16 +342,13 @@ pub trait HelperModule: crate::storage::StorageModule {
         }
     }
 
-    fn release_token_user(
-        &self,
-        address: &ManagedAddress,
-        token: &TokenIdentifier,
-        amount: &BigUint,
-    ) {
+    fn release_token_user(&self, address: &ManagedAddress, token: &TokenIdentifier) -> BigUint {
+        let amount = self.deposited_amount(address, token).get();
         self.deposited_currencies(address).swap_remove(token);
-        self.decrease_totals(token, amount);
+        self.decrease_totals(token, &amount);
         self.remove_general(address, token);
-        self.send().direct_esdt(address, token, 0, amount);
+        self.remove_group_fee(address, token);
+        amount
     }
 
     fn release_token_admin(

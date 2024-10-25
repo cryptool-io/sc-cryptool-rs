@@ -185,7 +185,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         &self,
         timestamp: u64,
         signature: ManagedBuffer,
-        overcommited: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
+        overcommited: MultiValueEncoded<ManagedAddress>,
     ) -> OperationCompletionStatus {
         self.validate_owner_call(timestamp, signature);
         self.enable_raise_pool(false);
@@ -285,17 +285,17 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             "Refund deadline has passed"
         );
         let caller = self.blockchain().get_caller();
-        let amount = self.deposited_amount(&caller, &token).take();
+        require!(self.is_registered(&caller), "Wallet not registered");
         self.validate_user_refund_call(
             timestamp,
             &self.pool_id().get(),
             &caller,
             &token,
-            &amount,
             self.signer().get(),
             signature,
         );
-        self.release_token_user(&caller, &token, &amount);
+        let amount = self.release_token_user(&caller, &token);
+        self.send().direct_esdt(&caller, &token, 0, &amount);
     }
 
     #[endpoint(adminRefund)]
@@ -432,7 +432,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
 
     fn refund_overcommited(
         &self,
-        overcommited: MultiValueEncoded<MultiValue3<ManagedAddress, TokenIdentifier, BigUint>>,
+        overcommited: MultiValueEncoded<ManagedAddress>,
         overcommited_len: usize,
     ) -> OperationCompletionStatus {
         let overcommited_iter = overcommited.into_iter();
@@ -440,6 +440,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         let mut overcommited_iter = overcommited_iter.skip(overcommited_index);
         let mut tx_index: usize = 0;
 
+        let mut payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
         while overcommited_index < overcommited_len {
             if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION
                 || tx_index == MAX_TX_PER_RELEASE as usize
@@ -447,9 +448,13 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
                 self.overcommited_index().set(overcommited_index);
                 return OperationCompletionStatus::InterruptedBeforeOutOfGas;
             }
-            let overcommitment_data = overcommited_iter.next().unwrap();
-            let (overcommiter, token, amount) = overcommitment_data.into_tuple();
-            // self.return_tokens(overcommiter, token, amount);
+            let address = overcommited_iter.next().unwrap();
+            for token in self.deposited_currencies(&address).iter() {
+                let payment = self.release_token_admin(&address, &token);
+                payments.push(payment);
+            }
+            self.addresses().swap_remove(&address);
+            self.send().direct_multi(&address, &payments);
             overcommited_index += 1;
             tx_index += 1;
         }

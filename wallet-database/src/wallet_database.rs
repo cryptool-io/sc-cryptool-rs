@@ -35,7 +35,7 @@ pub trait WalletDatabase: permissions_module::PermissionsModule + pausable::Paus
         let mut buffer_user = ManagedBuffer::new();
         let result = timestamp.dep_encode(&mut buffer_user);
         require!(result.is_ok(), "Could not encode");
-        buffer_user.append(&caller.as_managed_buffer());
+        buffer_user.append(caller.as_managed_buffer());
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer_user, &user_signature);
 
@@ -55,7 +55,7 @@ pub trait WalletDatabase: permissions_module::PermissionsModule + pausable::Paus
         let mut buffer_user = ManagedBuffer::new();
         let result = timestamp.dep_encode(&mut buffer_user);
         require!(result.is_ok(), "Could not encode");
-        buffer_user.append(&caller.as_managed_buffer());
+        buffer_user.append(caller.as_managed_buffer());
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer_user, &user_signature);
 

@@ -16,6 +16,8 @@ import {
   AMBASSADOR_FEE,
   TIMESTAMP_AFTER,
   AFTER_DEPOSIT_TIMESTAMP,
+  CURRENCY1,
+  CURRENCY2,
 } from "../helpers";
 
 import { deployerAddress, privateKeyDeployer } from "./deployer";
@@ -76,4 +78,24 @@ const DATA_BOB_AFTER_DEPOSIT = Buffer.concat([
 ]);
 export const SIGNATURE_BOB_AFTER_DEPOSIT = privateKeyDeployer.sign(
   DATA_BOB_AFTER_DEPOSIT,
+);
+
+const DATA_BOB_USER_REFUND_CURRENCY1 = Buffer.concat([
+  codec.encodeNested(new U64Value(TIMESTAMP)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
+  bobAddress,
+  codec.encodeNested(StringValue.fromUTF8(CURRENCY1)),
+]);
+export const SIGNATURE_DATA_BOB_USER_REFUND_CURRENCY1 = privateKeyDeployer.sign(
+  DATA_BOB_USER_REFUND_CURRENCY1,
+);
+
+const DATA_BOB_USER_REFUND_CURRENCY2 = Buffer.concat([
+  codec.encodeNested(new U64Value(TIMESTAMP)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
+  bobAddress,
+  codec.encodeNested(StringValue.fromUTF8(CURRENCY2)),
+]);
+export const SIGNATURE_DATA_BOB_USER_REFUND_CURRENCY2 = privateKeyDeployer.sign(
+  DATA_BOB_USER_REFUND_CURRENCY2,
 );

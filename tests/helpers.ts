@@ -34,6 +34,7 @@ export const TIMESTAMP_BEFORE = 30;
 export const TIMESTAMP_AFTER = 660;
 export const TIMESTAMP_WITH_DELAY = 360;
 export const REFUND_ENABLED = 1;
+export const REFUND_DISABLED = 0;
 export const REFUND_NOT_ENABLED = 0;
 export const MAX_PERCENTAGE = BigInt(10000);
 export const HARD_CAP_INVALID = 5000;
