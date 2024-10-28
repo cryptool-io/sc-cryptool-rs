@@ -3,6 +3,7 @@ import path from "path";
 import { UserSecretKey } from "@multiversx/sdk-wallet/out";
 import {
   BinaryCodec,
+  U32Value,
   U64Value,
   BigUIntValue,
   StringValue,
@@ -18,6 +19,7 @@ import {
   AFTER_DEPOSIT_TIMESTAMP,
   CURRENCY1,
   CURRENCY2,
+  BATCH_ID,
 } from "../helpers";
 
 import { deployerAddress, privateKeyDeployer } from "./deployer";
@@ -99,3 +101,12 @@ const DATA_BOB_USER_REFUND_CURRENCY2 = Buffer.concat([
 export const SIGNATURE_DATA_BOB_USER_REFUND_CURRENCY2 = privateKeyDeployer.sign(
   DATA_BOB_USER_REFUND_CURRENCY2,
 );
+
+const DATA_BOB_DISTRUBUTE = Buffer.concat([
+  codec.encodeNested(new U64Value(TIMESTAMP)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
+  codec.encodeNested(new U32Value(BATCH_ID)),
+  bobAddress,
+]);
+export const SIGNATURE_DATA_BOB_DISTRUBUTE =
+  privateKeyDeployer.sign(DATA_BOB_DISTRUBUTE);

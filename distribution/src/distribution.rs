@@ -3,6 +3,8 @@
 #[allow(unused_imports)]
 use multiversx_sc::imports::*;
 
+pub const ALLOWED_TIMESTAMP_DELAY: u64 = 90;
+
 /// An empty contract. To be used as a template when starting a new contract from scratch.
 #[multiversx_sc::contract]
 pub trait Distribution {
@@ -26,6 +28,10 @@ pub trait Distribution {
         distribute_data: MultiValueEncoded<MultiValue2<ManagedAddress, BigUint>>,
     ) {
         self.validate_batch(&pool_id, &batch_id);
+        require!(
+            self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
+            "Deposit took too long"
+        );
         self.validate_distibute_call(
             &pool_id,
             &batch_id,
