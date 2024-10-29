@@ -119,982 +119,1106 @@ afterEach(async () => {
   world.terminate();
 });
 
-// test("Release with wrong signature", async () => {
-//   const numberOfDeposits = 1;
-
-//   await deployer.callContract({
-//     callee: factoryContract,
-//     gasLimit: 50_000_000,
-//     funcName: "deployRaisePool",
-//     funcArgs: [
-//       e.Str(POOL_ID),
-//       e.U64(SOFT_CAP),
-//       e.U64(HIGH_HARD_CAP),
-//       e.U64(MIN_DEPOSIT),
-//       e.U64(MAX_DEPOSIT),
-//       e.U64(DEPOSIT_INCREMENTS),
-//       e.U64(START_DATE),
-//       e.U64(END_DATE),
-//       e.U64(REFUND_ENABLED),
-//       e.U64(END_DATE),
-//       e.Addr(deployer),
-//       e.Addr(deployer),
-//       e.TopBuffer(SIGNATURE_DEPLOYER),
-//       e.U64(TIMESTAMP),
-//       e.Str(CURRENCY1),
-//       e.Str(CURRENCY2),
-//       e.Str(CURRENCY3),
-//     ],
-//   });
-
-//   const raisePoolAddressResult = await deployer.query({
-//     callee: factoryContract,
-//     funcName: "getPoolIdToAddress",
-//     funcArgs: [e.Str(POOL_ID)],
-//   });
-
-//   const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
-//   const raisePoolContract = new LSContract({
-//     address: raisePoolAddress,
-//     world,
-//   });
-
-//   await deployer.callContract({
-//     callee: factoryContract,
-//     gasLimit: 50_000_000,
-//     funcName: "enableRaisePool",
-//     funcArgs: [
-//       e.U64(TIMESTAMP),
-//       e.Str(POOL_ID),
-//       e.TopBuffer(SIGNATURE_DEPLOYER),
-//       e.Bool(true),
-//     ],
-//   });
-
-//   await world.setCurrentBlockInfo({
-//     timestamp: DEPOSIT_TIMESTAMP,
-//   });
-
-//   const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
-//   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
-
-//   for (let i = 0; i < numberOfDeposits; i++) {
-//     const {
-//       address,
-//       whitelistSignature,
-//       depositSignature,
-//       platformFee,
-//       groupFee,
-//       ambassadorFee,
-//       ambassadorAddress,
-//     } = generateDataAndSignature(1);
-
-//     const currencyRand = getRandomInt(0, 2);
-//     const currency = currenciesArray[currencyRand];
-//     const decimals = currenciesDecimals[currencyRand];
-//     const depositAmount = getRandomDeposit(
-//       MIN_DEPOSIT,
-//       MAX_DEPOSIT,
-//       DEPOSIT_INCREMENTS,
-//     );
-//     const depositAmountInCurrency =
-//       BigInt(depositAmount) * BigInt(10 ** decimals);
-
-//     genericWallet = await world.createWallet({
-//       address: address,
-//       balance: 100_000,
-//       kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
-//     });
-
-//     await genericWallet.callContract({
-//       callee: walletDababaseContract,
-//       gasLimit: 50_000_000,
-//       funcName: "registerWallet",
-//       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
-//     });
-
-//     await genericWallet.callContract({
-//       callee: raisePoolContract,
-//       gasLimit: 50_000_000,
-//       funcName: "deposit",
-//       funcArgs: [
-//         e.U64(TIMESTAMP),
-//         e.TopBuffer(depositSignature),
-//         e.U(platformFee),
-//         e.U(groupFee),
-//         e.U(ambassadorFee),
-//         e.Addr(ambassadorAddress),
-//       ],
-//       esdts: [{ id: currency, amount: depositAmountInCurrency }],
-//     });
-//   }
-
-//   await deployer
-//     .callContract({
-//       callee: raisePoolContract,
-//       gasLimit: 50_000_000,
-//       funcName: "release",
-//       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DUMMY)],
-//     })
-//     .assertFail({ code: 10, message: "invalid signature" });
-// });
-
-// test("Release by non owner", async () => {
-//   const numberOfDeposits = 1;
-
-//   await deployer.callContract({
-//     callee: factoryContract,
-//     gasLimit: 50_000_000,
-//     funcName: "deployRaisePool",
-//     funcArgs: [
-//       e.Str(POOL_ID),
-//       e.U64(LOW_SOFT_CAP),
-//       e.U64(HIGH_HARD_CAP),
-//       e.U64(MIN_DEPOSIT),
-//       e.U64(MAX_DEPOSIT),
-//       e.U64(DEPOSIT_INCREMENTS),
-//       e.U64(START_DATE),
-//       e.U64(END_DATE),
-//       e.U64(REFUND_ENABLED),
-//       e.U64(END_DATE),
-//       e.Addr(deployer),
-//       e.Addr(deployer),
-//       e.TopBuffer(SIGNATURE_DEPLOYER),
-//       e.U64(TIMESTAMP),
-//       e.Str(CURRENCY1),
-//       e.Str(CURRENCY2),
-//       e.Str(CURRENCY3),
-//     ],
-//   });
-
-//   const raisePoolAddressResult = await deployer.query({
-//     callee: factoryContract,
-//     funcName: "getPoolIdToAddress",
-//     funcArgs: [e.Str(POOL_ID)],
-//   });
-
-//   const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
-//   const raisePoolContract = new LSContract({
-//     address: raisePoolAddress,
-//     world,
-//   });
-
-//   await deployer.callContract({
-//     callee: factoryContract,
-//     gasLimit: 50_000_000,
-//     funcName: "enableRaisePool",
-//     funcArgs: [
-//       e.U64(TIMESTAMP),
-//       e.Str(POOL_ID),
-//       e.TopBuffer(SIGNATURE_DEPLOYER),
-//       e.Bool(true),
-//     ],
-//   });
-
-//   await world.setCurrentBlockInfo({
-//     timestamp: DEPOSIT_TIMESTAMP,
-//   });
-
-//   const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
-//   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
-
-//   for (let i = 0; i < numberOfDeposits; i++) {
-//     const {
-//       address,
-//       whitelistSignature,
-//       depositSignature,
-//       platformFee,
-//       groupFee,
-//       ambassadorFee,
-//       ambassadorAddress,
-//     } = generateDataAndSignature(1);
-
-//     const currencyRand = getRandomInt(0, 2);
-//     const currency = currenciesArray[currencyRand];
-//     const decimals = currenciesDecimals[currencyRand];
-//     const depositAmount = getRandomDeposit(
-//       MIN_DEPOSIT,
-//       MAX_DEPOSIT,
-//       DEPOSIT_INCREMENTS,
-//     );
-//     const depositAmountInCurrency =
-//       BigInt(depositAmount) * BigInt(10 ** decimals);
-
-//     genericWallet = await world.createWallet({
-//       address: address,
-//       balance: 100_000,
-//       kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
-//     });
-
-//     await genericWallet.callContract({
-//       callee: walletDababaseContract,
-//       gasLimit: 50_000_000,
-//       funcName: "registerWallet",
-//       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
-//     });
-
-//     await genericWallet.callContract({
-//       callee: raisePoolContract,
-//       gasLimit: 50_000_000,
-//       funcName: "deposit",
-//       funcArgs: [
-//         e.U64(TIMESTAMP),
-//         e.TopBuffer(depositSignature),
-//         e.U(platformFee),
-//         e.U(groupFee),
-//         e.U(ambassadorFee),
-//         e.Addr(ambassadorAddress),
-//       ],
-//       esdts: [{ id: currency, amount: depositAmountInCurrency }],
-//     });
-//   }
-
-//   bob = await world.createWallet({
-//     address: bobAddress,
-//     balance: 100_000,
-//   });
-
-//   await bob
-//     .callContract({
-//       callee: raisePoolContract,
-//       gasLimit: 50_000_000,
-//       funcName: "release",
-//       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_REFUND)],
-//     })
-//     .assertFail({ code: 4, message: "Only owner can call this function" });
-// });
-
-// test("Release with too much delay", async () => {
-//   const numberOfDeposits = 1;
-
-//   await deployer.callContract({
-//     callee: factoryContract,
-//     gasLimit: 50_000_000,
-//     funcName: "deployRaisePool",
-//     funcArgs: [
-//       e.Str(POOL_ID),
-//       e.U64(LOW_HARD_CAP),
-//       e.U64(HIGH_HARD_CAP),
-//       e.U64(MIN_DEPOSIT),
-//       e.U64(MAX_DEPOSIT),
-//       e.U64(DEPOSIT_INCREMENTS),
-//       e.U64(START_DATE),
-//       e.U64(END_DATE),
-//       e.U64(REFUND_ENABLED),
-//       e.U64(END_DATE),
-//       e.Addr(deployer),
-//       e.Addr(deployer),
-//       e.TopBuffer(SIGNATURE_DEPLOYER),
-//       e.U64(TIMESTAMP),
-//       e.Str(CURRENCY1),
-//       e.Str(CURRENCY2),
-//       e.Str(CURRENCY3),
-//     ],
-//   });
-
-//   const raisePoolAddressResult = await deployer.query({
-//     callee: factoryContract,
-//     funcName: "getPoolIdToAddress",
-//     funcArgs: [e.Str(POOL_ID)],
-//   });
-
-//   const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
-//   const raisePoolContract = new LSContract({
-//     address: raisePoolAddress,
-//     world,
-//   });
-
-//   await deployer.callContract({
-//     callee: factoryContract,
-//     gasLimit: 50_000_000,
-//     funcName: "enableRaisePool",
-//     funcArgs: [
-//       e.U64(TIMESTAMP),
-//       e.Str(POOL_ID),
-//       e.TopBuffer(SIGNATURE_DEPLOYER),
-//       e.Bool(true),
-//     ],
-//   });
-
-//   await world.setCurrentBlockInfo({
-//     timestamp: DEPOSIT_TIMESTAMP,
-//   });
-
-//   const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
-//   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
-
-//   for (let i = 0; i < numberOfDeposits; i++) {
-//     const {
-//       address,
-//       whitelistSignature,
-//       depositSignature,
-//       platformFee,
-//       groupFee,
-//       ambassadorFee,
-//       ambassadorAddress,
-//     } = generateDataAndSignature(1);
-
-//     const currencyRand = getRandomInt(0, 2);
-//     const currency = currenciesArray[currencyRand];
-//     const decimals = currenciesDecimals[currencyRand];
-//     const depositAmount = getRandomDeposit(
-//       MIN_DEPOSIT,
-//       MAX_DEPOSIT,
-//       DEPOSIT_INCREMENTS,
-//     );
-//     const depositAmountInCurrency =
-//       BigInt(depositAmount) * BigInt(10 ** decimals);
-
-//     genericWallet = await world.createWallet({
-//       address: address,
-//       balance: 100_000,
-//       kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
-//     });
-
-//     await genericWallet.callContract({
-//       callee: walletDababaseContract,
-//       gasLimit: 50_000_000,
-//       funcName: "registerWallet",
-//       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
-//     });
-
-//     await genericWallet.callContract({
-//       callee: raisePoolContract,
-//       gasLimit: 50_000_000,
-//       funcName: "deposit",
-//       funcArgs: [
-//         e.U64(TIMESTAMP),
-//         e.TopBuffer(depositSignature),
-//         e.U(platformFee),
-//         e.U(groupFee),
-//         e.U(ambassadorFee),
-//         e.Addr(ambassadorAddress),
-//       ],
-//       esdts: [{ id: currency, amount: depositAmountInCurrency }],
-//     });
-//   }
-
-//   await world.setCurrentBlockInfo({
-//     timestamp: TIMESTAMP_WITH_DELAY,
-//   });
-
-//   await deployer
-//     .callContract({
-//       callee: raisePoolContract,
-//       gasLimit: 50_000_000,
-//       funcName: "release",
-//       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
-//     })
-//     .assertFail({ code: 4, message: "Function call took too long" });
-// });
-
-// test("Enable pool after release", async () => {
-//   const numberOfDeposits = 1;
-
-//   platformWallet = await world.createWallet();
-//   groupWallet = await world.createWallet();
-
-//   await deployer.callContract({
-//     callee: factoryContract,
-//     gasLimit: 50_000_000,
-//     funcName: "deployRaisePool",
-//     funcArgs: [
-//       e.Str(POOL_ID),
-//       e.U64(LOW_SOFT_CAP),
-//       e.U64(HIGH_HARD_CAP),
-//       e.U64(MIN_DEPOSIT),
-//       e.U64(MAX_DEPOSIT),
-//       e.U64(DEPOSIT_INCREMENTS),
-//       e.U64(START_DATE),
-//       e.U64(END_DATE),
-//       e.U64(REFUND_ENABLED),
-//       e.U64(END_DATE),
-//       e.Addr(platformWallet),
-//       e.Addr(groupWallet),
-//       e.TopBuffer(SIGNATURE_DEPLOYER),
-//       e.U64(TIMESTAMP),
-//       e.Str(CURRENCY1),
-//       e.Str(CURRENCY2),
-//       e.Str(CURRENCY3),
-//     ],
-//   });
-
-//   const raisePoolAddressResult = await deployer.query({
-//     callee: factoryContract,
-//     funcName: "getPoolIdToAddress",
-//     funcArgs: [e.Str(POOL_ID)],
-//   });
-
-//   const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
-//   const raisePoolContract = new LSContract({
-//     address: raisePoolAddress,
-//     world,
-//   });
-
-//   await deployer.callContract({
-//     callee: factoryContract,
-//     gasLimit: 50_000_000,
-//     funcName: "enableRaisePool",
-//     funcArgs: [
-//       e.U64(TIMESTAMP),
-//       e.Str(POOL_ID),
-//       e.TopBuffer(SIGNATURE_DEPLOYER),
-//       e.Bool(true),
-//     ],
-//   });
-
-//   await world.setCurrentBlockInfo({
-//     timestamp: DEPOSIT_TIMESTAMP,
-//   });
-
-//   const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
-//   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
-//   var currenciesPlatformFees = [BigInt(0), BigInt(0), BigInt(0)];
-//   var currenciesGroupFees = [BigInt(0), BigInt(0), BigInt(0)];
-//   var ambassadorWallets: LSWallet[] = [];
-//   var currencies: string[] = [];
-//   var depositedAmounts: bigint[] = [];
-//   var ambassadorFees: bigint[] = [];
-
-//   for (let i = 0; i < numberOfDeposits; i++) {
-//     const {
-//       address,
-//       whitelistSignature,
-//       depositSignature,
-//       platformFee,
-//       groupFee,
-//       ambassadorFee,
-//       ambassadorAddress,
-//     } = generateDataAndSignature(1);
-
-//     const currencyRand = getRandomInt(0, 2);
-//     const currency = currenciesArray[currencyRand];
-//     const decimals = currenciesDecimals[currencyRand];
-//     const depositAmount = getRandomDeposit(
-//       MIN_DEPOSIT,
-//       MAX_DEPOSIT,
-//       DEPOSIT_INCREMENTS,
-//     );
-//     const depositAmountInCurrency =
-//       BigInt(depositAmount) * BigInt(10 ** decimals);
-//     const ambassadorFeeAmountInCurrency =
-//       (BigInt(depositAmountInCurrency) * BigInt(ambassadorFee)) /
-//       MAX_PERCENTAGE;
-//     currenciesPlatformFees[currencyRand] +=
-//       (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
-//     currenciesGroupFees[currencyRand] +=
-//       (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
-
-//     genericWallet = await world.createWallet({
-//       address: address,
-//       balance: 0,
-//       kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
-//     });
-
-//     await genericWallet.callContract({
-//       callee: walletDababaseContract,
-//       gasLimit: 50_000_000,
-//       funcName: "registerWallet",
-//       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
-//     });
-
-//     await genericWallet.callContract({
-//       callee: raisePoolContract,
-//       gasLimit: 50_000_000,
-//       funcName: "deposit",
-//       funcArgs: [
-//         e.U64(TIMESTAMP),
-//         e.TopBuffer(depositSignature),
-//         e.U(platformFee),
-//         e.U(groupFee),
-//         e.U(ambassadorFee),
-//         e.Addr(ambassadorAddress),
-//       ],
-//       esdts: [{ id: currency, amount: depositAmountInCurrency }],
-//     });
-
-//     ambassadorWallet = await world.createWallet({
-//       address: ambassadorAddress,
-//       balance: 0n,
-//     });
-
-//     ambassadorWallets.push(ambassadorWallet);
-//     depositedAmounts.push(depositAmountInCurrency);
-//     currencies.push(currency);
-//     ambassadorFees.push(ambassadorFeeAmountInCurrency);
-
-//     /*
-//     console.log(
-//       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
-//         depositAmount,
-//       ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
-//         platformFee,
-//       ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
-//         3,
-//         " ",
-//       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
-//     );
-//     */
-//   }
-
-//   await world.setCurrentBlockInfo({
-//     timestamp: TIMESTAMP_AFTER,
-//   });
-
-//   let result = await deployer.callContract({
-//     callee: raisePoolContract,
-//     gasLimit: 500_000_000,
-//     funcName: "release",
-//     funcArgs: [e.U64(TIMESTAMP_AFTER), e.TopBuffer(SIGNATURE_AFTER)],
-//   });
-
-//   expect(result.returnData[0]).toBe(Buffer.from("completed").toString("hex"));
-
-//   assertAccount(await world.getAccount(platformWallet), {
-//     kvs: [
-//       e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesPlatformFees[0] }]),
-//       e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesPlatformFees[1] }]),
-//       e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesPlatformFees[2] }]),
-//     ],
-//   });
-
-//   assertAccount(await world.getAccount(groupWallet), {
-//     kvs: [
-//       e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesGroupFees[0] }]),
-//       e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesGroupFees[1] }]),
-//       e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesGroupFees[2] }]),
-//     ],
-//   });
-
-//   for (let i = 0; i < numberOfDeposits; i++) {
-//     assertAccount(await world.getAccount(ambassadorWallets[i]), {
-//       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
-//     });
-//     /*
-//     console.log(
-//       `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`,
-//     );
-//     */
-//   }
-
-//   await deployer
-//     .callContract({
-//       callee: factoryContract,
-//       gasLimit: 50_000_000,
-//       funcName: "enableRaisePool",
-//       funcArgs: [
-//         e.U64(TIMESTAMP),
-//         e.Str(POOL_ID),
-//         e.TopBuffer(SIGNATURE_DEPLOYER),
-//         e.Bool(true),
-//       ],
-//     })
-//     .assertFail({
-//       code: 10,
-//       message: "error signalled by smartcontract",
-//     });
-// }, 200000);
-
-// test("Release in 1 call no overcommitment", async () => {
-//   const numberOfDeposits = 140;
-
-//   platformWallet = await world.createWallet();
-//   groupWallet = await world.createWallet();
-
-//   await deployer.callContract({
-//     callee: factoryContract,
-//     gasLimit: 50_000_000,
-//     funcName: "deployRaisePool",
-//     funcArgs: [
-//       e.Str(POOL_ID),
-//       e.U64(LOW_SOFT_CAP),
-//       e.U64(HIGH_HARD_CAP),
-//       e.U64(MIN_DEPOSIT),
-//       e.U64(MAX_DEPOSIT),
-//       e.U64(DEPOSIT_INCREMENTS),
-//       e.U64(START_DATE),
-//       e.U64(END_DATE),
-//       e.U64(REFUND_ENABLED),
-//       e.U64(END_DATE),
-//       e.Addr(platformWallet),
-//       e.Addr(groupWallet),
-//       e.TopBuffer(SIGNATURE_DEPLOYER),
-//       e.U64(TIMESTAMP),
-//       e.Str(CURRENCY1),
-//       e.Str(CURRENCY2),
-//       e.Str(CURRENCY3),
-//     ],
-//   });
-
-//   const raisePoolAddressResult = await deployer.query({
-//     callee: factoryContract,
-//     funcName: "getPoolIdToAddress",
-//     funcArgs: [e.Str(POOL_ID)],
-//   });
-
-//   const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
-//   const raisePoolContract = new LSContract({
-//     address: raisePoolAddress,
-//     world,
-//   });
-
-//   await deployer.callContract({
-//     callee: factoryContract,
-//     gasLimit: 50_000_000,
-//     funcName: "enableRaisePool",
-//     funcArgs: [
-//       e.U64(TIMESTAMP),
-//       e.Str(POOL_ID),
-//       e.TopBuffer(SIGNATURE_DEPLOYER),
-//       e.Bool(true),
-//     ],
-//   });
-
-//   await world.setCurrentBlockInfo({
-//     timestamp: DEPOSIT_TIMESTAMP,
-//   });
-
-//   const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
-//   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
-//   var currenciesPlatformFees = [BigInt(0), BigInt(0), BigInt(0)];
-//   var currenciesGroupFees = [BigInt(0), BigInt(0), BigInt(0)];
-//   var ambassadorWallets: LSWallet[] = [];
-//   var currencies: string[] = [];
-//   var depositedAmounts: bigint[] = [];
-//   var ambassadorFees: bigint[] = [];
-
-//   for (let i = 0; i < numberOfDeposits; i++) {
-//     const {
-//       address,
-//       whitelistSignature,
-//       depositSignature,
-//       platformFee,
-//       groupFee,
-//       ambassadorFee,
-//       ambassadorAddress,
-//     } = generateDataAndSignature(1);
-
-//     const currencyRand = getRandomInt(0, 2);
-//     const currency = currenciesArray[currencyRand];
-//     const decimals = currenciesDecimals[currencyRand];
-//     const depositAmount = getRandomDeposit(
-//       MIN_DEPOSIT,
-//       MAX_DEPOSIT,
-//       DEPOSIT_INCREMENTS,
-//     );
-//     const depositAmountInCurrency =
-//       BigInt(depositAmount) * BigInt(10 ** decimals);
-//     const ambassadorFeeAmountInCurrency =
-//       (BigInt(depositAmountInCurrency) * BigInt(ambassadorFee)) /
-//       MAX_PERCENTAGE;
-//     currenciesPlatformFees[currencyRand] +=
-//       (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
-//     currenciesGroupFees[currencyRand] +=
-//       (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
-
-//     genericWallet = await world.createWallet({
-//       address: address,
-//       balance: 0,
-//       kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
-//     });
-
-//     await genericWallet.callContract({
-//       callee: walletDababaseContract,
-//       gasLimit: 50_000_000,
-//       funcName: "registerWallet",
-//       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
-//     });
-
-//     await genericWallet.callContract({
-//       callee: raisePoolContract,
-//       gasLimit: 50_000_000,
-//       funcName: "deposit",
-//       funcArgs: [
-//         e.U64(TIMESTAMP),
-//         e.TopBuffer(depositSignature),
-//         e.U(platformFee),
-//         e.U(groupFee),
-//         e.U(ambassadorFee),
-//         e.Addr(ambassadorAddress),
-//       ],
-//       esdts: [{ id: currency, amount: depositAmountInCurrency }],
-//     });
-
-//     ambassadorWallet = await world.createWallet({
-//       address: ambassadorAddress,
-//       balance: 0n,
-//     });
-
-//     ambassadorWallets.push(ambassadorWallet);
-//     depositedAmounts.push(depositAmountInCurrency);
-//     currencies.push(currency);
-//     ambassadorFees.push(ambassadorFeeAmountInCurrency);
-
-//     /*
-//     console.log(
-//       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
-//         depositAmount,
-//       ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
-//         platformFee,
-//       ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
-//         3,
-//         " ",
-//       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
-//     );
-//     */
-//   }
-
-//   await world.setCurrentBlockInfo({
-//     timestamp: TIMESTAMP_AFTER,
-//   });
-
-//   let result = await deployer.callContract({
-//     callee: raisePoolContract,
-//     gasLimit: 500_000_000,
-//     funcName: "release",
-//     funcArgs: [e.U64(TIMESTAMP_AFTER), e.TopBuffer(SIGNATURE_AFTER)],
-//   });
-
-//   expect(result.returnData[0]).toBe(Buffer.from("completed").toString("hex"));
-
-//   assertAccount(await world.getAccount(platformWallet), {
-//     kvs: [
-//       e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesPlatformFees[0] }]),
-//       e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesPlatformFees[1] }]),
-//       e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesPlatformFees[2] }]),
-//     ],
-//   });
-
-//   assertAccount(await world.getAccount(groupWallet), {
-//     kvs: [
-//       e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesGroupFees[0] }]),
-//       e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesGroupFees[1] }]),
-//       e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesGroupFees[2] }]),
-//     ],
-//   });
-
-//   for (let i = 0; i < numberOfDeposits; i++) {
-//     assertAccount(await world.getAccount(ambassadorWallets[i]), {
-//       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
-//     });
-//     /*
-//     console.log(
-//       `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`,
-//     );
-//     */
-//   }
-// }, 200000);
-
-// test("Release in 2 calls no overcommitment", async () => {
-//   const numberOfDeposits = 150;
-
-//   platformWallet = await world.createWallet();
-//   groupWallet = await world.createWallet();
-
-//   await deployer.callContract({
-//     callee: factoryContract,
-//     gasLimit: 50_000_000,
-//     funcName: "deployRaisePool",
-//     funcArgs: [
-//       e.Str(POOL_ID),
-//       e.U64(LOW_SOFT_CAP),
-//       e.U64(HIGH_HARD_CAP),
-//       e.U64(MIN_DEPOSIT),
-//       e.U64(MAX_DEPOSIT),
-//       e.U64(DEPOSIT_INCREMENTS),
-//       e.U64(START_DATE),
-//       e.U64(END_DATE),
-//       e.U64(REFUND_ENABLED),
-//       e.U64(END_DATE),
-//       e.Addr(platformWallet),
-//       e.Addr(groupWallet),
-//       e.TopBuffer(SIGNATURE_DEPLOYER),
-//       e.U64(TIMESTAMP),
-//       e.Str(CURRENCY1),
-//       e.Str(CURRENCY2),
-//       e.Str(CURRENCY3),
-//     ],
-//   });
-
-//   const raisePoolAddressResult = await deployer.query({
-//     callee: factoryContract,
-//     funcName: "getPoolIdToAddress",
-//     funcArgs: [e.Str(POOL_ID)],
-//   });
-
-//   const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
-//   const raisePoolContract = new LSContract({
-//     address: raisePoolAddress,
-//     world,
-//   });
-
-//   await deployer.callContract({
-//     callee: factoryContract,
-//     gasLimit: 50_000_000,
-//     funcName: "enableRaisePool",
-//     funcArgs: [
-//       e.U64(TIMESTAMP),
-//       e.Str(POOL_ID),
-//       e.TopBuffer(SIGNATURE_DEPLOYER),
-//       e.Bool(true),
-//     ],
-//   });
-
-//   await world.setCurrentBlockInfo({
-//     timestamp: DEPOSIT_TIMESTAMP,
-//   });
-
-//   const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
-//   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
-//   var currenciesPlatformFees = [BigInt(0), BigInt(0), BigInt(0)];
-//   var currenciesGroupFees = [BigInt(0), BigInt(0), BigInt(0)];
-//   var ambassadorWallets: LSWallet[] = [];
-//   var currencies: string[] = [];
-//   var depositedAmounts: bigint[] = [];
-//   var ambassadorFees: bigint[] = [];
-
-//   for (let i = 0; i < numberOfDeposits; i++) {
-//     const {
-//       address,
-//       whitelistSignature,
-//       depositSignature,
-//       platformFee,
-//       groupFee,
-//       ambassadorFee,
-//       ambassadorAddress,
-//     } = generateDataAndSignature(1);
-
-//     const currencyRand = getRandomInt(0, 2);
-//     const currency = currenciesArray[currencyRand];
-//     const decimals = currenciesDecimals[currencyRand];
-//     const depositAmount = getRandomDeposit(
-//       MIN_DEPOSIT,
-//       MAX_DEPOSIT,
-//       DEPOSIT_INCREMENTS,
-//     );
-//     const depositAmountInCurrency =
-//       BigInt(depositAmount) * BigInt(10 ** decimals);
-//     const ambassadorFeeAmountInCurrency =
-//       (BigInt(depositAmountInCurrency) * BigInt(ambassadorFee)) /
-//       MAX_PERCENTAGE;
-//     currenciesPlatformFees[currencyRand] +=
-//       (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
-//     currenciesGroupFees[currencyRand] +=
-//       (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
-
-//     genericWallet = await world.createWallet({
-//       address: address,
-//       balance: 0,
-//       kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
-//     });
-
-//     await genericWallet.callContract({
-//       callee: walletDababaseContract,
-//       gasLimit: 50_000_000,
-//       funcName: "registerWallet",
-//       funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
-//     });
-
-//     await genericWallet.callContract({
-//       callee: raisePoolContract,
-//       gasLimit: 50_000_000,
-//       funcName: "deposit",
-//       funcArgs: [
-//         e.U64(TIMESTAMP),
-//         e.TopBuffer(depositSignature),
-//         e.U(platformFee),
-//         e.U(groupFee),
-//         e.U(ambassadorFee),
-//         e.Addr(ambassadorAddress),
-//       ],
-//       esdts: [{ id: currency, amount: depositAmountInCurrency }],
-//     });
-
-//     ambassadorWallet = await world.createWallet({
-//       address: ambassadorAddress,
-//       balance: 0n,
-//     });
-
-//     ambassadorWallets.push(ambassadorWallet);
-//     depositedAmounts.push(depositAmountInCurrency);
-//     currencies.push(currency);
-//     ambassadorFees.push(ambassadorFeeAmountInCurrency);
-
-//     /*
-//     console.log(
-//       `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
-//         depositAmount,
-//       ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
-//         platformFee,
-//       ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
-//         3,
-//         " ",
-//       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
-//     );
-//     */
-//   }
-
-//   await world.setCurrentBlockInfo({
-//     timestamp: TIMESTAMP_AFTER,
-//   });
-
-//   let result1 = await deployer.callContract({
-//     callee: raisePoolContract,
-//     gasLimit: 500_000_000,
-//     funcName: "release",
-//     funcArgs: [e.U64(TIMESTAMP_AFTER), e.TopBuffer(SIGNATURE_AFTER)],
-//   });
-
-//   expect(result1.returnData[0]).toBe(
-//     Buffer.from("interrupted").toString("hex"),
-//   );
-
-//   let result2 = await deployer.callContract({
-//     callee: raisePoolContract,
-//     gasLimit: 500_000_000,
-//     funcName: "release",
-//     funcArgs: [e.U64(TIMESTAMP_AFTER), e.TopBuffer(SIGNATURE_AFTER)],
-//   });
-
-//   expect(result2.returnData[0]).toBe(Buffer.from("completed").toString("hex"));
-
-//   assertAccount(await world.getAccount(platformWallet), {
-//     kvs: [
-//       e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesPlatformFees[0] }]),
-//       e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesPlatformFees[1] }]),
-//       e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesPlatformFees[2] }]),
-//     ],
-//   });
-
-//   assertAccount(await world.getAccount(groupWallet), {
-//     kvs: [
-//       e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesGroupFees[0] }]),
-//       e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesGroupFees[1] }]),
-//       e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesGroupFees[2] }]),
-//     ],
-//   });
-
-//   for (let i = 0; i < numberOfDeposits; i++) {
-//     assertAccount(await world.getAccount(ambassadorWallets[i]), {
-//       kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
-//     });
-//     /*
-//     console.log(
-//       `Ambassador amount sent to Id: ${String(i + 1).padStart(2, " ")}`,
-//     );
-//     */
-//   }
-// }, 200000);
+test("Release with wrong signature", async () => {
+  const numberOfDeposits = 1;
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(SOFT_CAP),
+      e.U64(HIGH_HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+      e.Str(CURRENCY3),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
+  await world.setCurrentBlockInfo({
+    timestamp: DEPOSIT_TIMESTAMP,
+  });
+
+  const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
+  const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
+
+  for (let i = 0; i < numberOfDeposits; i++) {
+    const {
+      address,
+      whitelistSignature,
+      depositSignature,
+      platformFee,
+      groupFee,
+      ambassadorFee,
+      ambassadorAddress,
+    } = generateDataAndSignature(1);
+
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+    );
+    const depositAmountInCurrency =
+      BigInt(depositAmount) * BigInt(10 ** decimals);
+
+    genericWallet = await world.createWallet({
+      address: address,
+      balance: 100_000,
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+    });
+
+    await genericWallet.callContract({
+      callee: walletDababaseContract,
+      gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "deposit",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.TopBuffer(depositSignature),
+        e.U(platformFee),
+        e.U(groupFee),
+        e.U(ambassadorFee),
+        e.Addr(ambassadorAddress),
+      ],
+      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+    });
+  }
+
+  await deployer
+    .callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "release",
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DUMMY)],
+    })
+    .assertFail({ code: 10, message: "invalid signature" });
+});
+
+test("Release by non owner", async () => {
+  const numberOfDeposits = 1;
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(LOW_SOFT_CAP),
+      e.U64(HIGH_HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+      e.Str(CURRENCY3),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
+  await world.setCurrentBlockInfo({
+    timestamp: DEPOSIT_TIMESTAMP,
+  });
+
+  const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
+  const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
+
+  for (let i = 0; i < numberOfDeposits; i++) {
+    const {
+      address,
+      whitelistSignature,
+      depositSignature,
+      platformFee,
+      groupFee,
+      ambassadorFee,
+      ambassadorAddress,
+    } = generateDataAndSignature(1);
+
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+    );
+    const depositAmountInCurrency =
+      BigInt(depositAmount) * BigInt(10 ** decimals);
+
+    genericWallet = await world.createWallet({
+      address: address,
+      balance: 100_000,
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+    });
+
+    await genericWallet.callContract({
+      callee: walletDababaseContract,
+      gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "deposit",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.TopBuffer(depositSignature),
+        e.U(platformFee),
+        e.U(groupFee),
+        e.U(ambassadorFee),
+        e.Addr(ambassadorAddress),
+      ],
+      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+    });
+  }
+
+  bob = await world.createWallet({
+    address: bobAddress,
+    balance: 100_000,
+  });
+
+  await bob
+    .callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "release",
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_REFUND)],
+    })
+    .assertFail({ code: 4, message: "Only owner can call this function" });
+});
+
+test("Release with too much delay", async () => {
+  const numberOfDeposits = 1;
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(LOW_HARD_CAP),
+      e.U64(HIGH_HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+      e.Str(CURRENCY3),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
+  await world.setCurrentBlockInfo({
+    timestamp: DEPOSIT_TIMESTAMP,
+  });
+
+  const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
+  const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
+
+  for (let i = 0; i < numberOfDeposits; i++) {
+    const {
+      address,
+      whitelistSignature,
+      depositSignature,
+      platformFee,
+      groupFee,
+      ambassadorFee,
+      ambassadorAddress,
+    } = generateDataAndSignature(1);
+
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+    );
+    const depositAmountInCurrency =
+      BigInt(depositAmount) * BigInt(10 ** decimals);
+
+    genericWallet = await world.createWallet({
+      address: address,
+      balance: 100_000,
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+    });
+
+    await genericWallet.callContract({
+      callee: walletDababaseContract,
+      gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "deposit",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.TopBuffer(depositSignature),
+        e.U(platformFee),
+        e.U(groupFee),
+        e.U(ambassadorFee),
+        e.Addr(ambassadorAddress),
+      ],
+      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+    });
+  }
+
+  await world.setCurrentBlockInfo({
+    timestamp: TIMESTAMP_WITH_DELAY,
+  });
+
+  await deployer
+    .callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "release",
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_DEPLOYER)],
+    })
+    .assertFail({ code: 4, message: "Function call took too long" });
+});
+
+test("Enable pool after release", async () => {
+  const numberOfDeposits = 1;
+
+  platformWallet = await world.createWallet();
+  groupWallet = await world.createWallet();
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(LOW_SOFT_CAP),
+      e.U64(HIGH_HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
+      e.Addr(platformWallet),
+      e.Addr(groupWallet),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+      e.Str(CURRENCY3),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
+  await world.setCurrentBlockInfo({
+    timestamp: DEPOSIT_TIMESTAMP,
+  });
+
+  const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
+  const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
+  var currenciesPlatformFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesGroupFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var ambassadorWallets: LSWallet[] = [];
+  var currencies: string[] = [];
+  var depositedAmounts: bigint[] = [];
+  var ambassadorFees: bigint[] = [];
+
+  for (let i = 0; i < numberOfDeposits; i++) {
+    const {
+      address,
+      whitelistSignature,
+      depositSignature,
+      platformFee,
+      groupFee,
+      ambassadorFee,
+      ambassadorAddress,
+    } = generateDataAndSignature(1);
+
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+    );
+    const depositAmountInCurrency =
+      BigInt(depositAmount) * BigInt(10 ** decimals);
+    const ambassadorFeeAmountInCurrency =
+      (BigInt(depositAmountInCurrency) * BigInt(ambassadorFee)) /
+      MAX_PERCENTAGE;
+    currenciesPlatformFees[currencyRand] +=
+      (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
+    currenciesGroupFees[currencyRand] +=
+      (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
+
+    genericWallet = await world.createWallet({
+      address: address,
+      balance: 0,
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+    });
+
+    await genericWallet.callContract({
+      callee: walletDababaseContract,
+      gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "deposit",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.TopBuffer(depositSignature),
+        e.U(platformFee),
+        e.U(groupFee),
+        e.U(ambassadorFee),
+        e.Addr(ambassadorAddress),
+      ],
+      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+    });
+
+    ambassadorWallet = await world.createWallet({
+      address: ambassadorAddress,
+      balance: 0n,
+    });
+
+    ambassadorWallets.push(ambassadorWallet);
+    depositedAmounts.push(depositAmountInCurrency);
+    currencies.push(currency);
+    ambassadorFees.push(ambassadorFeeAmountInCurrency);
+
+    /*
+    console.log(
+      `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
+        depositAmount,
+      ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
+        platformFee,
+      ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
+        3,
+        " ",
+      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
+    );
+    */
+  }
+
+  await world.setCurrentBlockInfo({
+    timestamp: TIMESTAMP_AFTER,
+  });
+
+  let result = await deployer.callContract({
+    callee: raisePoolContract,
+    gasLimit: 500_000_000,
+    funcName: "release",
+    funcArgs: [e.U64(TIMESTAMP_AFTER), e.TopBuffer(SIGNATURE_AFTER)],
+  });
+
+  expect(result.returnData[0]).toBe(Buffer.from("completed").toString("hex"));
+
+  assertAccount(await world.getAccount(platformWallet), {
+    kvs: [
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesPlatformFees[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesPlatformFees[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesPlatformFees[2] }]),
+    ],
+  });
+
+  assertAccount(await world.getAccount(groupWallet), {
+    kvs: [
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesGroupFees[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesGroupFees[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesGroupFees[2] }]),
+    ],
+  });
+
+  for (let i = 0; i < numberOfDeposits; i++) {
+    assertAccount(await world.getAccount(ambassadorWallets[i]), {
+      kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
+    });
+    /*
+    console.log(
+      `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`,
+    );
+    */
+  }
+
+  await deployer
+    .callContract({
+      callee: factoryContract,
+      gasLimit: 50_000_000,
+      funcName: "enableRaisePool",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.Str(POOL_ID),
+        e.TopBuffer(SIGNATURE_DEPLOYER),
+        e.Bool(true),
+      ],
+    })
+    .assertFail({
+      code: 10,
+      message: "error signalled by smartcontract",
+    });
+}, 200000);
+
+test("Release in 1 call no overcommitment", async () => {
+  const numberOfDeposits = 140;
+
+  platformWallet = await world.createWallet();
+  groupWallet = await world.createWallet();
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(LOW_SOFT_CAP),
+      e.U64(HIGH_HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
+      e.Addr(platformWallet),
+      e.Addr(groupWallet),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+      e.Str(CURRENCY3),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
+  await world.setCurrentBlockInfo({
+    timestamp: DEPOSIT_TIMESTAMP,
+  });
+
+  var totalAmount: bigint = BigInt(0);
+  var platformFeeAmount: bigint = BigInt(0);
+  var platformFeeAmountInCurrency: bigint = BigInt(0);
+  var groupFeeAmount: bigint = BigInt(0);
+  var groupFeeAmountInCurrency: bigint = BigInt(0);
+  var ambassadorFeeAmount: bigint = BigInt(0);
+
+  const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
+  const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
+  var currenciesTotal = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesPlatformFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesGroupFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesAmbassadorFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var ambassadorWallets: LSWallet[] = [];
+  var currencies: string[] = [];
+  var ambassadorFees: bigint[] = [];
+
+  for (let i = 0; i < numberOfDeposits; i++) {
+    const {
+      address,
+      whitelistSignature,
+      depositSignature,
+      platformFee,
+      groupFee,
+      ambassadorFee,
+      ambassadorAddress,
+    } = generateDataAndSignature(1);
+
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+    );
+
+    genericWallet = await world.createWallet({
+      address: address,
+      balance: 0,
+      kvs: [
+        e.kvs.Esdts([
+          {
+            id: currency,
+            amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+          },
+        ]),
+      ],
+    });
+
+    await genericWallet.callContract({
+      callee: walletDababaseContract,
+      gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "deposit",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.TopBuffer(depositSignature),
+        e.U(platformFee),
+        e.U(groupFee),
+        e.U(ambassadorFee),
+        e.Addr(ambassadorAddress),
+      ],
+      esdts: [
+        {
+          id: currency,
+          amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+        },
+      ],
+    });
+
+    ambassadorWallet = await world.createWallet({
+      address: ambassadorAddress,
+      balance: 0n,
+    });
+
+    const depositAmountInCurrency =
+      BigInt(depositAmount) * BigInt(10 ** decimals);
+    const depositAmountDenominated = BigInt(depositAmount) * BigInt(10 ** 18);
+
+    platformFeeAmountInCurrency =
+      (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
+    groupFeeAmountInCurrency =
+      (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
+    const ambassadorFeeAmountInCurrency =
+      (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+
+    currenciesPlatformFees[currencyRand] +=
+      (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
+    platformFeeAmount =
+      (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
+    currenciesGroupFees[currencyRand] +=
+      (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
+    groupFeeAmount =
+      (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
+    ambassadorFeeAmount =
+      (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+
+    currenciesAmbassadorFees[currencyRand] =
+      currenciesAmbassadorFees[currencyRand] +
+      ambassadorFeeAmountInCurrency -
+      platformFeeAmountInCurrency -
+      groupFeeAmountInCurrency -
+      ambassadorFeeAmountInCurrency;
+
+    ambassadorWallets.push(ambassadorWallet);
+    currencies.push(currency);
+    ambassadorFees.push(ambassadorFeeAmountInCurrency);
+
+    currenciesTotal[currencyRand] =
+      currenciesTotal[currencyRand] +
+      depositAmountInCurrency -
+      platformFeeAmountInCurrency -
+      groupFeeAmountInCurrency -
+      ambassadorFeeAmountInCurrency;
+
+    totalAmount =
+      totalAmount +
+      depositAmountDenominated -
+      platformFeeAmount -
+      groupFeeAmount -
+      ambassadorFeeAmount;
+
+    /*
+    console.log(
+      `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
+        depositAmount,
+      ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
+        platformFee,
+      ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
+        3,
+        " ",
+      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
+    );
+    */
+  }
+
+  await world.setCurrentBlockInfo({
+    timestamp: TIMESTAMP_AFTER,
+  });
+
+  let result = await deployer.callContract({
+    callee: raisePoolContract,
+    gasLimit: 500_000_000,
+    funcName: "release",
+    funcArgs: [e.U64(TIMESTAMP_AFTER), e.TopBuffer(SIGNATURE_AFTER)],
+  });
+
+  expect(result.returnData[0]).toBe(Buffer.from("completed").toString("hex"));
+
+  assertAccount(await world.getAccount(platformWallet), {
+    kvs: [
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesPlatformFees[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesPlatformFees[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesPlatformFees[2] }]),
+    ],
+  });
+
+  assertAccount(await world.getAccount(groupWallet), {
+    kvs: [
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesGroupFees[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesGroupFees[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesGroupFees[2] }]),
+    ],
+  });
+
+  for (let i = 0; i < numberOfDeposits; i++) {
+    assertAccount(await world.getAccount(ambassadorWallets[i]), {
+      kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
+    });
+    /*
+    console.log(
+      `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`,
+    );
+    */
+  }
+
+  assertAccount(await raisePoolContract.getAccount(), {
+    balance: 0n,
+    hasKvs: [
+      e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesTotal[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesTotal[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesTotal[2] }]),
+    ],
+  });
+}, 200000);
+
+test("Release in 2 calls no overcommitment", async () => {
+  const numberOfDeposits = 200;
+
+  platformWallet = await world.createWallet();
+  groupWallet = await world.createWallet();
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(LOW_SOFT_CAP),
+      e.U64(HIGH_HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
+      e.Addr(platformWallet),
+      e.Addr(groupWallet),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+      e.Str(CURRENCY3),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
+  await world.setCurrentBlockInfo({
+    timestamp: DEPOSIT_TIMESTAMP,
+  });
+
+  var totalAmount: bigint = BigInt(0);
+  var platformFeeAmount: bigint = BigInt(0);
+  var platformFeeAmountInCurrency: bigint = BigInt(0);
+  var groupFeeAmount: bigint = BigInt(0);
+  var groupFeeAmountInCurrency: bigint = BigInt(0);
+  var ambassadorFeeAmount: bigint = BigInt(0);
+
+  const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
+  const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
+  var currenciesTotal = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesPlatformFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesGroupFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesAmbassadorFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var ambassadorWallets: LSWallet[] = [];
+  var currencies: string[] = [];
+  var ambassadorFees: bigint[] = [];
+
+  for (let i = 0; i < numberOfDeposits; i++) {
+    const {
+      address,
+      whitelistSignature,
+      depositSignature,
+      platformFee,
+      groupFee,
+      ambassadorFee,
+      ambassadorAddress,
+    } = generateDataAndSignature(1);
+
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+    );
+
+    genericWallet = await world.createWallet({
+      address: address,
+      balance: 0,
+      kvs: [
+        e.kvs.Esdts([
+          {
+            id: currency,
+            amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+          },
+        ]),
+      ],
+    });
+
+    await genericWallet.callContract({
+      callee: walletDababaseContract,
+      gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "deposit",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.TopBuffer(depositSignature),
+        e.U(platformFee),
+        e.U(groupFee),
+        e.U(ambassadorFee),
+        e.Addr(ambassadorAddress),
+      ],
+      esdts: [
+        {
+          id: currency,
+          amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+        },
+      ],
+    });
+
+    ambassadorWallet = await world.createWallet({
+      address: ambassadorAddress,
+      balance: 0n,
+    });
+
+    const depositAmountInCurrency =
+      BigInt(depositAmount) * BigInt(10 ** decimals);
+    const depositAmountDenominated = BigInt(depositAmount) * BigInt(10 ** 18);
+
+    platformFeeAmountInCurrency =
+      (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
+    groupFeeAmountInCurrency =
+      (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
+    const ambassadorFeeAmountInCurrency =
+      (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+
+    currenciesPlatformFees[currencyRand] +=
+      (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
+    platformFeeAmount =
+      (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
+    currenciesGroupFees[currencyRand] +=
+      (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
+    groupFeeAmount =
+      (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
+    ambassadorFeeAmount =
+      (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+
+    currenciesAmbassadorFees[currencyRand] =
+      currenciesAmbassadorFees[currencyRand] +
+      ambassadorFeeAmountInCurrency -
+      platformFeeAmountInCurrency -
+      groupFeeAmountInCurrency -
+      ambassadorFeeAmountInCurrency;
+
+    ambassadorWallets.push(ambassadorWallet);
+    currencies.push(currency);
+    ambassadorFees.push(ambassadorFeeAmountInCurrency);
+
+    currenciesTotal[currencyRand] =
+      currenciesTotal[currencyRand] +
+      depositAmountInCurrency -
+      platformFeeAmountInCurrency -
+      groupFeeAmountInCurrency -
+      ambassadorFeeAmountInCurrency;
+
+    totalAmount =
+      totalAmount +
+      depositAmountDenominated -
+      platformFeeAmount -
+      groupFeeAmount -
+      ambassadorFeeAmount;
+
+    /*
+    console.log(
+      `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
+        depositAmount,
+      ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
+        platformFee,
+      ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
+        3,
+        " ",
+      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
+    );
+    */
+  }
+
+  await world.setCurrentBlockInfo({
+    timestamp: TIMESTAMP_AFTER,
+  });
+
+  let result = await deployer.callContract({
+    callee: raisePoolContract,
+    gasLimit: 500_000_000,
+    funcName: "release",
+    funcArgs: [e.U64(TIMESTAMP_AFTER), e.TopBuffer(SIGNATURE_AFTER)],
+  });
+
+  expect(result.returnData[0]).toBe(Buffer.from("interrupted").toString("hex"));
+
+  let result2 = await deployer.callContract({
+    callee: raisePoolContract,
+    gasLimit: 500_000_000,
+    funcName: "release",
+    funcArgs: [e.U64(TIMESTAMP_AFTER), e.TopBuffer(SIGNATURE_AFTER)],
+  });
+
+  expect(result2.returnData[0]).toBe(Buffer.from("completed").toString("hex"));
+
+  assertAccount(await world.getAccount(platformWallet), {
+    kvs: [
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesPlatformFees[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesPlatformFees[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesPlatformFees[2] }]),
+    ],
+  });
+
+  assertAccount(await world.getAccount(groupWallet), {
+    kvs: [
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesGroupFees[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesGroupFees[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesGroupFees[2] }]),
+    ],
+  });
+
+  for (let i = 0; i < numberOfDeposits; i++) {
+    assertAccount(await world.getAccount(ambassadorWallets[i]), {
+      kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
+    });
+    /*
+    console.log(
+      `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`,
+    );
+    */
+  }
+
+  assertAccount(await raisePoolContract.getAccount(), {
+    balance: 0n,
+    hasKvs: [
+      e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesTotal[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesTotal[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesTotal[2] }]),
+    ],
+  });
+}, 200000);
 
 test("Release in 1 call with N overcommitment", async () => {
-  const numberOfDeposits = 10;
-  const refundLast = 4;
+  const numberOfDeposits = 160;
+  const refundLast = 40;
 
   platformWallet = await world.createWallet();
   groupWallet = await world.createWallet();
@@ -1183,7 +1307,6 @@ test("Release in 1 call with N overcommitment", async () => {
     } = generateDataAndSignature(1);
 
     const currencyRand = getRandomInt(0, 2);
-    // const currencyRand = 2;
     const currency = currenciesArray[currencyRand];
     const decimals = currenciesDecimals[currencyRand];
     const depositAmount = getRandomDeposit(
@@ -1191,7 +1314,6 @@ test("Release in 1 call with N overcommitment", async () => {
       MAX_DEPOSIT,
       DEPOSIT_INCREMENTS,
     );
-    // const depositAmount = 1000;
 
     genericWallet = await world.createWallet({
       address: address,
@@ -1280,12 +1402,6 @@ test("Release in 1 call with N overcommitment", async () => {
         groupFeeAmountInCurrency -
         ambassadorFeeAmountInCurrency;
 
-      console.log(depositAmountInCurrency);
-      console.log(platformFeeAmountInCurrency);
-      console.log(groupFeeAmountInCurrency);
-      console.log(ambassadorFeeAmountInCurrency);
-      console.log(currenciesTotal[currencyRand]);
-
       totalAmount =
         totalAmount +
         depositAmountDenominated -
@@ -1293,20 +1409,19 @@ test("Release in 1 call with N overcommitment", async () => {
         groupFeeAmount -
         ambassadorFeeAmount;
     } else {
-      console.log("Refund ", i);
       refundAddresses.push(e.Addr(address));
     }
 
-    console.log(
-      `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
-        depositAmount,
-      ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
-        platformFee,
-      ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
-        3,
-        " ",
-      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
-    );
+    // console.log(
+    //   `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
+    //     depositAmount,
+    //   ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
+    //     platformFee,
+    //   ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
+    //     3,
+    //     " ",
+    //   )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
+    // );
   }
 
   await world.setCurrentBlockInfo({
@@ -1325,6 +1440,277 @@ test("Release in 1 call with N overcommitment", async () => {
   });
 
   expect(result.returnData[0]).toBe(Buffer.from("completed").toString("hex"));
+
+  assertAccount(await world.getAccount(platformWallet), {
+    kvs: [
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesPlatformFees[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesPlatformFees[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesPlatformFees[2] }]),
+    ],
+  });
+
+  assertAccount(await world.getAccount(groupWallet), {
+    kvs: [
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesGroupFees[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesGroupFees[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesGroupFees[2] }]),
+    ],
+  });
+
+  for (let i = 0; i < numberOfDeposits - refundLast; i++) {
+    assertAccount(await world.getAccount(ambassadorWallets[i]), {
+      kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
+    });
+  }
+
+  assertAccount(await raisePoolContract.getAccount(), {
+    balance: 0n,
+    hasKvs: [
+      e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesTotal[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesTotal[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesTotal[2] }]),
+    ],
+  });
+}, 200000);
+
+test("Release in 2 calls with N overcommitment", async () => {
+  const numberOfDeposits = 250;
+  const refundLast = 150;
+
+  platformWallet = await world.createWallet();
+  groupWallet = await world.createWallet();
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(LOW_SOFT_CAP),
+      e.U64(HIGH_HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
+      e.Addr(platformWallet),
+      e.Addr(groupWallet),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+      e.Str(CURRENCY3),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "enableRaisePool",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.Str(POOL_ID),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.Bool(true),
+    ],
+  });
+
+  await world.setCurrentBlockInfo({
+    timestamp: DEPOSIT_TIMESTAMP,
+  });
+
+  var totalAmount: bigint = BigInt(0);
+  var platformFeeAmount: bigint = BigInt(0);
+  var platformFeeAmountInCurrency: bigint = BigInt(0);
+  var groupFeeAmount: bigint = BigInt(0);
+  var groupFeeAmountInCurrency: bigint = BigInt(0);
+  var ambassadorFeeAmount: bigint = BigInt(0);
+
+  const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
+  const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
+  var currenciesTotal = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesPlatformFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesGroupFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesAmbassadorFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var ambassadorWallets: LSWallet[] = [];
+  var currencies: string[] = [];
+  var ambassadorFees: bigint[] = [];
+  var refundAddresses: Encodable[] = [];
+
+  for (let i = 0; i < numberOfDeposits; i++) {
+    const {
+      address,
+      whitelistSignature,
+      depositSignature,
+      platformFee,
+      groupFee,
+      ambassadorFee,
+      ambassadorAddress,
+    } = generateDataAndSignature(1);
+
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+    );
+
+    genericWallet = await world.createWallet({
+      address: address,
+      balance: 0,
+      kvs: [
+        e.kvs.Esdts([
+          {
+            id: currency,
+            amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+          },
+        ]),
+      ],
+    });
+
+    await genericWallet.callContract({
+      callee: walletDababaseContract,
+      gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "deposit",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.TopBuffer(depositSignature),
+        e.U(platformFee),
+        e.U(groupFee),
+        e.U(ambassadorFee),
+        e.Addr(ambassadorAddress),
+      ],
+      esdts: [
+        {
+          id: currency,
+          amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+        },
+      ],
+    });
+
+    ambassadorWallet = await world.createWallet({
+      address: ambassadorAddress,
+      balance: 0n,
+    });
+
+    if (i < numberOfDeposits - refundLast) {
+      const depositAmountInCurrency =
+        BigInt(depositAmount) * BigInt(10 ** decimals);
+      const depositAmountDenominated = BigInt(depositAmount) * BigInt(10 ** 18);
+
+      platformFeeAmountInCurrency =
+        (BigInt(depositAmountInCurrency) * BigInt(platformFee)) /
+        MAX_PERCENTAGE;
+      groupFeeAmountInCurrency =
+        (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
+      const ambassadorFeeAmountInCurrency =
+        (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+
+      currenciesPlatformFees[currencyRand] +=
+        (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
+      platformFeeAmount =
+        (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
+      currenciesGroupFees[currencyRand] +=
+        (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
+      groupFeeAmount =
+        (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
+      ambassadorFeeAmount =
+        (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+
+      currenciesAmbassadorFees[currencyRand] =
+        currenciesAmbassadorFees[currencyRand] +
+        ambassadorFeeAmountInCurrency -
+        platformFeeAmountInCurrency -
+        groupFeeAmountInCurrency -
+        ambassadorFeeAmountInCurrency;
+
+      ambassadorWallets.push(ambassadorWallet);
+      currencies.push(currency);
+      ambassadorFees.push(ambassadorFeeAmountInCurrency);
+
+      currenciesTotal[currencyRand] =
+        currenciesTotal[currencyRand] +
+        depositAmountInCurrency -
+        platformFeeAmountInCurrency -
+        groupFeeAmountInCurrency -
+        ambassadorFeeAmountInCurrency;
+
+      totalAmount =
+        totalAmount +
+        depositAmountDenominated -
+        platformFeeAmount -
+        groupFeeAmount -
+        ambassadorFeeAmount;
+    } else {
+      refundAddresses.push(e.Addr(address));
+    }
+
+    // console.log(
+    //   `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
+    //     depositAmount,
+    //   ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
+    //     platformFee,
+    //   ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
+    //     3,
+    //     " ",
+    //   )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
+    // );
+  }
+
+  await world.setCurrentBlockInfo({
+    timestamp: TIMESTAMP_AFTER,
+  });
+
+  let result = await deployer.callContract({
+    callee: raisePoolContract,
+    gasLimit: 50_000_000_000,
+    funcName: "release",
+    funcArgs: [
+      e.U64(TIMESTAMP_AFTER),
+      e.TopBuffer(SIGNATURE_AFTER),
+      ...refundAddresses,
+    ],
+  });
+
+  expect(result.returnData[0]).toBe(Buffer.from("interrupted").toString("hex"));
+
+  let result2 = await deployer.callContract({
+    callee: raisePoolContract,
+    gasLimit: 50_000_000_000,
+    funcName: "release",
+    funcArgs: [
+      e.U64(TIMESTAMP_AFTER),
+      e.TopBuffer(SIGNATURE_AFTER),
+      ...refundAddresses,
+    ],
+  });
+
+  expect(result2.returnData[0]).toBe(Buffer.from("completed").toString("hex"));
 
   assertAccount(await world.getAccount(platformWallet), {
     kvs: [
