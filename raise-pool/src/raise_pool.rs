@@ -193,6 +193,20 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         loop {
             match self.release_state().get() {
                 ReleaseState::None => {
+                    if overcommited_len > 0 {
+                        let status =
+                            self.refund_overcommited(overcommited.clone(), overcommited_len);
+                        if status == OperationCompletionStatus::InterruptedBeforeOutOfGas {
+                            return status;
+                        }
+                        self.release_state()
+                            .set(ReleaseState::OvercommitersReleased);
+                    } else {
+                        self.release_state()
+                            .set(ReleaseState::OvercommitersReleased);
+                    }
+                }
+                ReleaseState::OvercommitersReleased => {
                     self.release_plaform();
                     self.release_state().set(ReleaseState::PlatformReleased);
                 }
@@ -205,19 +219,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
                     if status == OperationCompletionStatus::InterruptedBeforeOutOfGas {
                         return status;
                     }
-                    self.release_state().set(ReleaseState::AmbassadorsReleased);
-                }
-                ReleaseState::AmbassadorsReleased => {
-                    if overcommited_len > 0 {
-                        let status =
-                            self.refund_overcommited(overcommited.clone(), overcommited_len);
-                        if status == OperationCompletionStatus::InterruptedBeforeOutOfGas {
-                            return status;
-                        }
-                        self.release_state().set(ReleaseState::AllReleased);
-                    } else {
-                        self.release_state().set(ReleaseState::AllReleased);
-                    }
+                    self.release_state().set(ReleaseState::AllReleased);
                 }
                 ReleaseState::AllReleased => return OperationCompletionStatus::Completed,
             }
@@ -330,7 +332,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
     }
 
     fn release_plaform(&self) {
-        let mut payments = ManagedVec::new();
+        let mut payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
         for token in self.payment_currencies().iter() {
             let fee = self.platform_fee(&token).get();
             if fee > 0 {
@@ -409,7 +411,6 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         let mut overcommited_iter = overcommited_iter.skip(overcommited_index);
         let mut tx_index: usize = 0;
 
-        let mut payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
         while overcommited_index < overcommited_len {
             if self.blockchain().get_gas_left() < MIN_GAS_FOR_OPERATION
                 || tx_index == MAX_TX_PER_RELEASE as usize
@@ -417,6 +418,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
                 self.overcommited_index().set(overcommited_index);
                 return OperationCompletionStatus::InterruptedBeforeOutOfGas;
             }
+            let mut payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
             let address = overcommited_iter.next().unwrap();
             for token in self.deposited_currencies(&address).iter() {
                 let payment = self.release_token_admin(&address, &token);
@@ -427,7 +429,6 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
             overcommited_index += 1;
             tx_index += 1;
         }
-
         self.overcommited_index().set(overcommited_len);
         OperationCompletionStatus::Completed
     }

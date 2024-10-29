@@ -1093,8 +1093,8 @@ afterEach(async () => {
 // }, 200000);
 
 test("Release in 1 call with N overcommitment", async () => {
-  const numberOfDeposits = 2;
-  const refundLast = 0;
+  const numberOfDeposits = 10;
+  const refundLast = 4;
 
   platformWallet = await world.createWallet();
   groupWallet = await world.createWallet();
@@ -1153,44 +1153,12 @@ test("Release in 1 call with N overcommitment", async () => {
     timestamp: DEPOSIT_TIMESTAMP,
   });
 
-  const baseKvs = [
-    e.kvs.Mapper("soft_cap").Value(e.I(HIGH_SOFT_CAP)),
-    e.kvs.Mapper("hard_cap").Value(e.I(HIGH_HARD_CAP)),
-    e.kvs.Mapper("min_deposit").Value(e.I(MIN_DEPOSIT)),
-    e.kvs.Mapper("max_deposit").Value(e.I(MAX_DEPOSIT)),
-    e.kvs.Mapper("deposit_increments").Value(e.I(DEPOSIT_INCREMENTS)),
-    e.kvs.Mapper("start_date").Value(e.U64(START_DATE)),
-    e.kvs.Mapper("end_date").Value(e.U64(END_DATE)),
-    e.kvs.Mapper("refund_enabled").Value(e.Bool(Boolean(REFUND_ENABLED))),
-    e.kvs.Mapper("refund_deadline").Value(e.U64(END_DATE)),
-    e.kvs.Mapper("platform_fee_wallet").Value(e.Addr(deployer)),
-    e.kvs.Mapper("group_fee_wallet").Value(e.Addr(deployer)),
-    e.kvs
-      .Mapper("payment_currencies")
-      .UnorderedSet([e.Str(CURRENCY1), e.Str(CURRENCY2), e.Str(CURRENCY3)]),
-    e.kvs.Mapper("currency_decimals", e.Str(CURRENCY1)).Value(e.U32(DECIMALS1)),
-    e.kvs.Mapper("currency_decimals", e.Str(CURRENCY2)).Value(e.U32(DECIMALS2)),
-    e.kvs.Mapper("currency_decimals", e.Str(CURRENCY3)).Value(e.U32(DECIMALS3)),
-    e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(false)),
-    e.kvs.Mapper("signer").Value(e.Addr(deployer)),
-    e.kvs.Mapper("pool_id").Value(e.Str(POOL_ID)),
-    e.kvs.Mapper("release_state").Value(e.Usize(0)),
-    e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(true)),
-    e.kvs.Mapper("owner").Value(e.Addr(deployer)),
-    e.kvs
-      .Mapper("wallet_database_address")
-      .Value(e.Addr(walletDababaseContract)),
-  ];
-
-  type TripleBigIntArray = [BigInt, BigInt, BigInt];
-  var walletsKvs: Kvs[] = [];
-  var addresses: Encodable[] = [];
   var totalAmount: bigint = BigInt(0);
-  var totalPlatformFee: bigint = BigInt(0);
-  var totalGroupFee: bigint = BigInt(0);
-  var ambassadors: Encodable[] = [];
-  var ambassadorsRefferalFees: TripleBigIntArray[] = [];
-  var refundAddresses: Encodable[] = [];
+  var platformFeeAmount: bigint = BigInt(0);
+  var platformFeeAmountInCurrency: bigint = BigInt(0);
+  var groupFeeAmount: bigint = BigInt(0);
+  var groupFeeAmountInCurrency: bigint = BigInt(0);
+  var ambassadorFeeAmount: bigint = BigInt(0);
 
   const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
@@ -1200,10 +1168,8 @@ test("Release in 1 call with N overcommitment", async () => {
   var currenciesAmbassadorFees = [BigInt(0), BigInt(0), BigInt(0)];
   var ambassadorWallets: LSWallet[] = [];
   var currencies: string[] = [];
-  var depositedAmounts: bigint[] = [];
   var ambassadorFees: bigint[] = [];
   var refundAddresses: Encodable[] = [];
-  var ambIdx = 0;
 
   for (let i = 0; i < numberOfDeposits; i++) {
     const {
@@ -1217,6 +1183,7 @@ test("Release in 1 call with N overcommitment", async () => {
     } = generateDataAndSignature(1);
 
     const currencyRand = getRandomInt(0, 2);
+    // const currencyRand = 2;
     const currency = currenciesArray[currencyRand];
     const decimals = currenciesDecimals[currencyRand];
     const depositAmount = getRandomDeposit(
@@ -1224,6 +1191,7 @@ test("Release in 1 call with N overcommitment", async () => {
       MAX_DEPOSIT,
       DEPOSIT_INCREMENTS,
     );
+    // const depositAmount = 1000;
 
     genericWallet = await world.createWallet({
       address: address,
@@ -1275,79 +1243,57 @@ test("Release in 1 call with N overcommitment", async () => {
         BigInt(depositAmount) * BigInt(10 ** decimals);
       const depositAmountDenominated = BigInt(depositAmount) * BigInt(10 ** 18);
 
-      walletsKvs.push(
-        e.kvs
-          .Mapper("deposited_currencies", e.Addr(genericWallet))
-          .UnorderedSet([e.Str(currency)]),
-      );
-      walletsKvs.push(
-        e.kvs
-          .Mapper("deposited_amount", e.Addr(genericWallet), e.Str(currency))
-          .Value(e.U(depositAmountInCurrency)),
-      );
-      walletsKvs.push(
-        e.kvs
-          .Mapper(
-            "address_platform_fee",
-            e.Addr(genericWallet),
-            e.Str(currency),
-          )
-          .Value(
-            e.U(
-              (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE,
-            ),
-          ),
-      );
-      walletsKvs.push(
-        e.kvs
-          .Mapper("address_group_fee", e.Addr(genericWallet), e.Str(currency))
-          .Value(
-            e.U((depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE),
-          ),
-      );
-      addresses.push(e.Addr(genericWallet));
-      totalAmount += depositAmountDenominated;
-      currenciesTotal[currencyRand] += depositAmountInCurrency;
+      platformFeeAmountInCurrency =
+        (BigInt(depositAmountInCurrency) * BigInt(platformFee)) /
+        MAX_PERCENTAGE;
+      groupFeeAmountInCurrency =
+        (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
+      const ambassadorFeeAmountInCurrency =
+        (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+
       currenciesPlatformFees[currencyRand] +=
         (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
-      totalPlatformFee +=
+      platformFeeAmount =
         (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
       currenciesGroupFees[currencyRand] +=
         (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
-      totalGroupFee +=
+      groupFeeAmount =
         (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
-      walletsKvs.push(
-        e.kvs
-          .Mapper(
-            "address_ambassador_fee",
-            e.Addr(genericWallet),
-            e.Str(currency),
-          )
-          .Value(
-            e.U(
-              (depositAmountInCurrency * BigInt(ambassadorFee)) /
-                MAX_PERCENTAGE,
-            ),
-          ),
-      );
-      walletsKvs.push(
-        e.kvs
-          .Mapper("address_to_ambassador", e.Addr(genericWallet))
-          .Value(e.Addr(ambassadorAddress)),
-      );
-      const ambassadorFeeInCurrency =
-        (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
-      currenciesAmbassadorFees[currencyRand] += ambassadorFeeInCurrency;
-      ambassadorsRefferalFees.push([BigInt(0), BigInt(0), BigInt(0)]);
-      ambassadorsRefferalFees[ambIdx][currencyRand] = ambassadorFeeInCurrency;
-      ambIdx += 1;
-      ambassadors.push(e.Addr(ambassadorAddress));
+      ambassadorFeeAmount =
+        (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+
+      currenciesAmbassadorFees[currencyRand] =
+        currenciesAmbassadorFees[currencyRand] +
+        ambassadorFeeAmountInCurrency -
+        platformFeeAmountInCurrency -
+        groupFeeAmountInCurrency -
+        ambassadorFeeAmountInCurrency;
 
       ambassadorWallets.push(ambassadorWallet);
-      depositedAmounts.push(depositAmountInCurrency);
       currencies.push(currency);
-      ambassadorFees.push(ambassadorFeeInCurrency);
+      ambassadorFees.push(ambassadorFeeAmountInCurrency);
+
+      currenciesTotal[currencyRand] =
+        currenciesTotal[currencyRand] +
+        depositAmountInCurrency -
+        platformFeeAmountInCurrency -
+        groupFeeAmountInCurrency -
+        ambassadorFeeAmountInCurrency;
+
+      console.log(depositAmountInCurrency);
+      console.log(platformFeeAmountInCurrency);
+      console.log(groupFeeAmountInCurrency);
+      console.log(ambassadorFeeAmountInCurrency);
+      console.log(currenciesTotal[currencyRand]);
+
+      totalAmount =
+        totalAmount +
+        depositAmountDenominated -
+        platformFeeAmount -
+        groupFeeAmount -
+        ambassadorFeeAmount;
     } else {
+      console.log("Refund ", i);
       refundAddresses.push(e.Addr(address));
     }
 
@@ -1371,8 +1317,11 @@ test("Release in 1 call with N overcommitment", async () => {
     callee: raisePoolContract,
     gasLimit: 500_000_000,
     funcName: "release",
-    funcArgs: [e.U64(TIMESTAMP_AFTER), e.TopBuffer(SIGNATURE_AFTER)],
-    ...refundAddresses,
+    funcArgs: [
+      e.U64(TIMESTAMP_AFTER),
+      e.TopBuffer(SIGNATURE_AFTER),
+      ...refundAddresses,
+    ],
   });
 
   expect(result.returnData[0]).toBe(Buffer.from("completed").toString("hex"));
@@ -1385,22 +1334,27 @@ test("Release in 1 call with N overcommitment", async () => {
     ],
   });
 
-  // assertAccount(await world.getAccount(groupWallet), {
-  //   kvs: [
-  //     e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesGroupFees[0] }]),
-  //     e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesGroupFees[1] }]),
-  //     e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesGroupFees[2] }]),
-  //   ],
-  // });
+  assertAccount(await world.getAccount(groupWallet), {
+    kvs: [
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesGroupFees[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesGroupFees[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesGroupFees[2] }]),
+    ],
+  });
 
-  // for (let i = 0; i < numberOfDeposits; i++) {
-  //   assertAccount(await world.getAccount(ambassadorWallets[i]), {
-  //     kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
-  //   });
-  //   /*
-  //   console.log(
-  //     `Amount sent to Ambassador Id: ${String(i + 1).padStart(2, " ")}`,
-  //   );
-  //   */
-  // }
+  for (let i = 0; i < numberOfDeposits - refundLast; i++) {
+    assertAccount(await world.getAccount(ambassadorWallets[i]), {
+      kvs: [e.kvs.Esdts([{ id: currencies[i], amount: ambassadorFees[i] }])],
+    });
+  }
+
+  assertAccount(await raisePoolContract.getAccount(), {
+    balance: 0n,
+    hasKvs: [
+      e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
+      e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesTotal[0] }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesTotal[1] }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesTotal[2] }]),
+    ],
+  });
 }, 200000);

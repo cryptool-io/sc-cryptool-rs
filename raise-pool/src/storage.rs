@@ -4,9 +4,9 @@ multiversx_sc::derive_imports!();
 #[derive(TopEncode, TopDecode, PartialEq, TypeAbi, Clone, Copy, Debug)]
 pub enum ReleaseState {
     None,
+    OvercommitersReleased,
     PlatformReleased,
     GroupReleased,
-    AmbassadorsReleased,
     AllReleased,
 }
 

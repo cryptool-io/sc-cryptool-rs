@@ -2475,7 +2475,6 @@ test("Deposit automatically with deployer as ambassador", async () => {
         BigInt(current.toString()) + BigInt(ambassadorFeeInCurrency.toString());
     }
     const currencyEncoded = e.Str(currenciesArray[currencyRand]);
-    // console.log(currenciesArray[currencyRand]);
     const indexCurrency = ambassadorCurrencies.findIndex(
       (cEncoded) => cEncoded.toTopHex() === currencyEncoded.toTopHex(),
     );
