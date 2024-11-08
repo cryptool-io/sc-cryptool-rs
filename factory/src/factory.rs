@@ -62,6 +62,7 @@ pub trait Factory:
         group_fee_wallet: ManagedAddress,
         signature: ManagedBuffer,
         timestamp: u64,
+        payment_network_id: ManagedBuffer,
         currencies: MultiValueEncoded<TokenIdentifier>,
     ) {
         let caller = self.blockchain().get_caller();
@@ -135,6 +136,7 @@ pub trait Factory:
             platform_fee_wallet,
             group_fee_wallet,
             timestamp,
+            payment_network_id,
             raise_pool_currencies,
         );
     }

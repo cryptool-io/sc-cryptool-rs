@@ -1,6 +1,7 @@
 #![no_std]
 
 use multiversx_sc::imports::*;
+pub mod events;
 pub mod helper;
 pub mod storage;
 use crate::helper::DEFAULT_DECIMALS;
@@ -10,7 +11,9 @@ pub const MIN_GAS_FOR_OPERATION: u64 = 2_000_000;
 pub const MAX_TX_PER_RELEASE: u32 = 140;
 
 #[multiversx_sc::contract]
-pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule {
+pub trait RaisePool:
+    crate::storage::StorageModule + crate::helper::HelperModule + events::EventsModule
+{
     #[init]
     fn init(
         &self,
@@ -75,6 +78,7 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
         signature: ManagedBuffer,
         platform_fee_percentage: BigUint,
         group_fee_percentage: BigUint,
+        deposit_id: ManagedBuffer,
         ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>,
     ) {
         let caller = self.blockchain().get_caller();
@@ -135,6 +139,8 @@ pub trait RaisePool: crate::storage::StorageModule + crate::helper::HelperModule
                 ambassador_wallet,
             );
         }
+
+        self.deposited_event(self.pool_id().get(), deposit_id);
     }
 
     #[endpoint(refund)]
