@@ -153,7 +153,6 @@ pub trait Factory:
             !self.pool_id_to_address(&pool_id).is_empty(),
             "Pool not deployed"
         );
-        self.require_caller_has_owner_permissions();
         let caller = self.blockchain().get_caller();
         self.validate_signature(timestamp, &pool_id, &caller, signature);
         self.raise_pool_address_proxy(self.pool_id_to_address(&pool_id).get())

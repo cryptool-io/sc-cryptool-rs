@@ -59,7 +59,7 @@ pub trait RaisePool:
             self.payment_currencies().insert(currency.clone());
             self.currency_decimals(&currency).set(decimals);
         }
-        self.raise_pool_enabled().set(false);
+        self.raise_pool_enabled().set(true);
         self.wallet_database_address().set(wallet_database_address);
         self.signer().set(signer);
         self.pool_id().set(pool_id);
@@ -317,18 +317,29 @@ pub trait RaisePool:
         self.raise_pool_enabled().set(value);
     }
 
-    #[endpoint(setStartTimestamp)]
-    fn set_start_date(&self, timestamp: u64, signature: ManagedBuffer, new_start_date: u64) {
+    #[endpoint(setTimestamps)]
+    fn set_timestamps(
+        &self,
+        timestamp: u64,
+        signature: ManagedBuffer,
+        new_start_date: u64,
+        new_end_date: u64,
+        new_refund_deadline: u64,
+    ) {
         self.validate_owner_call_on_enabled_pool(timestamp, signature);
-        require!(new_start_date < self.end_date().get(), "Invalid timestamp");
+        require!(
+            new_start_date <= new_refund_deadline && new_refund_deadline < new_end_date,
+            "Invalid timestamps"
+        );
         self.start_date().set(new_start_date);
-    }
-
-    #[endpoint(setEndTimestamp)]
-    fn set_end_date(&self, timestamp: u64, signature: ManagedBuffer, new_end_date: u64) {
-        self.validate_owner_call_on_enabled_pool(timestamp, signature);
-        require!(new_end_date > self.start_date().get(), "Invalid timestamp");
+        self.refund_deadline().set(new_refund_deadline);
         self.end_date().set(new_end_date);
+        self.changed_timestamp_event(
+            self.pool_id().get(),
+            new_start_date,
+            new_end_date,
+            new_refund_deadline,
+        );
     }
 
     #[endpoint(setRefundEnabled)]

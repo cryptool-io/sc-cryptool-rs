@@ -53,3 +53,5 @@ export const ONE_EGLD = BigInt(10 ** 18);
 export const ONE_TENTH_EGLD = BigInt(10 ** 17);
 export const BATCH_ID = 0;
 export const INCORRECT_BATCH_ID = 1;
+export const PAYMENT_NETWORK_ID = "PAYMENT_NETWORK_ID";
+export const DEPOSIT_ID = "ID0";

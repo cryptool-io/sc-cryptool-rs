@@ -47,6 +47,8 @@ import {
   DUMMY_TOKEN,
   HIGH_HARD_CAP,
   AFTER_DEPOSIT_TIMESTAMP,
+  DEPOSIT_ID,
+  PAYMENT_NETWORK_ID,
 } from "./helpers.ts";
 
 import {
@@ -104,7 +106,7 @@ beforeEach(async () => {
     code: "file:raise-pool/output/raise-pool.wasm",
     codeMetadata: [],
     codeArgs: [
-      e.Addr(deployer), // POOL OWNER
+      e.Addr(deployer),
       e.Str("0"), // POOL ID
       e.U64(0), // SOFT CAP
       e.U64(10), // HARD CAP
@@ -117,14 +119,14 @@ beforeEach(async () => {
       e.U64(122), // REFUND DEADLINE
       e.Addr(deployer), // PLATFORM FEE WALLET
       e.Addr(deployer), // GROUP FEE WALLET
-      e.Addr(deployer), // SIGNATURE DEPLOYER
+      e.Addr(deployer), // SIGNER WALLET
       e.Addr(walletDababaseContract), // WALLET DATABASE CONTRACT
       e.Str("Dummy1"), // CURRENCY1
-      e.U64(0), // DECIMALS1
+      e.U32(0), // DECIMALS1
       e.Str("Dummy2"), // CURRENCY2
-      e.U64(0), // DECIMALS2
+      e.U32(0), // DECIMALS2
     ],
-    gasLimit: 50_000_000,
+    gasLimit: 10_000_000,
   }));
 
   ({ contract: factoryContract } = await deployer.deployContract({
@@ -208,6 +210,7 @@ test("Deposit with invalid signature", async () => {
         e.TopBuffer(SIGNATURE_DUMMY),
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
+        e.Str(DEPOSIT_ID),
         e.U(AMBASSADOR_FEE),
         e.Addr(deployer),
       ],
@@ -286,6 +289,7 @@ test("Deposit with invalid token", async () => {
         e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
+        e.Str(DEPOSIT_ID),
         e.U(AMBASSADOR_FEE),
         e.Addr(deployer),
       ],
@@ -314,6 +318,7 @@ test("Deposit while deposits not open yet", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
     ],
@@ -330,6 +335,10 @@ test("Deposit while deposits not open yet", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
+  });
+
+  await world.setCurrentBlockInfo({
+    timestamp: TIMESTAMP,
   });
 
   bob = await world.createWallet({
@@ -356,10 +365,11 @@ test("Deposit while deposits not open yet", async () => {
       gasLimit: 50_000_000,
       funcName: "deposit",
       funcArgs: [
-        e.U64(TIMESTAMP_AFTER),
-        e.TopBuffer(SIGNATURE_BOB_AFTER),
+        e.U64(TIMESTAMP),
+        e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
+        e.Str(DEPOSIT_ID),
         e.U(AMBASSADOR_FEE),
         e.Addr(deployer),
       ],
@@ -388,6 +398,7 @@ test("Deposit while deposits closed", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
     ],
@@ -429,10 +440,11 @@ test("Deposit while deposits closed", async () => {
       gasLimit: 50_000_000,
       funcName: "deposit",
       funcArgs: [
-        e.U64(TIMESTAMP_AFTER),
-        e.TopBuffer(SIGNATURE_BOB_AFTER),
+        e.U64(TIMESTAMP),
+        e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
+        e.Str(DEPOSIT_ID),
         e.U(AMBASSADOR_FEE),
         e.Addr(deployer),
       ],
@@ -461,9 +473,9 @@ test("Deposit with too much delay", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
-      e.Str(CURRENCY3),
     ],
   });
 
@@ -512,6 +524,7 @@ test("Deposit with too much delay", async () => {
         e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
+        e.Str(DEPOSIT_ID),
         e.U(AMBASSADOR_FEE),
         e.Addr(deployer),
       ],
@@ -540,6 +553,7 @@ test("Deposit while deposits closed", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
     ],
@@ -552,7 +566,6 @@ test("Deposit while deposits closed", async () => {
   });
 
   const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
@@ -581,10 +594,11 @@ test("Deposit while deposits closed", async () => {
       gasLimit: 50_000_000,
       funcName: "deposit",
       funcArgs: [
-        e.U64(AFTER_DEPOSIT_TIMESTAMP),
-        e.TopBuffer(SIGNATURE_BOB_AFTER_DEPOSIT),
+        e.U64(TIMESTAMP_AFTER),
+        e.TopBuffer(SIGNATURE_BOB_AFTER),
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
+        e.Str(DEPOSIT_ID),
         e.U(AMBASSADOR_FEE),
         e.Addr(deployer),
       ],
@@ -594,84 +608,6 @@ test("Deposit while deposits closed", async () => {
       code: 4,
       message: "Backend timestamp higher than current timestamp",
     });
-});
-
-test("Deposit in not enabled pool", async () => {
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "deployRaisePool",
-    funcArgs: [
-      e.Str(POOL_ID),
-      e.U64(SOFT_CAP),
-      e.U64(HARD_CAP),
-      e.U64(MIN_DEPOSIT),
-      e.U64(MAX_DEPOSIT),
-      e.U64(DEPOSIT_INCREMENTS),
-      e.U64(START_DATE),
-      e.U64(END_DATE),
-      e.U64(REFUND_ENABLED),
-      e.U64(END_DATE),
-      e.Addr(deployer),
-      e.Addr(deployer),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.U64(TIMESTAMP),
-      e.Str(CURRENCY1),
-      e.Str(CURRENCY2),
-    ],
-  });
-
-  const raisePoolAddressResult = await deployer.query({
-    callee: factoryContract,
-    funcName: "getPoolIdToAddress",
-    funcArgs: [e.Str(POOL_ID)],
-  });
-
-  const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
-  const raisePoolContract = new LSContract({
-    address: raisePoolAddress,
-    world,
-  });
-
-  await world.setCurrentBlockInfo({
-    timestamp: DEPOSIT_TIMESTAMP,
-  });
-
-  bob = await world.createWallet({
-    address: bobAddress,
-    balance: 100_000,
-    kvs: [
-      e.kvs.Esdts([
-        { id: CURRENCY1, amount: 2_000_000 },
-        { id: CURRENCY2, amount: 1_000_000 },
-      ]),
-    ],
-  });
-
-  await bob.callContract({
-    callee: walletDababaseContract,
-    gasLimit: 50_000_000,
-    funcName: "registerWallet",
-    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
-  });
-
-  await bob
-    .callContract({
-      callee: raisePoolContract,
-      gasLimit: 50_000_000,
-      funcName: "deposit",
-      funcArgs: [
-        e.U64(TIMESTAMP),
-        e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
-        e.U(PLATFORM_FEE1),
-        e.U(GROUP_FEE1),
-        e.U(AMBASSADOR_FEE),
-        e.Addr(deployer),
-      ],
-      esdts: [{ id: CURRENCY1, amount: 100_000 }],
-    })
-    .assertFail({ code: 4, message: "Pool is not enabled" });
 });
 
 test("Deposit amount too low", async () => {
@@ -694,9 +630,9 @@ test("Deposit amount too low", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
-      e.Str(CURRENCY3),
     ],
   });
 
@@ -757,6 +693,7 @@ test("Deposit amount too low", async () => {
         e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
+        e.Str(DEPOSIT_ID),
         e.U(AMBASSADOR_FEE),
         e.Addr(deployer),
       ],
@@ -785,9 +722,9 @@ test("Deposit amount too high", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
-      e.Str(CURRENCY3),
     ],
   });
 
@@ -847,6 +784,7 @@ test("Deposit amount too high", async () => {
         e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
+        e.Str(DEPOSIT_ID),
         e.U(AMBASSADOR_FEE),
         e.Addr(deployer),
       ],
@@ -875,9 +813,9 @@ test("Deposit but max deposit threshold would be exceeded", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
-      e.Str(CURRENCY3),
     ],
   });
 
@@ -937,6 +875,7 @@ test("Deposit but max deposit threshold would be exceeded", async () => {
       e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
       e.U(PLATFORM_FEE1),
       e.U(GROUP_FEE1),
+      e.Str(DEPOSIT_ID),
       e.U(AMBASSADOR_FEE),
       e.Addr(deployer),
     ],
@@ -952,6 +891,7 @@ test("Deposit but max deposit threshold would be exceeded", async () => {
       e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
       e.U(PLATFORM_FEE1),
       e.U(GROUP_FEE1),
+      e.Str(DEPOSIT_ID),
       e.U(AMBASSADOR_FEE),
       e.Addr(deployer),
     ],
@@ -968,6 +908,7 @@ test("Deposit but max deposit threshold would be exceeded", async () => {
         e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
+        e.Str(DEPOSIT_ID),
         e.U(AMBASSADOR_FEE),
         e.Addr(deployer),
       ],
@@ -999,9 +940,9 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
-      e.Str(CURRENCY3),
     ],
   });
 
@@ -1056,6 +997,7 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
       e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
       e.U(PLATFORM_FEE1),
       e.U(GROUP_FEE1),
+      e.Str(DEPOSIT_ID),
       e.U(AMBASSADOR_FEE),
       e.Addr(deployer),
     ],
@@ -1085,6 +1027,7 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
         e.TopBuffer(SIGNATURE_CAROL_WITHOUT_AMBASSADOR),
         e.U(PLATFORM_FEE2),
         e.U(GROUP_FEE2),
+        e.Str(DEPOSIT_ID),
       ],
       esdts: [{ id: CURRENCY2, amount: CURRENCY2_DEPOSIT_MAX }],
     })
@@ -1111,6 +1054,7 @@ test("Deposit with incorect deposit increment", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
     ],
@@ -1168,6 +1112,7 @@ test("Deposit with incorect deposit increment", async () => {
         e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
+        e.Str(DEPOSIT_ID),
         e.U(AMBASSADOR_FEE),
         e.Addr(deployer),
       ],
@@ -1199,6 +1144,7 @@ test("Deposit Currency1 with Bob", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
     ],
@@ -1255,6 +1201,7 @@ test("Deposit Currency1 with Bob", async () => {
       e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
       e.U(PLATFORM_FEE1),
       e.U(GROUP_FEE1),
+      e.Str(DEPOSIT_ID),
       e.U(AMBASSADOR_FEE),
       e.Addr(deployer),
     ],
@@ -1375,6 +1322,7 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
     ],
@@ -1436,6 +1384,7 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
       e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
       e.U(PLATFORM_FEE1),
       e.U(GROUP_FEE1),
+      e.Str(DEPOSIT_ID),
       e.U(AMBASSADOR_FEE),
       e.Addr(deployer),
     ],
@@ -1451,6 +1400,7 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
       e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
       e.U(PLATFORM_FEE1),
       e.U(GROUP_FEE1),
+      e.Str(DEPOSIT_ID),
       e.U(AMBASSADOR_FEE),
       e.Addr(deployer),
     ],
@@ -1622,6 +1572,7 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
       e.Str(CURRENCY3),
@@ -1684,6 +1635,7 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
       e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
       e.U(PLATFORM_FEE1),
       e.U(GROUP_FEE1),
+      e.Str(DEPOSIT_ID),
       e.U(AMBASSADOR_FEE),
       e.Addr(deployer),
     ],
@@ -1699,6 +1651,7 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
       e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
       e.U(PLATFORM_FEE1),
       e.U(GROUP_FEE1),
+      e.Str(DEPOSIT_ID),
       e.U(AMBASSADOR_FEE),
       e.Addr(deployer),
     ],
@@ -1727,6 +1680,7 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
       e.TopBuffer(SIGNATURE_CAROL_WITHOUT_AMBASSADOR),
       e.U(PLATFORM_FEE2),
       e.U(GROUP_FEE2),
+      e.Str(DEPOSIT_ID),
     ],
     esdts: [{ id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT }],
   });
@@ -1927,6 +1881,7 @@ test("Deposit automatically with random parameters", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
       e.Str(CURRENCY3),
@@ -2055,6 +2010,7 @@ test("Deposit automatically with random parameters", async () => {
           e.TopBuffer(depositSignature),
           e.U(platformFee),
           e.U(groupFee),
+          e.Str(DEPOSIT_ID),
           e.U(ambassadorFee),
           e.Addr(ambassadorAddress),
         ],
@@ -2070,6 +2026,7 @@ test("Deposit automatically with random parameters", async () => {
           e.TopBuffer(depositSignature),
           e.U(platformFee),
           e.U(groupFee),
+          e.Str(DEPOSIT_ID),
         ],
         esdts: [{ id: currency, amount: depositAmountInCurrency }],
       });
@@ -2255,6 +2212,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
       e.Str(CURRENCY3),
@@ -2381,6 +2339,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
         e.TopBuffer(depositSignature),
         e.U(platformFee),
         e.U(groupFee),
+        e.Str(DEPOSIT_ID),
         e.U(ambassadorFee),
         e.Addr(deployer),
       ],

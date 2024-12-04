@@ -26,6 +26,7 @@ import {
   INCORRECT_DECIMALS,
   CURRENCY3,
   TIMESTAMP_AFTER,
+  PAYMENT_NETWORK_ID,
 } from "./helpers.ts";
 
 import {
@@ -61,7 +62,7 @@ beforeEach(async () => {
     code: "file:raise-pool/output/raise-pool.wasm",
     codeMetadata: [],
     codeArgs: [
-      e.Addr(deployer), // POOL OWNER
+      e.Addr(deployer),
       e.Str("0"), // POOL ID
       e.U64(0), // SOFT CAP
       e.U64(10), // HARD CAP
@@ -74,12 +75,12 @@ beforeEach(async () => {
       e.U64(122), // REFUND DEADLINE
       e.Addr(deployer), // PLATFORM FEE WALLET
       e.Addr(deployer), // GROUP FEE WALLET
-      e.Addr(deployer), // SIGNATURE DEPLOYER
+      e.Addr(deployer), // SIGNER WALLET
       e.Addr(walletDababaseContract), // WALLET DATABASE CONTRACT
       e.Str("Dummy1"), // CURRENCY1
-      e.U64(0), // DECIMALS1
+      e.U32(0), // DECIMALS1
       e.Str("Dummy2"), // CURRENCY2
-      e.U64(0), // DECIMALS2
+      e.U32(0), // DECIMALS2
     ],
     gasLimit: 10_000_000,
   }));
@@ -93,11 +94,22 @@ beforeEach(async () => {
       e.Addr(walletDababaseContract), // WALLET DATABASE CONTRACT
       e.Addr(deployer),
       e.Str(CURRENCY1),
-      e.U64(DECIMALS1),
+      e.U32(DECIMALS1),
       e.Str(CURRENCY2),
-      e.U64(DECIMALS2),
+      e.U32(DECIMALS2),
     ],
   }));
+
+  assertAccount(await raisePoolDummyContract.getAccount(), {
+    balance: 0n,
+    hasKvs: [
+      e.kvs
+        .Mapper("payment_currencies")
+        .UnorderedSet([e.Str("Dummy1"), e.Str("Dummy2")]),
+      e.kvs.Mapper("currency_decimals", e.Str("Dummy1")).Value(e.U32(0)),
+      e.kvs.Mapper("currency_decimals", e.Str("Dummy2")).Value(e.U32(0)),
+    ],
+  });
 });
 
 afterEach(async () => {
@@ -364,8 +376,8 @@ test("Deploy Pool with not whitelisted currency", async () => {
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
         e.U64(TIMESTAMP),
+        e.Str(PAYMENT_NETWORK_ID),
         e.Str(CURRENCY3),
-        e.Str(CURRENCY2),
       ],
     })
     .assertFail({
@@ -449,6 +461,7 @@ test("Deploy Pool", async () => {
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
     ],
@@ -510,7 +523,7 @@ test("Deploy Pool", async () => {
 
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
-    kvs: [
+    hasKvs: [
       e.kvs.Mapper("soft_cap").Value(e.I(SOFT_CAP)),
       e.kvs.Mapper("hard_cap").Value(e.I(HARD_CAP)),
       e.kvs.Mapper("min_deposit").Value(e.I(MIN_DEPOSIT)),

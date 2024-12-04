@@ -50,7 +50,6 @@ pub trait HelperModule: crate::storage::StorageModule {
         );
         require!(timestamp > self.start_date().get(), "Deposits not open yet");
         require!(timestamp < self.end_date().get(), "Deposits closed");
-        require!(timestamp > self.start_date().get(), "Deposits not open yet");
         require!(
             timestamp >= *backend_timestamp,
             "Backend timestamp higher than current timestamp"
