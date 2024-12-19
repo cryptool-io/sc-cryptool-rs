@@ -33,7 +33,7 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
       **!!! Check _tests/examples/03.initFactoryCall.ts_ for an example.**
 
-- **deployRaisePool** (_pool_id: u32, soft_cap: BigUint, hard_cap: BigUint, min_deposit: BigUint, max_deposit: BigUint, deposit_increments: BigUint, start_date: u64, end_date: u64, refund_enabled: bool, platform_fee_wallet: ManagedAddress, group_fee_wallet: ManagedAddress, signature: ManagedBuffer, timestamp: u64, currencies: MultiValueEncoded<TokenIdentifier>_)
+- **deployRaisePool** (_pool_id: u32, soft_cap: BigUint, hard_cap: BigUint, min_deposit: BigUint, max_deposit: BigUint, deposit_increments: BigUint, start_date: u64, end_date: u64, refund_enabled: bool, platform_fee_wallet: ManagedAddress, group_fee_wallet: ManagedAddress, signature: ManagedBuffer, timestamp: u64, payment_network_id: ManagedBuffer, currencies: MultiValueEncoded<TokenIdentifier>_)
 
   - This endpoint, called on the factory, deploys a new raise pool. Notice the parameters are virtually identical to the dummy deploy except for the owner, which the Factory sets as the caller and the currencies which don't need to have their decimals specified as this was done in the Factory deploy step.
   - Signature data format: signed(timestamp + pool_id + deployer_address).
@@ -55,7 +55,7 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
 - **release** (_timestamp: u64, signature: ManagedBuffer, overcommitted: MultiValueEncoded<ManagedAddress>_) -> _OperationCompletionStatus_
 
-  - Once the End Date is exceeded, calling the release endpoint sends fees to the Platform, Group, and Ambassador Wallets (and potentially to Overcommitter Wallets if applicable).
+  - Calling the release endpoint sends fees to the Platform, Group, and Ambassador Wallets (and potentially to Overcommitter Wallets if applicable).
   - If there are more transactions than the blockchain limit, the function returns _interrupted_, so this endpoint needs to be called again. Otherwise, it returns _completed_. Please keep in mind that if the function returns _interrupted_, the next call needs to have the exact same parameters (so even if the function reaches the _overcommited_ step and returns _interrupted_, the next call needs to have the original overcommited list as parameter)
   - Signature data format: signed(timestamp + pool_id + deployer_address).
 
@@ -64,7 +64,7 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
   - Once the _release_ has been completed, calling this endpoint sends the remaining deposited funds to the owner wallet.
   - Signature data format: signed(timestamp + pool_id + deployer_address).
 
-- **userRefund**(_timestamp: u64, signature: ManagedBuffer, token: TokenIdentifier )
+- **userRefund**(_timestamp: u64, signature: ManagedBuffer, token: TokenIdentifier_ )
 
     - This enpdpoint allows the user to refund  all of his deposited funds in the respective token.
     - Only available if the refund is enabled and the refund deadline has not passed.
@@ -73,14 +73,14 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
 - **adminRefund** (_timestamp: u64, signature: ManagedBuffer, addresses: MMultiValueEncoded<ManagedAddress>_)
 
-    - This enpdpoint allows the admin to fully refund token all amounts to respective wallets  
+    - This enpdpoint allows the admin to fully refund all token amounts to respective wallets
     - The full deposited amount is returned to the user and all storages that were updated due to the deposit are cleared
     - Signature data format: signed(timestamp + pool_id + admin_address).
 
 ## Owner Callable Endpoints on Production Distribution SC:
 
 - **distribute** (_pool_id: ManagedBuffer, batch_id: u32, timestamp: u64, signature: ManagedBuffer, distribute_data: MultiValueEncoded<MultiValue2<ManagedAddress, BigUint>>_,
-    ) 
+    )
     - This enpdpoint allows the admin to distribute tokens to the respective addresses
     - The addresses that receive the funds should be registered in the wallet database
     - The sum of the amounts that will be sent to the addresses should sum to the total payment made to this endpoint
@@ -111,7 +111,7 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
 ## User Callable Endpoints on Production Raise Pool SC:
 
-- **deposit** (_timestamp: u64, signature: ManagedBuffer, platform_fee_percentage: BigUint, group_fee_percentage: BigUint, ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>_)
+- **deposit** (_timestamp: u64, signature: ManagedBuffer, platform_fee_percentage: BigUint, group_fee_percentage: BigUint, deposit_id: ManagedBuffer, ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>_)
 
   - This is the main endpoint of the pool, used to deposit tokens in the pool.
   - If no ambassador is provided, the signature data format is:

@@ -10,7 +10,7 @@ pub trait EventsModule {
         #[indexed] deposit_id: ManagedBuffer,
     );
 
-    #[event("changeTimestempEvent")]
+    #[event("changeTimestampEvent")]
     fn changed_timestamp_event(
         self,
         #[indexed] pool_id: ManagedBuffer,
