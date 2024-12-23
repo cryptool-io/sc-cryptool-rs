@@ -102,22 +102,19 @@ pub trait RaisePool:
 
         let payment_denomination =
             self.denominate_payment(&payment.token_identifier, &payment.amount);
-        require!(
-            self.total_amount().get() + &payment_denomination
-                <= self.hard_cap().get() * 10_u64.pow(DEFAULT_DECIMALS),
-            "Hard cap threshold would be exceeded"
-        );
 
         self.increase_totals(&payment.token_identifier, &payment.amount);
 
-        self.increase_platform_fee(
+        let mut total_fees = BigUint::from(0u64);
+
+        total_fees += self.increase_platform_fee(
             &caller,
             &payment,
             &payment_denomination,
             &platform_fee_percentage,
         );
 
-        self.increase_group_fee(
+        total_fees += self.increase_group_fee(
             &caller,
             &payment,
             &payment_denomination,
@@ -132,13 +129,28 @@ pub trait RaisePool:
                     "Ambassador wallet mismatch"
                 );
             }
-            self.increase_ambassador_fee(
+            total_fees += self.increase_ambassador_fee(
                 &caller,
                 &payment,
                 ambassador_percentage,
                 ambassador_wallet,
             );
         }
+
+        require!(
+            self.total_amount().get()
+                <= (self.hard_cap().get() * 10_u64.pow(DEFAULT_DECIMALS)
+                    - self.total_ambassador_fee().get())
+                    - self.total_group_fee().get()
+                    - self.total_platform_fee().get(),
+            "Hard cap threshold would be exceeded"
+        );
+
+        let max_deposit_denominated = self.match_denomination(self.max_deposit().get(), &payment);
+        require!(
+            payment.amount - total_fees <= max_deposit_denominated,
+            "Payment amount too high"
+        );
 
         self.deposited_event(self.pool_id().get(), deposit_id);
     }

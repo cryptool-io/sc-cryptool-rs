@@ -140,6 +140,7 @@ test("Deploy Factory", async () => {
   });
 });
 
+/* DISABLED, MIN NO LONGER CHECKED AGAINST DEPOSIT INCREMENTS
 test("Deploy Pool with incorrect min deposit", async () => {
   await deployer
     .callContract({
@@ -167,7 +168,9 @@ test("Deploy Pool with incorrect min deposit", async () => {
     })
     .assertFail({ code: 10, message: "error signalled by smartcontract" });
 });
+*/
 
+/* DISABLED, MAX NO LONGER CHECKED AGAINST DEPOSIT INCREMENTS
 test("Deploy Pool with incorrect max deposit", async () => {
   await deployer
     .callContract({
@@ -195,6 +198,7 @@ test("Deploy Pool with incorrect max deposit", async () => {
     })
     .assertFail({ code: 10, message: "error signalled by smartcontract" });
 });
+*/
 
 test("Deploy Pool with invalid Signature", async () => {
   await deployer

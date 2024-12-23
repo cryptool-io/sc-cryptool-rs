@@ -598,6 +598,7 @@ test("Refund last N deposits", async () => {
   var ambassadors: Encodable[] = [];
   var ambassadorsRefferalFees: TripleBigIntArray[] = [];
   var refundAddresses: Encodable[] = [];
+  var totalAmbassadorsAmount: bigint = BigInt(0);
 
   const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
@@ -690,6 +691,8 @@ test("Refund last N deposits", async () => {
      */
 
     if (i < numberOfDeposits - refundLast) {
+      totalAmbassadorsAmount +=
+        (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
       walletsKvs.push(
         e.kvs
           .Mapper("deposited_currencies", e.Addr(genericWallet))
@@ -823,6 +826,7 @@ test("Refund last N deposits", async () => {
       .Mapper("group_fee", e.Str(CURRENCY3))
       .Value(e.U(currenciesGroupFees[2])),
     e.kvs.Mapper("total_group_fee").Value(e.U(totalGroupFee)),
+    e.kvs.Mapper("total_ambassador_fee").Value(e.U(totalAmbassadorsAmount)),
     e.kvs.Mapper("ambassadors").UnorderedSet(ambassadors),
     e.kvs
       .Mapper("ambassador_fee", e.Str(CURRENCY1))

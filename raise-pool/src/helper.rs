@@ -17,12 +17,12 @@ pub trait HelperModule: crate::storage::StorageModule {
         max_deposit: &BigUint,
         start_date: u64,
         end_date: u64,
-        deposit_increments: &BigUint,
+        _deposit_increments: &BigUint,
     ) {
-        require!(
-            min_deposit % deposit_increments == 0 && max_deposit % deposit_increments == 0,
-            "Min and max deposit amounts must be a multiple of deposit increments"
-        );
+        // require!(                                                                     // DISABLED
+        //     min_deposit % deposit_increments == 0 && max_deposit % deposit_increments == 0,
+        //     "Min and max deposit amounts must be a multiple of deposit increments"
+        // );
         require!(
             soft_cap <= hard_cap,
             "Soft cap needs to be lower than hard cap"
@@ -64,11 +64,6 @@ pub trait HelperModule: crate::storage::StorageModule {
             min_deposit_denominated <= payment.amount,
             "Payment amount too low"
         );
-        let max_deposit_denominated = self.match_denomination(self.max_deposit().get(), payment);
-        require!(
-            payment.amount <= max_deposit_denominated,
-            "Payment amount too high"
-        );
 
         let caller = self.blockchain().get_caller();
         let mut total_caller_amount = BigUint::zero();
@@ -77,26 +72,13 @@ pub trait HelperModule: crate::storage::StorageModule {
             let denominated_amount = self.denominate_payment(&currency, &deposited_amount);
             total_caller_amount += denominated_amount;
         }
-        let payment_denomination =
-            self.denominate_payment(&payment.token_identifier, &payment.amount);
-        require!(
-            total_caller_amount + &payment_denomination
-                <= self.max_deposit().get() * 10_u64.pow(DEFAULT_DECIMALS),
-            "Max_deposit threshold would be exceeded"
-        );
 
-        require!(
-            self.total_amount().get() + &payment_denomination
-                <= self.hard_cap().get() * 10_u64.pow(DEFAULT_DECIMALS),
-            "Hard cap threshold would be exceeded"
-        );
-
-        let increment = self.deposit_increments().get();
-        let increment_denominted = self.match_denomination(increment, payment);
-        require!(
-            &payment.amount % &increment_denominted == 0,
-            "Payment amount is not a multiple of the deposit increment"
-        );
+        // let increment = self.deposit_increments().get();                                             // DISABLED
+        // let increment_denominted = self.match_denomination(increment, payment);
+        // require!(
+        //     &payment.amount % &increment_denominted == 0,
+        //     "Payment amount is not a multiple of the deposit increment"
+        // );
     }
 
     fn validate_owner_call_on_enabled_pool(&self, timestamp: u64, signature: ManagedBuffer) {
@@ -247,7 +229,7 @@ pub trait HelperModule: crate::storage::StorageModule {
         payment: &EsdtTokenPayment,
         payment_denomination: &BigUint,
         platform_fee_percentage: &BigUint,
-    ) {
+    ) -> BigUint {
         let platform_fee_amount = (&payment.amount * platform_fee_percentage) / MAX_PERCENTAGE;
         let denominated_platform_fee_amount =
             (payment_denomination * platform_fee_percentage) / MAX_PERCENTAGE;
@@ -257,6 +239,7 @@ pub trait HelperModule: crate::storage::StorageModule {
             .update(|current| *current += &platform_fee_amount);
         self.total_platform_fee()
             .update(|current| *current += &denominated_platform_fee_amount);
+        platform_fee_amount
     }
 
     fn remove_platform_fee(&self, address: &ManagedAddress, token: &TokenIdentifier) {
@@ -274,7 +257,7 @@ pub trait HelperModule: crate::storage::StorageModule {
         payment: &EsdtTokenPayment,
         payment_denomination: &BigUint,
         group_fee_percentage: &BigUint,
-    ) {
+    ) -> BigUint {
         let group_fee_amount = (&payment.amount * group_fee_percentage) / MAX_PERCENTAGE;
         let denominated_group_fee_amount =
             (payment_denomination * group_fee_percentage) / MAX_PERCENTAGE;
@@ -284,6 +267,7 @@ pub trait HelperModule: crate::storage::StorageModule {
             .update(|current| *current += &group_fee_amount);
         self.total_group_fee()
             .update(|current| *current += &denominated_group_fee_amount);
+        group_fee_amount
     }
 
     fn remove_group_fee(&self, address: &ManagedAddress, token: &TokenIdentifier) {
@@ -301,9 +285,13 @@ pub trait HelperModule: crate::storage::StorageModule {
         payment: &EsdtTokenPayment,
         ambassador_percentage: BigUint,
         ambassador_wallet: ManagedAddress,
-    ) {
+    ) -> BigUint {
         self.ambassadors().insert(ambassador_wallet.clone());
         let ambassador_amount = (&payment.amount * &ambassador_percentage) / MAX_PERCENTAGE;
+        let ambassador_amount_denomination =
+            self.denominate_payment(&payment.token_identifier, &ambassador_amount);
+        self.total_ambassador_fee()
+            .update(|current| *current += &ambassador_amount_denomination);
         self.address_ambassador_fee(address, &payment.token_identifier)
             .update(|current| *current += &ambassador_amount);
         self.ambassador_fee(&payment.token_identifier)
@@ -316,11 +304,15 @@ pub trait HelperModule: crate::storage::StorageModule {
             self.address_to_ambassador(address)
                 .set(ambassador_wallet.clone());
         }
+        ambassador_amount
     }
 
     fn decrease_ambassador_fee(&self, address: &ManagedAddress, token: &TokenIdentifier) {
         let ambassador_amount = self.address_ambassador_fee(address, token).take();
+        let ambassador_amount_denomination = self.denominate_payment(token, &ambassador_amount);
         let ambassador_wallet = self.address_to_ambassador(address).get();
+        self.total_ambassador_fee()
+            .update(|current| *current -= &ambassador_amount_denomination);
         self.ambassador_fee(token)
             .update(|current| *current -= &ambassador_amount);
         self.referral_ambassador_fee(&ambassador_wallet, token)

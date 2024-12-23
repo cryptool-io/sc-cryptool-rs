@@ -793,133 +793,6 @@ test("Deposit amount too high", async () => {
     .assertFail({ code: 4, message: "Payment amount too high" });
 });
 
-test("Deposit but max deposit threshold would be exceeded", async () => {
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "deployRaisePool",
-    funcArgs: [
-      e.Str(POOL_ID),
-      e.U64(SOFT_CAP),
-      e.U64(HARD_CAP),
-      e.U64(MIN_DEPOSIT),
-      e.U64(MAX_DEPOSIT),
-      e.U64(DEPOSIT_INCREMENTS),
-      e.U64(START_DATE),
-      e.U64(END_DATE),
-      e.U64(REFUND_ENABLED),
-      e.U64(END_DATE),
-      e.Addr(deployer),
-      e.Addr(deployer),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.U64(TIMESTAMP),
-      e.Str(PAYMENT_NETWORK_ID),
-      e.Str(CURRENCY1),
-      e.Str(CURRENCY2),
-    ],
-  });
-
-  const raisePoolAddressResult = await deployer.query({
-    callee: factoryContract,
-    funcName: "getPoolIdToAddress",
-    funcArgs: [e.Str(POOL_ID)],
-  });
-
-  const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
-  const raisePoolContract = new LSContract({
-    address: raisePoolAddress,
-    world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
-  await world.setCurrentBlockInfo({
-    timestamp: DEPOSIT_TIMESTAMP,
-  });
-
-  bob = await world.createWallet({
-    address: bobAddress,
-    balance: 100_000,
-    kvs: [
-      e.kvs.Esdts([
-        { id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT * BigInt(100) },
-        { id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT * BigInt(100) },
-      ]),
-    ],
-  });
-
-  await bob.callContract({
-    callee: walletDababaseContract,
-    gasLimit: 50_000_000,
-    funcName: "registerWallet",
-    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
-  });
-
-  await bob.callContract({
-    callee: raisePoolContract,
-    gasLimit: 50_000_000,
-    funcName: "deposit",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
-      e.U(PLATFORM_FEE1),
-      e.U(GROUP_FEE1),
-      e.Str(DEPOSIT_ID),
-      e.U(AMBASSADOR_FEE),
-      e.Addr(deployer),
-    ],
-    esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
-  });
-
-  await bob.callContract({
-    callee: raisePoolContract,
-    gasLimit: 50_000_000,
-    funcName: "deposit",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
-      e.U(PLATFORM_FEE1),
-      e.U(GROUP_FEE1),
-      e.Str(DEPOSIT_ID),
-      e.U(AMBASSADOR_FEE),
-      e.Addr(deployer),
-    ],
-    esdts: [{ id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT }],
-  });
-
-  await bob
-    .callContract({
-      callee: raisePoolContract,
-      gasLimit: 50_000_000,
-      funcName: "deposit",
-      funcArgs: [
-        e.U64(TIMESTAMP),
-        e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
-        e.U(PLATFORM_FEE1),
-        e.U(GROUP_FEE1),
-        e.Str(DEPOSIT_ID),
-        e.U(AMBASSADOR_FEE),
-        e.Addr(deployer),
-      ],
-      esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
-    })
-    .assertFail({
-      code: 4,
-      message: "Max_deposit threshold would be exceeded",
-    });
-});
-
 test("Deposit but hard cap threshold would be exceeded", async () => {
   await deployer.callContract({
     callee: factoryContract,
@@ -977,20 +850,20 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
 
   bob = await world.createWallet({
     address: bobAddress,
-    balance: 100_000,
+    balance: 100_000_000_000,
     kvs: [e.kvs.Esdts([{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_MAX }])],
   });
 
   await bob.callContract({
     callee: walletDababaseContract,
-    gasLimit: 50_000_000,
+    gasLimit: 500_000_000,
     funcName: "registerWallet",
     funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_BOB_WALLET)],
   });
 
   await bob.callContract({
     callee: raisePoolContract,
-    gasLimit: 50_000_000,
+    gasLimit: 500_000_000,
     funcName: "deposit",
     funcArgs: [
       e.U64(TIMESTAMP),
@@ -1001,7 +874,12 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
       e.U(AMBASSADOR_FEE),
       e.Addr(deployer),
     ],
-    esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_MAX }],
+    esdts: [
+      {
+        id: CURRENCY1,
+        amount: CURRENCY1_DEPOSIT_MAX,
+      },
+    ],
   });
 
   carol = await world.createWallet({
@@ -1034,6 +912,7 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
     .assertFail({ code: 4, message: "Hard cap threshold would be exceeded" });
 });
 
+/* DISABLED
 test("Deposit with incorect deposit increment", async () => {
   await deployer.callContract({
     callee: factoryContract,
@@ -1123,6 +1002,7 @@ test("Deposit with incorect deposit increment", async () => {
       message: "Payment amount is not a multiple of the deposit increment",
     });
 });
+*/
 
 test("Deposit Currency1 with Bob", async () => {
   await deployer.callContract({
@@ -1271,6 +1151,11 @@ test("Deposit Currency1 with Bob", async () => {
       e.kvs
         .Mapper("total_group_fee")
         .Value(e.U((CURRENCY1_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
+      e.kvs
+        .Mapper("total_ambassador_fee")
+        .Value(
+          e.U((CURRENCY1_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
+        ),
       e.kvs.Mapper("ambassadors").UnorderedSet([e.Addr(deployer)]),
       e.kvs
         .Mapper("address_ambassador_fee", e.Addr(bob), e.Str(CURRENCY1))
@@ -1486,6 +1371,9 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
           e.U((CURRENCY2_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
         ),
       e.kvs.Mapper("total_platform_fee").Value(e.U(total_platform_fee)),
+      e.kvs
+        .Mapper("total_ambassador_fee")
+        .Value(e.U((total_deposited_amount * AMBASSADOR_FEE) / MAX_PERCENTAGE)),
       e.kvs
         .Mapper("address_to_ambassador", e.Addr(bob))
         .Value(e.Addr(deployer)),
@@ -1814,6 +1702,15 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
         .Mapper("group_fee", e.Str(CURRENCY3))
         .Value(e.U((CURRENCY3_DEPOSIT_AMOUNT * GROUP_FEE2) / MAX_PERCENTAGE)),
       e.kvs.Mapper("total_group_fee").Value(e.U(total_group_fee)),
+      e.kvs
+        .Mapper("total_ambassador_fee")
+        .Value(
+          e.U(
+            ((CURRENCY1_DEPOSIT_AMOUNT + denominated_currency2) *
+              AMBASSADOR_FEE) /
+              MAX_PERCENTAGE,
+          ),
+        ),
       e.kvs.Mapper("ambassadors").UnorderedSet([e.Addr(deployer)]),
       e.kvs
         .Mapper("address_ambassador_fee", e.Addr(bob), e.Str(CURRENCY1))
@@ -1954,6 +1851,7 @@ test("Deposit automatically with random parameters", async () => {
   var totalGroupFee: bigint = BigInt(0);
   var ambassadors: Encodable[] = [];
   var ambassadorsRefferalFees: TripleBigIntArray[] = [];
+  var totalAmbassadorsAmount: bigint = BigInt(0);
 
   const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
@@ -2083,6 +1981,8 @@ test("Deposit automatically with random parameters", async () => {
       (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
 
     if (ambassadorBool == 1) {
+      totalAmbassadorsAmount +=
+        (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
       walletsKvs.push(
         e.kvs
           .Mapper(
@@ -2158,6 +2058,7 @@ test("Deposit automatically with random parameters", async () => {
       .Mapper("group_fee", e.Str(CURRENCY3))
       .Value(e.U(currenciesGroupFees[2])),
     e.kvs.Mapper("total_group_fee").Value(e.U(totalGroupFee)),
+    e.kvs.Mapper("total_ambassador_fee").Value(e.U(totalAmbassadorsAmount)),
     e.kvs.Mapper("ambassadors").UnorderedSet(ambassadors),
     e.kvs
       .Mapper("ambassador_fee", e.Str(CURRENCY1))
@@ -2285,6 +2186,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
   var totalGroupFee: bigint = BigInt(0);
   var ambassadors: Encodable[] = [];
   var ambassadorsRefferalFees: TripleBigIntArray[] = [];
+  var totalAmbassadorsAmount: bigint = BigInt(0);
 
   const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
@@ -2395,6 +2297,8 @@ test("Deposit automatically with deployer as ambassador", async () => {
       (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
     totalGroupFee +=
       (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
+    totalAmbassadorsAmount +=
+      (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
 
     walletsKvs.push(
       e.kvs
@@ -2482,6 +2386,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
       .Mapper("group_fee", e.Str(CURRENCY3))
       .Value(e.U(currenciesGroupFees[2])),
     e.kvs.Mapper("total_group_fee").Value(e.U(totalGroupFee)),
+    e.kvs.Mapper("total_ambassador_fee").Value(e.U(totalAmbassadorsAmount)),
     e.kvs.Mapper("ambassadors").UnorderedSet(ambassadors),
     e.kvs
       .Mapper("ambassador_fee", e.Str(CURRENCY1))

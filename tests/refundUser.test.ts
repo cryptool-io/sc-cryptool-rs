@@ -887,6 +887,15 @@ test("Refund Bob with Currency1 after deposit Currency1, Currency2 with Bob, Cur
         .Mapper("total_amount_currency", e.Str(CURRENCY3))
         .Value(e.U(CURRENCY3_DEPOSIT_AMOUNT)),
       e.kvs
+        .Mapper("total_ambassador_fee")
+        .Value(
+          e.U(
+            ((CURRENCY1_DEPOSIT_AMOUNT + denominated_currency2) *
+              AMBASSADOR_FEE) /
+              MAX_PERCENTAGE,
+          ),
+        ),
+      e.kvs
         .Mapper("address_to_ambassador", e.Addr(bob))
         .Value(e.Addr(deployer)),
       e.kvs
@@ -1209,6 +1218,15 @@ test("Refund Bob with Currency2 after deposit Currency1, Currency2 with Bob, Cur
         .Mapper("total_amount_currency", e.Str(CURRENCY3))
         .Value(e.U(CURRENCY3_DEPOSIT_AMOUNT)),
       e.kvs
+        .Mapper("total_ambassador_fee")
+        .Value(
+          e.U(
+            ((CURRENCY1_DEPOSIT_AMOUNT + denominated_currency2) *
+              AMBASSADOR_FEE) /
+              MAX_PERCENTAGE,
+          ),
+        ),
+      e.kvs
         .Mapper("address_to_ambassador", e.Addr(bob))
         .Value(e.Addr(deployer)),
       e.kvs
@@ -1524,6 +1542,15 @@ test("Refund Carol with Currency3 after deposit Currency1, Currency2 with Bob, C
       e.kvs
         .Mapper("total_amount_currency", e.Str(CURRENCY3))
         .Value(e.U(platform_fee2)),
+      e.kvs
+        .Mapper("total_ambassador_fee")
+        .Value(
+          e.U(
+            ((CURRENCY1_DEPOSIT_AMOUNT + denominated_currency2) *
+              AMBASSADOR_FEE) /
+              MAX_PERCENTAGE,
+          ),
+        ),
       e.kvs
         .Mapper("address_to_ambassador", e.Addr(bob))
         .Value(e.Addr(deployer)),
