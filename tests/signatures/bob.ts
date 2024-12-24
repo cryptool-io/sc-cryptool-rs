@@ -111,3 +111,13 @@ const DATA_BOB_DISTRUBUTE = Buffer.concat([
 ]);
 export const SIGNATURE_DATA_BOB_DISTRUBUTE =
   privateKeyDeployer.sign(DATA_BOB_DISTRUBUTE);
+
+const DATA_BOB_CUSTOM = Buffer.concat([
+  codec.encodeNested(new U64Value(TIMESTAMP)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
+  bobAddress,
+  codec.encodeNested(new BigUIntValue(Number(40))),
+  codec.encodeNested(new BigUIntValue(Number(1800))),
+]);
+export const SIGNATURE_DATA_BOB_CUSTOM =
+  privateKeyDeployer.sign(DATA_BOB_CUSTOM);

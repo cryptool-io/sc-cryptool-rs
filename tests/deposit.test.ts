@@ -63,6 +63,7 @@ import {
   SIGNATURE_BOB_AFTER,
   SIGNATURE_BOB_WALLET,
   SIGNATURE_BOB_AFTER_DEPOSIT,
+  SIGNATURE_DATA_BOB_CUSTOM,
 } from "./signatures/bob.ts";
 
 import {

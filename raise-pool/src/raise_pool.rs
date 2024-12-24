@@ -139,10 +139,10 @@ pub trait RaisePool:
 
         require!(
             self.total_amount().get()
-                <= (self.hard_cap().get() * 10_u64.pow(DEFAULT_DECIMALS)
-                    - self.total_ambassador_fee().get())
-                    - self.total_group_fee().get()
-                    - self.total_platform_fee().get(),
+                - self.total_ambassador_fee().get()
+                - self.total_group_fee().get()
+                - self.total_platform_fee().get()
+                <= self.hard_cap().get() * 10_u64.pow(DEFAULT_DECIMALS),
             "Hard cap threshold would be exceeded"
         );
 
