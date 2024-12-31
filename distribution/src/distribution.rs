@@ -5,7 +5,6 @@ use multiversx_sc::imports::*;
 
 pub const ALLOWED_TIMESTAMP_DELAY: u64 = 90;
 
-/// An empty contract. To be used as a template when starting a new contract from scratch.
 #[multiversx_sc::contract]
 pub trait Distribution {
     #[init]
@@ -29,6 +28,10 @@ pub trait Distribution {
     ) {
         self.validate_batch(&pool_id, &batch_id);
         require!(
+            timestamp <= self.blockchain().get_block_timestamp(),
+            "Invalid timestamp",
+        );
+        require!(
             self.blockchain().get_block_timestamp() - timestamp < ALLOWED_TIMESTAMP_DELAY,
             "Deposit took too long"
         );
@@ -49,7 +52,11 @@ pub trait Distribution {
         let egld_payment = payments_iter.next();
         let esdt_payment = payments_iter.next();
 
-        let (_, _, egld_amount) = egld_payment.unwrap().into_tuple();
+        let (egld_token, _, egld_amount) = egld_payment.unwrap().into_tuple();
+        require!(
+            egld_token.ticker() == ManagedBuffer::from("EGLD"),
+            "First token should be EGLD"
+        );
         self.send()
             .direct_egld(&self.platform_fee_wallet().get(), &egld_amount);
 

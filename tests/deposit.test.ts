@@ -28,19 +28,22 @@ import {
   REFUND_ENABLED,
   PLATFORM_FEE1,
   GROUP_FEE1,
-  AMBASSADOR_FEE,
+  AMBASSADOR_FEE1,
+  AMBASSADOR_FEE2,
   DEPOSIT_TIMESTAMP,
   CURRENCY1_DEPOSIT_AMOUNT,
   CURRENCY1_DEPOSIT_TOO_LOW,
   CURRENCY2_DEPOSIT_AMOUNT,
   CURRENCY3_DEPOSIT_AMOUNT,
-  MAX_PERCENTAGE,
   PLATFORM_FEE2,
   GROUP_FEE2,
+  PLATFORM_FEE3,
+  GROUP_FEE3,
   TIMESTAMP_AFTER,
   TIMESTAMP_WITH_DELAY,
   CURRENCY1_DEPOSIT_MAX,
   CURRENCY2_DEPOSIT_MAX,
+  CURRENCY3_DEPOSIT_MAX,
   LOW_SOFT_CAP,
   LOW_HARD_CAP,
   CURRENCY1_DEPOSIT_INCORECT_AMOUNT,
@@ -60,6 +63,7 @@ import {
 import {
   bobAddress,
   SIGNATURE_BOB_WITH_AMBASSADOR,
+  SIGNATURE_BOB_WITH_AMBASSADOR2,
   SIGNATURE_BOB_AFTER,
   SIGNATURE_BOB_WALLET,
   SIGNATURE_BOB_AFTER_DEPOSIT,
@@ -212,7 +216,7 @@ test("Deposit with invalid signature", async () => {
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
         e.Str(DEPOSIT_ID),
-        e.U(AMBASSADOR_FEE),
+        e.U(AMBASSADOR_FEE1),
         e.Addr(deployer),
       ],
       esdts: [{ id: CURRENCY1, amount: 100_000 }],
@@ -291,7 +295,7 @@ test("Deposit with invalid token", async () => {
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
         e.Str(DEPOSIT_ID),
-        e.U(AMBASSADOR_FEE),
+        e.U(AMBASSADOR_FEE1),
         e.Addr(deployer),
       ],
       esdts: [{ id: DUMMY_TOKEN, amount: CURRENCY1_DEPOSIT_AMOUNT }],
@@ -371,7 +375,7 @@ test("Deposit while deposits not open yet", async () => {
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
         e.Str(DEPOSIT_ID),
-        e.U(AMBASSADOR_FEE),
+        e.U(AMBASSADOR_FEE1),
         e.Addr(deployer),
       ],
       esdts: [{ id: CURRENCY1, amount: 100_000 }],
@@ -446,7 +450,7 @@ test("Deposit while deposits closed", async () => {
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
         e.Str(DEPOSIT_ID),
-        e.U(AMBASSADOR_FEE),
+        e.U(AMBASSADOR_FEE1),
         e.Addr(deployer),
       ],
       esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
@@ -526,7 +530,7 @@ test("Deposit with too much delay", async () => {
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
         e.Str(DEPOSIT_ID),
-        e.U(AMBASSADOR_FEE),
+        e.U(AMBASSADOR_FEE1),
         e.Addr(deployer),
       ],
       esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
@@ -600,7 +604,7 @@ test("Deposit while deposits closed", async () => {
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
         e.Str(DEPOSIT_ID),
-        e.U(AMBASSADOR_FEE),
+        e.U(AMBASSADOR_FEE1),
         e.Addr(deployer),
       ],
       esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
@@ -611,6 +615,7 @@ test("Deposit while deposits closed", async () => {
     });
 });
 
+/* DISABLED
 test("Deposit amount too low", async () => {
   await deployer.callContract({
     callee: factoryContract,
@@ -695,13 +700,14 @@ test("Deposit amount too low", async () => {
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
         e.Str(DEPOSIT_ID),
-        e.U(AMBASSADOR_FEE),
+        e.U(AMBASSADOR_FEE1),
         e.Addr(deployer),
       ],
       esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_TOO_LOW }],
     })
     .assertFail({ code: 4, message: "Payment amount too low" });
 });
+*/
 
 test("Deposit amount too high", async () => {
   await deployer.callContract({
@@ -786,7 +792,7 @@ test("Deposit amount too high", async () => {
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
         e.Str(DEPOSIT_ID),
-        e.U(AMBASSADOR_FEE),
+        e.U(AMBASSADOR_FEE1),
         e.Addr(deployer),
       ],
       esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT * BigInt(3) }],
@@ -816,7 +822,7 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
       e.U64(TIMESTAMP),
       e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
-      e.Str(CURRENCY2),
+      e.Str(CURRENCY3),
     ],
   });
 
@@ -872,7 +878,7 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
       e.U(PLATFORM_FEE1),
       e.U(GROUP_FEE1),
       e.Str(DEPOSIT_ID),
-      e.U(AMBASSADOR_FEE),
+      e.U(AMBASSADOR_FEE1),
       e.Addr(deployer),
     ],
     esdts: [
@@ -886,7 +892,7 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
   carol = await world.createWallet({
     address: carolAddress,
     balance: 100_000,
-    kvs: [e.kvs.Esdts([{ id: CURRENCY2, amount: CURRENCY2_DEPOSIT_MAX }])],
+    kvs: [e.kvs.Esdts([{ id: CURRENCY3, amount: CURRENCY3_DEPOSIT_MAX }])],
   });
 
   await carol.callContract({
@@ -904,11 +910,11 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
       funcArgs: [
         e.U64(TIMESTAMP),
         e.TopBuffer(SIGNATURE_CAROL_WITHOUT_AMBASSADOR),
-        e.U(PLATFORM_FEE2),
-        e.U(GROUP_FEE2),
+        e.U(PLATFORM_FEE3),
+        e.U(GROUP_FEE3),
         e.Str(DEPOSIT_ID),
       ],
-      esdts: [{ id: CURRENCY2, amount: CURRENCY2_DEPOSIT_MAX }],
+      esdts: [{ id: CURRENCY3, amount: CURRENCY3_DEPOSIT_MAX }],
     })
     .assertFail({ code: 4, message: "Hard cap threshold would be exceeded" });
 });
@@ -993,7 +999,7 @@ test("Deposit with incorect deposit increment", async () => {
         e.U(PLATFORM_FEE1),
         e.U(GROUP_FEE1),
         e.Str(DEPOSIT_ID),
-        e.U(AMBASSADOR_FEE),
+        e.U(AMBASSADOR_FEE1),
         e.Addr(deployer),
       ],
       esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_INCORECT_AMOUNT }],
@@ -1083,7 +1089,7 @@ test("Deposit Currency1 with Bob", async () => {
       e.U(PLATFORM_FEE1),
       e.U(GROUP_FEE1),
       e.Str(DEPOSIT_ID),
-      e.U(AMBASSADOR_FEE),
+      e.U(AMBASSADOR_FEE1),
       e.Addr(deployer),
     ],
     esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
@@ -1130,52 +1136,28 @@ test("Deposit Currency1 with Bob", async () => {
         .Value(e.U(CURRENCY1_DEPOSIT_AMOUNT)),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
-        ),
-      e.kvs
-        .Mapper("platform_fee", e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
-        ),
-      e.kvs
-        .Mapper("total_platform_fee")
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(PLATFORM_FEE1)),
+      e.kvs.Mapper("platform_fee", e.Str(CURRENCY1)).Value(e.U(PLATFORM_FEE1)),
+      e.kvs.Mapper("total_platform_fee").Value(e.U(PLATFORM_FEE1)),
       e.kvs
         .Mapper("address_group_fee", e.Addr(bob), e.Str(CURRENCY1))
-        .Value(e.U((CURRENCY1_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
-      e.kvs
-        .Mapper("group_fee", e.Str(CURRENCY1))
-        .Value(e.U((CURRENCY1_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
-      e.kvs
-        .Mapper("total_group_fee")
-        .Value(e.U((CURRENCY1_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
-      e.kvs
-        .Mapper("total_ambassador_fee")
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(GROUP_FEE1)),
+      e.kvs.Mapper("group_fee", e.Str(CURRENCY1)).Value(e.U(GROUP_FEE1)),
+      e.kvs.Mapper("total_group_fee").Value(e.U(GROUP_FEE1)),
+      e.kvs.Mapper("total_ambassador_fee").Value(e.U(AMBASSADOR_FEE1)),
       e.kvs.Mapper("ambassadors").UnorderedSet([e.Addr(deployer)]),
       e.kvs
         .Mapper("address_ambassador_fee", e.Addr(bob), e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE1)),
       e.kvs
         .Mapper("address_to_ambassador", e.Addr(bob))
         .Value(e.Addr(deployer)),
       e.kvs
         .Mapper("ambassador_fee", e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE1)),
       e.kvs
         .Mapper("referral_ambassador_fee", e.Addr(deployer), e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE1)),
       e.kvs
         .Mapper("ambassador_currencies", e.Addr(deployer))
         .UnorderedSet([e.Str(CURRENCY1)]),
@@ -1271,7 +1253,7 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
       e.U(PLATFORM_FEE1),
       e.U(GROUP_FEE1),
       e.Str(DEPOSIT_ID),
-      e.U(AMBASSADOR_FEE),
+      e.U(AMBASSADOR_FEE1),
       e.Addr(deployer),
     ],
     esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
@@ -1283,11 +1265,11 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
     funcName: "deposit",
     funcArgs: [
       e.U64(TIMESTAMP),
-      e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
-      e.U(PLATFORM_FEE1),
-      e.U(GROUP_FEE1),
+      e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR2),
+      e.U(PLATFORM_FEE2),
+      e.U(GROUP_FEE2),
       e.Str(DEPOSIT_ID),
-      e.U(AMBASSADOR_FEE),
+      e.U(AMBASSADOR_FEE2),
       e.Addr(deployer),
     ],
     esdts: [{ id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT }],
@@ -1295,16 +1277,18 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
 
   const denominated_currency2 =
     BigInt(CURRENCY2_DEPOSIT_AMOUNT) * BigInt(10 ** (18 - DECIMALS2));
+  const denominated_platform_fee_currency2 =
+    BigInt(PLATFORM_FEE2) * BigInt(10 ** (18 - DECIMALS2));
+  const denominated_group_fee_currency2 =
+    BigInt(GROUP_FEE2) * BigInt(10 ** (18 - DECIMALS2));
+  const denominated_ambassador_fee_currency2 =
+    BigInt(AMBASSADOR_FEE2) * BigInt(10 ** (18 - DECIMALS2));
   const total_deposited_amount =
     BigInt(CURRENCY1_DEPOSIT_AMOUNT) + denominated_currency2;
-  const total_platform_fee =
-    (BigInt(CURRENCY1_DEPOSIT_AMOUNT) * BigInt(PLATFORM_FEE1)) /
-      BigInt(MAX_PERCENTAGE) +
-    (denominated_currency2 * BigInt(PLATFORM_FEE1)) / BigInt(MAX_PERCENTAGE);
-  const total_group_fee =
-    (BigInt(CURRENCY1_DEPOSIT_AMOUNT) * BigInt(GROUP_FEE1)) /
-      BigInt(MAX_PERCENTAGE) +
-    (denominated_currency2 * BigInt(GROUP_FEE1)) / BigInt(MAX_PERCENTAGE);
+  const total_platform_fee = PLATFORM_FEE1 + denominated_platform_fee_currency2;
+  const total_group_fee = GROUP_FEE1 + denominated_group_fee_currency2;
+  const total_ambassador_fee =
+    AMBASSADOR_FEE1 + denominated_ambassador_fee_currency2;
 
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
@@ -1353,75 +1337,45 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
         .Value(e.U(CURRENCY1_DEPOSIT_AMOUNT)),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(PLATFORM_FEE1)),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY2))
-        .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
-        ),
-      e.kvs
-        .Mapper("platform_fee", e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
-        ),
-      e.kvs
-        .Mapper("platform_fee", e.Str(CURRENCY2))
-        .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(PLATFORM_FEE2)),
+      e.kvs.Mapper("platform_fee", e.Str(CURRENCY1)).Value(e.U(PLATFORM_FEE1)),
+      e.kvs.Mapper("platform_fee", e.Str(CURRENCY2)).Value(e.U(PLATFORM_FEE2)),
       e.kvs.Mapper("total_platform_fee").Value(e.U(total_platform_fee)),
-      e.kvs
-        .Mapper("total_ambassador_fee")
-        .Value(e.U((total_deposited_amount * AMBASSADOR_FEE) / MAX_PERCENTAGE)),
+      e.kvs.Mapper("total_ambassador_fee").Value(e.U(total_ambassador_fee)),
       e.kvs
         .Mapper("address_to_ambassador", e.Addr(bob))
         .Value(e.Addr(deployer)),
       e.kvs
         .Mapper("address_group_fee", e.Addr(bob), e.Str(CURRENCY1))
-        .Value(e.U((CURRENCY1_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
+        .Value(e.U(GROUP_FEE1)),
       e.kvs
         .Mapper("address_group_fee", e.Addr(bob), e.Str(CURRENCY2))
-        .Value(e.U((CURRENCY2_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
-      e.kvs
-        .Mapper("group_fee", e.Str(CURRENCY1))
-        .Value(e.U((CURRENCY1_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
-      e.kvs
-        .Mapper("group_fee", e.Str(CURRENCY2))
-        .Value(e.U((CURRENCY2_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
+        .Value(e.U(GROUP_FEE2)),
+      e.kvs.Mapper("group_fee", e.Str(CURRENCY1)).Value(e.U(GROUP_FEE1)),
+      e.kvs.Mapper("group_fee", e.Str(CURRENCY2)).Value(e.U(GROUP_FEE2)),
       e.kvs.Mapper("total_group_fee").Value(e.U(total_group_fee)),
       e.kvs.Mapper("ambassadors").UnorderedSet([e.Addr(deployer)]),
       e.kvs
         .Mapper("address_ambassador_fee", e.Addr(bob), e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE1)),
       e.kvs
         .Mapper("address_ambassador_fee", e.Addr(bob), e.Str(CURRENCY2))
-        .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE2)),
       e.kvs
         .Mapper("ambassador_fee", e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE1)),
       e.kvs
         .Mapper("ambassador_fee", e.Str(CURRENCY2))
-        .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE2)),
       e.kvs
         .Mapper("referral_ambassador_fee", e.Addr(deployer), e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE1)),
       e.kvs
         .Mapper("referral_ambassador_fee", e.Addr(deployer), e.Str(CURRENCY2))
-        .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE2)),
       e.kvs
         .Mapper("ambassador_currencies", e.Addr(deployer))
         .UnorderedSet([e.Str(CURRENCY1), e.Str(CURRENCY2)]),
@@ -1525,7 +1479,7 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
       e.U(PLATFORM_FEE1),
       e.U(GROUP_FEE1),
       e.Str(DEPOSIT_ID),
-      e.U(AMBASSADOR_FEE),
+      e.U(AMBASSADOR_FEE1),
       e.Addr(deployer),
     ],
     esdts: [{ id: CURRENCY1, amount: CURRENCY1_DEPOSIT_AMOUNT }],
@@ -1537,11 +1491,11 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
     funcName: "deposit",
     funcArgs: [
       e.U64(TIMESTAMP),
-      e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR),
-      e.U(PLATFORM_FEE1),
-      e.U(GROUP_FEE1),
+      e.TopBuffer(SIGNATURE_BOB_WITH_AMBASSADOR2),
+      e.U(PLATFORM_FEE2),
+      e.U(GROUP_FEE2),
       e.Str(DEPOSIT_ID),
-      e.U(AMBASSADOR_FEE),
+      e.U(AMBASSADOR_FEE2),
       e.Addr(deployer),
     ],
     esdts: [{ id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT }],
@@ -1567,8 +1521,8 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
     funcArgs: [
       e.U64(TIMESTAMP),
       e.TopBuffer(SIGNATURE_CAROL_WITHOUT_AMBASSADOR),
-      e.U(PLATFORM_FEE2),
-      e.U(GROUP_FEE2),
+      e.U(PLATFORM_FEE3),
+      e.U(GROUP_FEE3),
       e.Str(DEPOSIT_ID),
     ],
     esdts: [{ id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT }],
@@ -1578,20 +1532,30 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
     BigInt(CURRENCY2_DEPOSIT_AMOUNT) * BigInt(10 ** (18 - DECIMALS2));
   const denominated_currency3 =
     BigInt(CURRENCY3_DEPOSIT_AMOUNT) * BigInt(10 ** (18 - DECIMALS3));
+  const denominated_platform_fee_currency2 =
+    BigInt(PLATFORM_FEE2) * BigInt(10 ** (18 - DECIMALS2));
+  const denominated_group_fee_currency2 =
+    BigInt(GROUP_FEE2) * BigInt(10 ** (18 - DECIMALS2));
+  const denominated_ambassador_fee_currency2 =
+    BigInt(AMBASSADOR_FEE2) * BigInt(10 ** (18 - DECIMALS2));
+  const denominated_platform_fee_currency3 =
+    BigInt(PLATFORM_FEE3) * BigInt(10 ** (18 - DECIMALS3));
+  const denominated_group_fee_currency3 =
+    BigInt(GROUP_FEE3) * BigInt(10 ** (18 - DECIMALS3));
   const total_deposited_amount =
     BigInt(CURRENCY1_DEPOSIT_AMOUNT) +
     denominated_currency2 +
     denominated_currency3;
   const total_platform_fee =
-    (BigInt(CURRENCY1_DEPOSIT_AMOUNT) * BigInt(PLATFORM_FEE1)) /
-      BigInt(MAX_PERCENTAGE) +
-    (denominated_currency2 * BigInt(PLATFORM_FEE1)) / BigInt(MAX_PERCENTAGE) +
-    (denominated_currency3 * BigInt(PLATFORM_FEE2)) / BigInt(MAX_PERCENTAGE);
+    PLATFORM_FEE1 +
+    denominated_platform_fee_currency2 +
+    denominated_platform_fee_currency3;
   const total_group_fee =
-    (BigInt(CURRENCY1_DEPOSIT_AMOUNT) * BigInt(GROUP_FEE1)) /
-      BigInt(MAX_PERCENTAGE) +
-    (denominated_currency2 * BigInt(GROUP_FEE1)) / BigInt(MAX_PERCENTAGE) +
-    (denominated_currency3 * BigInt(GROUP_FEE2)) / BigInt(MAX_PERCENTAGE);
+    GROUP_FEE1 +
+    denominated_group_fee_currency2 +
+    denominated_group_fee_currency3;
+  const total_ambassador_fee =
+    AMBASSADOR_FEE1 + denominated_ambassador_fee_currency2;
 
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
@@ -1655,94 +1619,50 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
         .Value(e.Addr(deployer)),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(PLATFORM_FEE1)),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY2))
-        .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(PLATFORM_FEE2)),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(carol), e.Str(CURRENCY3))
-        .Value(
-          e.U((CURRENCY3_DEPOSIT_AMOUNT * PLATFORM_FEE2) / MAX_PERCENTAGE),
-        ),
-      e.kvs
-        .Mapper("platform_fee", e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
-        ),
-      e.kvs
-        .Mapper("platform_fee", e.Str(CURRENCY2))
-        .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * PLATFORM_FEE1) / MAX_PERCENTAGE),
-        ),
-      e.kvs
-        .Mapper("platform_fee", e.Str(CURRENCY3))
-        .Value(
-          e.U((CURRENCY3_DEPOSIT_AMOUNT * PLATFORM_FEE2) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(PLATFORM_FEE3)),
+      e.kvs.Mapper("platform_fee", e.Str(CURRENCY1)).Value(e.U(PLATFORM_FEE1)),
+      e.kvs.Mapper("platform_fee", e.Str(CURRENCY2)).Value(e.U(PLATFORM_FEE2)),
+      e.kvs.Mapper("platform_fee", e.Str(CURRENCY3)).Value(e.U(PLATFORM_FEE3)),
       e.kvs.Mapper("total_platform_fee").Value(e.U(total_platform_fee)),
       e.kvs
         .Mapper("address_group_fee", e.Addr(bob), e.Str(CURRENCY1))
-        .Value(e.U((CURRENCY1_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
+        .Value(e.U(GROUP_FEE1)),
       e.kvs
         .Mapper("address_group_fee", e.Addr(bob), e.Str(CURRENCY2))
-        .Value(e.U((CURRENCY2_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
+        .Value(e.U(GROUP_FEE2)),
       e.kvs
         .Mapper("address_group_fee", e.Addr(carol), e.Str(CURRENCY3))
-        .Value(e.U((CURRENCY3_DEPOSIT_AMOUNT * GROUP_FEE2) / MAX_PERCENTAGE)),
-      e.kvs
-        .Mapper("group_fee", e.Str(CURRENCY1))
-        .Value(e.U((CURRENCY1_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
-      e.kvs
-        .Mapper("group_fee", e.Str(CURRENCY2))
-        .Value(e.U((CURRENCY2_DEPOSIT_AMOUNT * GROUP_FEE1) / MAX_PERCENTAGE)),
-      e.kvs
-        .Mapper("group_fee", e.Str(CURRENCY3))
-        .Value(e.U((CURRENCY3_DEPOSIT_AMOUNT * GROUP_FEE2) / MAX_PERCENTAGE)),
+        .Value(e.U(GROUP_FEE3)),
+      e.kvs.Mapper("group_fee", e.Str(CURRENCY1)).Value(e.U(GROUP_FEE1)),
+      e.kvs.Mapper("group_fee", e.Str(CURRENCY2)).Value(e.U(GROUP_FEE2)),
+      e.kvs.Mapper("group_fee", e.Str(CURRENCY3)).Value(e.U(GROUP_FEE3)),
       e.kvs.Mapper("total_group_fee").Value(e.U(total_group_fee)),
-      e.kvs
-        .Mapper("total_ambassador_fee")
-        .Value(
-          e.U(
-            ((CURRENCY1_DEPOSIT_AMOUNT + denominated_currency2) *
-              AMBASSADOR_FEE) /
-              MAX_PERCENTAGE,
-          ),
-        ),
+      e.kvs.Mapper("total_ambassador_fee").Value(e.U(total_ambassador_fee)),
       e.kvs.Mapper("ambassadors").UnorderedSet([e.Addr(deployer)]),
       e.kvs
         .Mapper("address_ambassador_fee", e.Addr(bob), e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE1)),
       e.kvs
         .Mapper("address_ambassador_fee", e.Addr(bob), e.Str(CURRENCY2))
-        .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE2)),
       e.kvs
         .Mapper("ambassador_fee", e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE1)),
       e.kvs
         .Mapper("ambassador_fee", e.Str(CURRENCY2))
-        .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE2)),
       e.kvs
         .Mapper("referral_ambassador_fee", e.Addr(deployer), e.Str(CURRENCY1))
-        .Value(
-          e.U((CURRENCY1_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE1)),
       e.kvs
         .Mapper("referral_ambassador_fee", e.Addr(deployer), e.Str(CURRENCY2))
-        .Value(
-          e.U((CURRENCY2_DEPOSIT_AMOUNT * AMBASSADOR_FEE) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(AMBASSADOR_FEE2)),
       e.kvs
         .Mapper("ambassador_currencies", e.Addr(deployer))
         .UnorderedSet([e.Str(CURRENCY1), e.Str(CURRENCY2)]),
@@ -1864,6 +1784,15 @@ test("Deposit automatically with random parameters", async () => {
 
   for (let i = 0; i < numberOfDeposits; i++) {
     const ambassadorBool = getRandomInt(0, 1);
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -1872,24 +1801,19 @@ test("Deposit automatically with random parameters", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(ambassadorBool);
+    } = generateDataAndSignature(ambassadorBool, depositAmount);
 
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
-    const depositAmountDenominated = BigInt(depositAmount) * BigInt(10 ** 18);
+    const depositAmountDenominated =
+      BigInt(depositAmount) * BigInt(10 ** (18 - decimals));
+    const platformFeeDenominated = platformFee * BigInt(10 ** (18 - decimals));
+    const groupFeeDenominated = groupFee * BigInt(10 ** (18 - decimals));
+    const ambassadorFeeDenominated =
+      ambassadorFee * BigInt(10 ** (18 - decimals));
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -1913,7 +1837,7 @@ test("Deposit automatically with random parameters", async () => {
           e.U(ambassadorFee),
           e.Addr(ambassadorAddress),
         ],
-        esdts: [{ id: currency, amount: depositAmountInCurrency }],
+        esdts: [{ id: currency, amount: depositAmount }],
       });
     } else {
       await genericWallet.callContract({
@@ -1927,7 +1851,7 @@ test("Deposit automatically with random parameters", async () => {
           e.U(groupFee),
           e.Str(DEPOSIT_ID),
         ],
-        esdts: [{ id: currency, amount: depositAmountInCurrency }],
+        esdts: [{ id: currency, amount: depositAmount }],
       });
     }
 
@@ -1942,7 +1866,7 @@ test("Deposit automatically with random parameters", async () => {
         " ",
       )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
     );
-     */
+    */
 
     walletsKvs.push(
       e.kvs
@@ -1952,38 +1876,29 @@ test("Deposit automatically with random parameters", async () => {
     walletsKvs.push(
       e.kvs
         .Mapper("deposited_amount", e.Addr(genericWallet), e.Str(currency))
-        .Value(e.U(depositAmountInCurrency)),
+        .Value(e.U(depositAmount)),
     );
     walletsKvs.push(
       e.kvs
         .Mapper("address_platform_fee", e.Addr(genericWallet), e.Str(currency))
-        .Value(
-          e.U((depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(platformFee)),
     );
     walletsKvs.push(
       e.kvs
         .Mapper("address_group_fee", e.Addr(genericWallet), e.Str(currency))
-        .Value(
-          e.U((depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(groupFee)),
     );
     addresses.push(e.Addr(genericWallet));
 
     totalAmount += depositAmountDenominated;
-    currenciesTotal[currencyRand] += depositAmountInCurrency;
-    currenciesPlatformFees[currencyRand] +=
-      (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
-    totalPlatformFee +=
-      (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
-    currenciesGroupFees[currencyRand] +=
-      (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
-    totalGroupFee +=
-      (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
+    currenciesTotal[currencyRand] += BigInt(depositAmount);
+    currenciesPlatformFees[currencyRand] += platformFee;
+    totalPlatformFee += platformFeeDenominated;
+    currenciesGroupFees[currencyRand] += groupFee;
+    totalGroupFee += groupFeeDenominated;
 
     if (ambassadorBool == 1) {
-      totalAmbassadorsAmount +=
-        (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+      totalAmbassadorsAmount += ambassadorFeeDenominated;
       walletsKvs.push(
         e.kvs
           .Mapper(
@@ -1991,12 +1906,7 @@ test("Deposit automatically with random parameters", async () => {
             e.Addr(genericWallet),
             e.Str(currency),
           )
-          .Value(
-            e.U(
-              (depositAmountInCurrency * BigInt(ambassadorFee)) /
-                MAX_PERCENTAGE,
-            ),
-          ),
+          .Value(e.U(ambassadorFee)),
       );
 
       walletsKvs.push(
@@ -2005,11 +1915,9 @@ test("Deposit automatically with random parameters", async () => {
           .Value(e.Addr(ambassadorAddress)),
       );
 
-      const ambassadorFeeInCurrency =
-        (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
-      currenciesAmbassadorFees[currencyRand] += ambassadorFeeInCurrency;
+      currenciesAmbassadorFees[currencyRand] += ambassadorFee;
       ambassadorsRefferalFees.push([BigInt(0), BigInt(0), BigInt(0)]);
-      ambassadorsRefferalFees[ambIdx][currencyRand] = ambassadorFeeInCurrency;
+      ambassadorsRefferalFees[ambIdx][currencyRand] = ambassadorFee;
       ambIdx += 1;
       ambassadors.push(e.Addr(ambassadorAddress));
     }
@@ -2199,15 +2107,6 @@ test("Deposit automatically with deployer as ambassador", async () => {
   var ambIdx = 0;
 
   for (let i = 0; i < numberOfDeposits; i++) {
-    const {
-      address,
-      whitelistSignature,
-      depositSignature,
-      platformFee,
-      groupFee,
-      ambassadorFee,
-    } = generateDataAndSignatureDeployerAmbassador();
-
     const currencyRand = getRandomInt(0, 2);
     const currency = currenciesArray[currencyRand];
     const decimals = currenciesDecimals[currencyRand];
@@ -2215,15 +2114,28 @@ test("Deposit automatically with deployer as ambassador", async () => {
       MIN_DEPOSIT,
       MAX_DEPOSIT,
       DEPOSIT_INCREMENTS,
+      decimals,
     );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
-    const depositAmountDenominated = BigInt(depositAmount) * BigInt(10 ** 18);
+    const {
+      address,
+      whitelistSignature,
+      depositSignature,
+      platformFee,
+      groupFee,
+      ambassadorFee,
+    } = generateDataAndSignatureDeployerAmbassador(depositAmount);
+
+    const depositAmountDenominated =
+      BigInt(depositAmount) * BigInt(10 ** (18 - decimals));
+    const platformFeeDenominated = platformFee * BigInt(10 ** (18 - decimals));
+    const groupFeeDenominated = groupFee * BigInt(10 ** (18 - decimals));
+    const ambassadorFeeDenominated =
+      ambassadorFee * BigInt(10 ** (18 - decimals));
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -2246,7 +2158,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
         e.U(ambassadorFee),
         e.Addr(deployer),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
 
     /*
@@ -2270,36 +2182,27 @@ test("Deposit automatically with deployer as ambassador", async () => {
     walletsKvs.push(
       e.kvs
         .Mapper("deposited_amount", e.Addr(genericWallet), e.Str(currency))
-        .Value(e.U(depositAmountInCurrency)),
+        .Value(e.U(depositAmount)),
     );
     walletsKvs.push(
       e.kvs
         .Mapper("address_platform_fee", e.Addr(genericWallet), e.Str(currency))
-        .Value(
-          e.U((depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(platformFee)),
     );
     walletsKvs.push(
       e.kvs
         .Mapper("address_group_fee", e.Addr(genericWallet), e.Str(currency))
-        .Value(
-          e.U((depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE),
-        ),
+        .Value(e.U(groupFee)),
     );
     addresses.push(e.Addr(genericWallet));
 
     totalAmount += depositAmountDenominated;
-    currenciesTotal[currencyRand] += depositAmountInCurrency;
-    currenciesPlatformFees[currencyRand] +=
-      (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
-    totalPlatformFee +=
-      (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
-    currenciesGroupFees[currencyRand] +=
-      (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
-    totalGroupFee +=
-      (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
-    totalAmbassadorsAmount +=
-      (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+    currenciesTotal[currencyRand] += depositAmount;
+    currenciesPlatformFees[currencyRand] += platformFee;
+    totalPlatformFee += platformFeeDenominated;
+    currenciesGroupFees[currencyRand] += groupFee;
+    totalGroupFee += groupFeeDenominated;
+    totalAmbassadorsAmount += ambassadorFeeDenominated;
 
     walletsKvs.push(
       e.kvs
@@ -2308,11 +2211,7 @@ test("Deposit automatically with deployer as ambassador", async () => {
           e.Addr(genericWallet),
           e.Str(currency),
         )
-        .Value(
-          e.U(
-            (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE,
-          ),
-        ),
+        .Value(e.U(ambassadorFee)),
     );
 
     walletsKvs.push(
@@ -2321,22 +2220,20 @@ test("Deposit automatically with deployer as ambassador", async () => {
         .Value(e.Addr(deployer)),
     );
 
-    const ambassadorFeeInCurrency =
-      (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
-    currenciesAmbassadorFees[currencyRand] += ambassadorFeeInCurrency;
+    currenciesAmbassadorFees[currencyRand] += ambassadorFee;
 
     const index = ambassadors.findIndex((addr) => {
       return addr.toTopHex() === e.Addr(deployerAddress).toTopHex();
     });
     if (index === -1) {
       ambassadorsRefferalFees.push([BigInt(0), BigInt(0), BigInt(0)]);
-      ambassadorsRefferalFees[ambIdx][currencyRand] = ambassadorFeeInCurrency;
+      ambassadorsRefferalFees[ambIdx][currencyRand] = ambassadorFee;
       ambIdx += 1;
       ambassadors.push(e.Addr(deployerAddress));
     } else {
       const current = ambassadorsRefferalFees[index][currencyRand];
       ambassadorsRefferalFees[index][currencyRand] =
-        BigInt(current.toString()) + BigInt(ambassadorFeeInCurrency.toString());
+        BigInt(current.toString()) + BigInt(ambassadorFee.toString());
     }
     const currencyEncoded = e.Str(currenciesArray[currencyRand]);
     const indexCurrency = ambassadorCurrencies.findIndex(

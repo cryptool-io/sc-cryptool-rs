@@ -32,7 +32,6 @@ import {
   REFUND_NOT_ENABLED,
   LOW_SOFT_CAP,
   TIMESTAMP_AFTER,
-  MAX_PERCENTAGE,
   PAYMENT_NETWORK_ID,
   DEPOSIT_ID,
 } from "./helpers.ts";
@@ -185,6 +184,15 @@ test("Refund admin with wrong signature", async () => {
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -193,23 +201,12 @@ test("Refund admin with wrong signature", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -232,7 +229,7 @@ test("Refund admin with wrong signature", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
   }
 
@@ -308,6 +305,15 @@ test("Refund admin by non owner", async () => {
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -316,23 +322,12 @@ test("Refund admin by non owner", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -355,7 +350,7 @@ test("Refund admin by non owner", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
   }
 
@@ -436,6 +431,15 @@ test("Refund admin with too much delay", async () => {
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -444,23 +448,12 @@ test("Refund admin with too much delay", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -483,7 +476,7 @@ test("Refund admin with too much delay", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
   }
 
@@ -609,6 +602,15 @@ test("Refund last N deposits", async () => {
   var ambIdx = 0;
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const ambassadorBool = getRandomInt(0, 1);
     const {
       address,
@@ -618,24 +620,12 @@ test("Refund last N deposits", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(ambassadorBool);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
-    const depositAmountDenominated = BigInt(depositAmount) * BigInt(10 ** 18);
+    } = generateDataAndSignature(ambassadorBool, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -659,7 +649,7 @@ test("Refund last N deposits", async () => {
           e.U(ambassadorFee),
           e.Addr(ambassadorAddress),
         ],
-        esdts: [{ id: currency, amount: depositAmountInCurrency }],
+        esdts: [{ id: currency, amount: depositAmount }],
       });
     } else {
       await genericWallet.callContract({
@@ -673,7 +663,7 @@ test("Refund last N deposits", async () => {
           e.U(groupFee),
           e.Str(DEPOSIT_ID),
         ],
-        esdts: [{ id: currency, amount: depositAmountInCurrency }],
+        esdts: [{ id: currency, amount: depositAmount }],
       });
     }
 
@@ -691,8 +681,15 @@ test("Refund last N deposits", async () => {
      */
 
     if (i < numberOfDeposits - refundLast) {
-      totalAmbassadorsAmount +=
-        (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+      const depositAmountDenominated =
+        BigInt(depositAmount) * BigInt(10 ** (18 - decimals));
+      const platformFeeDenominated =
+        platformFee * BigInt(10 ** (18 - decimals));
+      const groupFeeDenominated = groupFee * BigInt(10 ** (18 - decimals));
+      const ambassadorFeeDenominated =
+        ambassadorFee * BigInt(10 ** (18 - decimals));
+
+      totalAmbassadorsAmount += ambassadorFeeDenominated;
       walletsKvs.push(
         e.kvs
           .Mapper("deposited_currencies", e.Addr(genericWallet))
@@ -701,7 +698,7 @@ test("Refund last N deposits", async () => {
       walletsKvs.push(
         e.kvs
           .Mapper("deposited_amount", e.Addr(genericWallet), e.Str(currency))
-          .Value(e.U(depositAmountInCurrency)),
+          .Value(e.U(depositAmount)),
       );
       walletsKvs.push(
         e.kvs
@@ -710,31 +707,21 @@ test("Refund last N deposits", async () => {
             e.Addr(genericWallet),
             e.Str(currency),
           )
-          .Value(
-            e.U(
-              (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE,
-            ),
-          ),
+          .Value(e.U(platformFee)),
       );
       walletsKvs.push(
         e.kvs
           .Mapper("address_group_fee", e.Addr(genericWallet), e.Str(currency))
-          .Value(
-            e.U((depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE),
-          ),
+          .Value(e.U(groupFee)),
       );
       addresses.push(e.Addr(genericWallet));
 
       totalAmount += depositAmountDenominated;
-      currenciesTotal[currencyRand] += depositAmountInCurrency;
-      currenciesPlatformFees[currencyRand] +=
-        (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
-      totalPlatformFee +=
-        (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
-      currenciesGroupFees[currencyRand] +=
-        (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
-      totalGroupFee +=
-        (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
+      currenciesTotal[currencyRand] += depositAmount;
+      currenciesPlatformFees[currencyRand] += platformFee;
+      totalPlatformFee += platformFeeDenominated;
+      currenciesGroupFees[currencyRand] += groupFee;
+      totalGroupFee += groupFeeDenominated;
 
       if (ambassadorBool == 1) {
         walletsKvs.push(
@@ -744,12 +731,7 @@ test("Refund last N deposits", async () => {
               e.Addr(genericWallet),
               e.Str(currency),
             )
-            .Value(
-              e.U(
-                (depositAmountInCurrency * BigInt(ambassadorFee)) /
-                  MAX_PERCENTAGE,
-              ),
-            ),
+            .Value(e.U(ambassadorFee)),
         );
 
         walletsKvs.push(
@@ -758,11 +740,9 @@ test("Refund last N deposits", async () => {
             .Value(e.Addr(ambassadorAddress)),
         );
 
-        const ambassadorFeeInCurrency =
-          (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
-        currenciesAmbassadorFees[currencyRand] += ambassadorFeeInCurrency;
+        currenciesAmbassadorFees[currencyRand] += ambassadorFee;
         ambassadorsRefferalFees.push([BigInt(0), BigInt(0), BigInt(0)]);
-        ambassadorsRefferalFees[ambIdx][currencyRand] = ambassadorFeeInCurrency;
+        ambassadorsRefferalFees[ambIdx][currencyRand] = ambassadorFee;
         ambIdx += 1;
         ambassadors.push(e.Addr(ambassadorAddress));
       }

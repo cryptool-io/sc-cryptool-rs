@@ -159,7 +159,7 @@ test("Distribute with invalid timestamp", async () => {
         { id: CURRENCY1, amount: CURRENCY1_DISTRIBUTE_AMOUNT },
       ],
     })
-    .assertFail({ code: 4, message: "Deposit took too long" });
+    .assertFail({ code: 4, message: "Invalid timestamp" });
 });
 
 test("Distribute with wrong signature", async () => {
@@ -210,6 +210,35 @@ test("Distribute with no payment", async () => {
     .assertFail({
       code: 4,
       message: "Two payments are expected, one for EGLD and one for ESDT",
+    });
+});
+
+test("Distribute with wrong first token", async () => {
+  await deployer
+    .callContract({
+      callee: distributionContract,
+      gasLimit: 50_000_000,
+      funcName: "distribute",
+      funcArgs: [
+        e.Str(POOL_ID),
+        e.U32(BATCH_ID),
+        e.U64(TIMESTAMP),
+        e.TopBuffer(SIGNATURE_DATA_DEPLOYER_DISTRUBUTE),
+        e.Addr(alice),
+        e.U(CURRENCY1_DISTRIBUTE_AMOUNT / BigInt(3)),
+        e.Addr(bob),
+        e.U(CURRENCY1_DISTRIBUTE_AMOUNT / BigInt(3)),
+        e.Addr(carol),
+        e.U(CURRENCY1_DISTRIBUTE_AMOUNT / BigInt(3)),
+      ],
+      esdts: [
+        { id: CURRENCY2, amount: CURRENCY2_DEPOSIT_AMOUNT },
+        { id: CURRENCY1, amount: CURRENCY1_DISTRIBUTE_AMOUNT },
+      ],
+    })
+    .assertFail({
+      code: 4,
+      message: "First token should be EGLD",
     });
 });
 

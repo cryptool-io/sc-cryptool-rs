@@ -7,6 +7,8 @@ import {
   StringValue,
 } from "@multiversx/sdk-core";
 
+const MAX_PERCENTAGE = BigInt(10000);
+
 import { privateKeyDeployer, deployerAddress } from "./signatures/deployer";
 
 import { TIMESTAMP, POOL_ID } from "./helpers";
@@ -23,11 +25,12 @@ export function getRandomDeposit(
   minDeposit: number,
   maxDeposit: number,
   increment: number,
-): number {
+  decimals: number,
+): bigint {
   const rangeStart = Math.ceil(minDeposit / increment);
   const rangeEnd = Math.floor(maxDeposit / increment);
   const randomMultiple = getRandomInt(rangeStart, rangeEnd);
-  return randomMultiple * increment;
+  return BigInt(randomMultiple * increment * 10 ** decimals);
 }
 
 function generateAddress(): Buffer {
@@ -39,17 +42,22 @@ function generateAddress(): Buffer {
   return address;
 }
 
-export function generateDataAndSignature(ambassadorBool: number): {
+export function generateDataAndSignature(
+  ambassadorBool: number,
+  depositAmount: bigint,
+): {
   address: Buffer;
   whitelistSignature: Buffer;
   depositSignature: Buffer;
-  platformFee: number;
-  groupFee: number;
-  ambassadorFee: number;
+  platformFee: bigint;
+  groupFee: bigint;
+  ambassadorFee: bigint;
   ambassadorAddress: Uint8Array;
 } {
-  const platformFee = getRandomInt(0, 100);
-  const groupFee = getRandomInt(101, 200);
+  const platformFee =
+    (BigInt(getRandomInt(0, 100)) * depositAmount) / MAX_PERCENTAGE;
+  const groupFee =
+    (BigInt(getRandomInt(101, 200)) * depositAmount) / MAX_PERCENTAGE;
   const address = generateAddress();
 
   var whitelist_data = Buffer.concat([
@@ -64,10 +72,11 @@ export function generateDataAndSignature(ambassadorBool: number): {
     codec.encodeNested(new BigUIntValue(platformFee)),
     codec.encodeNested(new BigUIntValue(groupFee)),
   ]);
-  var ambassadorFee = 0;
+  var ambassadorFee = BigInt(0);
   var ambassadorAddress = new Uint8Array(0);
   if (ambassadorBool == 1) {
-    ambassadorFee = getRandomInt(201, 300);
+    ambassadorFee =
+      (BigInt(getRandomInt(201, 300)) * depositAmount) / MAX_PERCENTAGE;
     ambassadorAddress = generateAddress();
     deploy_data = Buffer.concat([
       deploy_data,
@@ -89,18 +98,23 @@ export function generateDataAndSignature(ambassadorBool: number): {
   };
 }
 
-export function generateDataAndSignatureDeployerAmbassador(): {
+export function generateDataAndSignatureDeployerAmbassador(
+  depositAmount: bigint,
+): {
   address: Buffer;
   whitelistSignature: Buffer;
   depositSignature: Buffer;
-  platformFee: number;
-  groupFee: number;
-  ambassadorFee: number;
+  platformFee: bigint;
+  groupFee: bigint;
+  ambassadorFee: bigint;
 } {
-  const platformFee = getRandomInt(0, 100);
-  const groupFee = getRandomInt(101, 200);
+  const platformFee =
+    (BigInt(getRandomInt(0, 100)) * depositAmount) / MAX_PERCENTAGE;
+  const groupFee =
+    (BigInt(getRandomInt(101, 200)) * depositAmount) / MAX_PERCENTAGE;
   const address = generateAddress();
-  const ambassadorFee = getRandomInt(201, 300);
+  const ambassadorFee =
+    (BigInt(getRandomInt(201, 300)) * depositAmount) / MAX_PERCENTAGE;
 
   var whitelist_data = Buffer.concat([
     codec.encodeNested(new U64Value(TIMESTAMP)),

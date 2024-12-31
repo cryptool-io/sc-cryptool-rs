@@ -21,7 +21,6 @@ import {
   END_DATE,
   REFUND_ENABLED,
   DEPOSIT_TIMESTAMP,
-  MAX_PERCENTAGE,
   TIMESTAMP_AFTER,
   TIMESTAMP_WITH_DELAY,
   LOW_SOFT_CAP,
@@ -183,6 +182,15 @@ test("Release with wrong signature", async () => {
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -191,23 +199,12 @@ test("Release with wrong signature", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -230,7 +227,7 @@ test("Release with wrong signature", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
   }
 
@@ -306,6 +303,15 @@ test("Release by non owner", async () => {
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -314,23 +320,12 @@ test("Release by non owner", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -353,7 +348,7 @@ test("Release by non owner", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
   }
 
@@ -434,6 +429,15 @@ test("Release with too much delay", async () => {
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -442,23 +446,12 @@ test("Release with too much delay", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -481,7 +474,7 @@ test("Release with too much delay", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
   }
 
@@ -570,6 +563,15 @@ test("Enable pool after release", async () => {
   var ambassadorFees: bigint[] = [];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -578,30 +580,15 @@ test("Enable pool after release", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
+    } = generateDataAndSignature(1, depositAmount);
 
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
-    const ambassadorFeeAmountInCurrency =
-      (BigInt(depositAmountInCurrency) * BigInt(ambassadorFee)) /
-      MAX_PERCENTAGE;
-    currenciesPlatformFees[currencyRand] +=
-      (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
-    currenciesGroupFees[currencyRand] +=
-      (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
+    currenciesPlatformFees[currencyRand] += platformFee;
+    currenciesGroupFees[currencyRand] += groupFee;
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 0,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -624,7 +611,7 @@ test("Enable pool after release", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
 
     ambassadorWallet = await world.createWallet({
@@ -633,9 +620,9 @@ test("Enable pool after release", async () => {
     });
 
     ambassadorWallets.push(ambassadorWallet);
-    depositedAmounts.push(depositAmountInCurrency);
+    depositedAmounts.push(depositAmount);
     currencies.push(currency);
-    ambassadorFees.push(ambassadorFeeAmountInCurrency);
+    ambassadorFees.push(ambassadorFee);
 
     /*
     console.log(
@@ -788,6 +775,15 @@ test("Release in 1 call no overcommitment", async () => {
   var ambassadorFees: bigint[] = [];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -796,16 +792,7 @@ test("Release in 1 call no overcommitment", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
@@ -814,7 +801,7 @@ test("Release in 1 call no overcommitment", async () => {
         e.kvs.Esdts([
           {
             id: currency,
-            amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+            amount: depositAmount,
           },
         ]),
       ],
@@ -843,7 +830,7 @@ test("Release in 1 call no overcommitment", async () => {
       esdts: [
         {
           id: currency,
-          amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+          amount: depositAmount,
         },
       ],
     });
@@ -853,45 +840,32 @@ test("Release in 1 call no overcommitment", async () => {
       balance: 0n,
     });
 
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
-    const depositAmountDenominated = BigInt(depositAmount) * BigInt(10 ** 18);
+    const depositAmountDenominated =
+      depositAmount * BigInt(10 ** (18 - decimals));
 
-    platformFeeAmountInCurrency =
-      (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
-    groupFeeAmountInCurrency =
-      (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
-    const ambassadorFeeAmountInCurrency =
-      (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
-
-    currenciesPlatformFees[currencyRand] +=
-      (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
-    platformFeeAmount =
-      (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
-    currenciesGroupFees[currencyRand] +=
-      (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
-    groupFeeAmount =
-      (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
-    ambassadorFeeAmount =
-      (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+    currenciesPlatformFees[currencyRand] += platformFee;
+    platformFeeAmount = platformFee * BigInt(10 ** (18 - decimals));
+    currenciesGroupFees[currencyRand] += groupFee;
+    groupFeeAmount = groupFee * BigInt(10 ** (18 - decimals));
+    ambassadorFeeAmount = ambassadorFee * BigInt(10 ** (18 - decimals));
 
     currenciesAmbassadorFees[currencyRand] =
       currenciesAmbassadorFees[currencyRand] +
-      ambassadorFeeAmountInCurrency -
-      platformFeeAmountInCurrency -
-      groupFeeAmountInCurrency -
-      ambassadorFeeAmountInCurrency;
+      ambassadorFee -
+      platformFee -
+      groupFee -
+      ambassadorFee;
 
     ambassadorWallets.push(ambassadorWallet);
     currencies.push(currency);
-    ambassadorFees.push(ambassadorFeeAmountInCurrency);
+    ambassadorFees.push(ambassadorFee);
 
     currenciesTotal[currencyRand] =
       currenciesTotal[currencyRand] +
-      depositAmountInCurrency -
-      platformFeeAmountInCurrency -
-      groupFeeAmountInCurrency -
-      ambassadorFeeAmountInCurrency;
+      depositAmount -
+      platformFee -
+      groupFee -
+      ambassadorFee;
 
     totalAmount =
       totalAmount +
@@ -1044,6 +1018,15 @@ test("Release in 2 calls no overcommitment", async () => {
   var ambassadorFees: bigint[] = [];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -1052,16 +1035,7 @@ test("Release in 2 calls no overcommitment", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
@@ -1070,7 +1044,7 @@ test("Release in 2 calls no overcommitment", async () => {
         e.kvs.Esdts([
           {
             id: currency,
-            amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+            amount: depositAmount,
           },
         ]),
       ],
@@ -1099,7 +1073,7 @@ test("Release in 2 calls no overcommitment", async () => {
       esdts: [
         {
           id: currency,
-          amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+          amount: depositAmount,
         },
       ],
     });
@@ -1109,45 +1083,32 @@ test("Release in 2 calls no overcommitment", async () => {
       balance: 0n,
     });
 
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
-    const depositAmountDenominated = BigInt(depositAmount) * BigInt(10 ** 18);
+    const depositAmountDenominated =
+      depositAmount * BigInt(10 ** (18 - decimals));
 
-    platformFeeAmountInCurrency =
-      (BigInt(depositAmountInCurrency) * BigInt(platformFee)) / MAX_PERCENTAGE;
-    groupFeeAmountInCurrency =
-      (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
-    const ambassadorFeeAmountInCurrency =
-      (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
-
-    currenciesPlatformFees[currencyRand] +=
-      (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
-    platformFeeAmount =
-      (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
-    currenciesGroupFees[currencyRand] +=
-      (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
-    groupFeeAmount =
-      (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
-    ambassadorFeeAmount =
-      (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+    currenciesPlatformFees[currencyRand] += platformFee;
+    platformFeeAmount = platformFee * BigInt(10 ** (18 - decimals));
+    currenciesGroupFees[currencyRand] += groupFee;
+    groupFeeAmount = groupFee * BigInt(10 ** (18 - decimals));
+    ambassadorFeeAmount = ambassadorFee * BigInt(10 ** (18 - decimals));
 
     currenciesAmbassadorFees[currencyRand] =
       currenciesAmbassadorFees[currencyRand] +
-      ambassadorFeeAmountInCurrency -
-      platformFeeAmountInCurrency -
-      groupFeeAmountInCurrency -
-      ambassadorFeeAmountInCurrency;
+      ambassadorFee -
+      platformFee -
+      groupFee -
+      ambassadorFee;
 
     ambassadorWallets.push(ambassadorWallet);
     currencies.push(currency);
-    ambassadorFees.push(ambassadorFeeAmountInCurrency);
+    ambassadorFees.push(ambassadorFee);
 
     currenciesTotal[currencyRand] =
       currenciesTotal[currencyRand] +
-      depositAmountInCurrency -
-      platformFeeAmountInCurrency -
-      groupFeeAmountInCurrency -
-      ambassadorFeeAmountInCurrency;
+      depositAmount -
+      platformFee -
+      groupFee -
+      ambassadorFee;
 
     totalAmount =
       totalAmount +
@@ -1311,6 +1272,15 @@ test("Release in 1 call with N overcommitment", async () => {
   var refundAddresses: Encodable[] = [];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -1319,16 +1289,7 @@ test("Release in 1 call with N overcommitment", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
@@ -1337,7 +1298,7 @@ test("Release in 1 call with N overcommitment", async () => {
         e.kvs.Esdts([
           {
             id: currency,
-            amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+            amount: depositAmount,
           },
         ]),
       ],
@@ -1366,7 +1327,7 @@ test("Release in 1 call with N overcommitment", async () => {
       esdts: [
         {
           id: currency,
-          amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+          amount: depositAmount,
         },
       ],
     });
@@ -1377,46 +1338,32 @@ test("Release in 1 call with N overcommitment", async () => {
     });
 
     if (i < numberOfDeposits - refundLast) {
-      const depositAmountInCurrency =
-        BigInt(depositAmount) * BigInt(10 ** decimals);
-      const depositAmountDenominated = BigInt(depositAmount) * BigInt(10 ** 18);
+      const depositAmountDenominated =
+        depositAmount * BigInt(10 ** (18 - decimals));
 
-      platformFeeAmountInCurrency =
-        (BigInt(depositAmountInCurrency) * BigInt(platformFee)) /
-        MAX_PERCENTAGE;
-      groupFeeAmountInCurrency =
-        (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
-      const ambassadorFeeAmountInCurrency =
-        (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
-
-      currenciesPlatformFees[currencyRand] +=
-        (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
-      platformFeeAmount =
-        (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
-      currenciesGroupFees[currencyRand] +=
-        (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
-      groupFeeAmount =
-        (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
-      ambassadorFeeAmount =
-        (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+      currenciesPlatformFees[currencyRand] += platformFee;
+      platformFeeAmount = platformFee * BigInt(10 ** (18 - decimals));
+      currenciesGroupFees[currencyRand] += groupFee;
+      groupFeeAmount = groupFee * BigInt(10 ** (18 - decimals));
+      ambassadorFeeAmount = ambassadorFee * BigInt(10 ** (18 - decimals));
 
       currenciesAmbassadorFees[currencyRand] =
         currenciesAmbassadorFees[currencyRand] +
-        ambassadorFeeAmountInCurrency -
-        platformFeeAmountInCurrency -
-        groupFeeAmountInCurrency -
-        ambassadorFeeAmountInCurrency;
+        ambassadorFee -
+        platformFee -
+        groupFee -
+        ambassadorFee;
 
       ambassadorWallets.push(ambassadorWallet);
       currencies.push(currency);
-      ambassadorFees.push(ambassadorFeeAmountInCurrency);
+      ambassadorFees.push(ambassadorFee);
 
       currenciesTotal[currencyRand] =
         currenciesTotal[currencyRand] +
-        depositAmountInCurrency -
-        platformFeeAmountInCurrency -
-        groupFeeAmountInCurrency -
-        ambassadorFeeAmountInCurrency;
+        depositAmount -
+        platformFee -
+        groupFee -
+        ambassadorFee;
 
       totalAmount =
         totalAmount +
@@ -1571,6 +1518,15 @@ test("Release in 2 calls with N overcommitment", async () => {
   var refundAddresses: Encodable[] = [];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -1579,16 +1535,7 @@ test("Release in 2 calls with N overcommitment", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
@@ -1597,7 +1544,7 @@ test("Release in 2 calls with N overcommitment", async () => {
         e.kvs.Esdts([
           {
             id: currency,
-            amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+            amount: depositAmount,
           },
         ]),
       ],
@@ -1626,7 +1573,7 @@ test("Release in 2 calls with N overcommitment", async () => {
       esdts: [
         {
           id: currency,
-          amount: BigInt(depositAmount) * BigInt(10 ** decimals),
+          amount: depositAmount,
         },
       ],
     });
@@ -1637,46 +1584,32 @@ test("Release in 2 calls with N overcommitment", async () => {
     });
 
     if (i < numberOfDeposits - refundLast) {
-      const depositAmountInCurrency =
-        BigInt(depositAmount) * BigInt(10 ** decimals);
-      const depositAmountDenominated = BigInt(depositAmount) * BigInt(10 ** 18);
+      const depositAmountDenominated =
+        depositAmount * BigInt(10 ** (18 - decimals));
 
-      platformFeeAmountInCurrency =
-        (BigInt(depositAmountInCurrency) * BigInt(platformFee)) /
-        MAX_PERCENTAGE;
-      groupFeeAmountInCurrency =
-        (BigInt(depositAmountInCurrency) * BigInt(groupFee)) / MAX_PERCENTAGE;
-      const ambassadorFeeAmountInCurrency =
-        (depositAmountInCurrency * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
-
-      currenciesPlatformFees[currencyRand] +=
-        (depositAmountInCurrency * BigInt(platformFee)) / MAX_PERCENTAGE;
-      platformFeeAmount =
-        (depositAmountDenominated * BigInt(platformFee)) / MAX_PERCENTAGE;
-      currenciesGroupFees[currencyRand] +=
-        (depositAmountInCurrency * BigInt(groupFee)) / MAX_PERCENTAGE;
-      groupFeeAmount =
-        (depositAmountDenominated * BigInt(groupFee)) / MAX_PERCENTAGE;
-      ambassadorFeeAmount =
-        (depositAmountDenominated * BigInt(ambassadorFee)) / MAX_PERCENTAGE;
+      currenciesPlatformFees[currencyRand] += platformFee;
+      platformFeeAmount = platformFee * BigInt(10 ** (18 - decimals));
+      currenciesGroupFees[currencyRand] += groupFee;
+      groupFeeAmount = groupFee * BigInt(10 ** (18 - decimals));
+      ambassadorFeeAmount = ambassadorFee * BigInt(10 ** (18 - decimals));
 
       currenciesAmbassadorFees[currencyRand] =
         currenciesAmbassadorFees[currencyRand] +
-        ambassadorFeeAmountInCurrency -
-        platformFeeAmountInCurrency -
-        groupFeeAmountInCurrency -
-        ambassadorFeeAmountInCurrency;
+        ambassadorFee -
+        platformFee -
+        groupFee -
+        ambassadorFee;
 
       ambassadorWallets.push(ambassadorWallet);
       currencies.push(currency);
-      ambassadorFees.push(ambassadorFeeAmountInCurrency);
+      ambassadorFees.push(ambassadorFee);
 
       currenciesTotal[currencyRand] =
         currenciesTotal[currencyRand] +
-        depositAmountInCurrency -
-        platformFeeAmountInCurrency -
-        groupFeeAmountInCurrency -
-        ambassadorFeeAmountInCurrency;
+        depositAmount -
+        platformFee -
+        groupFee -
+        ambassadorFee;
 
       totalAmount =
         totalAmount +
@@ -1688,16 +1621,18 @@ test("Release in 2 calls with N overcommitment", async () => {
       refundAddresses.push(e.Addr(address));
     }
 
-    // console.log(
-    //   `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
-    //     depositAmount,
-    //   ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
-    //     platformFee,
-    //   ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
-    //     3,
-    //     " ",
-    //   )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
-    // );
+    /*
+    console.log(
+      `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
+        depositAmount,
+      ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
+        platformFee,
+      ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
+        3,
+        " ",
+      )}, ambassadorFee ${String(ambassadorFee).padStart(3, " ")}`,
+    );
+     */
   }
 
   await world.setCurrentBlockInfo({

@@ -111,13 +111,13 @@ The logic is split into two smart contracts: the **raise pool**, which handles a
 
 ## User Callable Endpoints on Production Raise Pool SC:
 
-- **deposit** (_timestamp: u64, signature: ManagedBuffer, platform_fee_percentage: BigUint, group_fee_percentage: BigUint, deposit_id: ManagedBuffer, ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>_)
+- **deposit** (_timestamp: u64, signature: ManagedBuffer, platform_fee: BigUint, group_fee: BigUint, deposit_id: ManagedBuffer, ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>_)
 
   - This is the main endpoint of the pool, used to deposit tokens in the pool.
   - If no ambassador is provided, the signature data format is:
-    - signed(timestamp + pool_id + caller_address + platform_fee_percentage + group_fee_percentage).
+    - signed(timestamp + pool_id + caller_address + platform_fee + group_fee).
   - If an ambassador is provided, the signature data format is:
-    - signed(timestamp + pool_id + caller_address + platform_fee_percentage + group_fee_percentage + ambassador_fee + ambassador_address).
+    - signed(timestamp + pool_id + caller_address + platform_fee + group_fee + ambassador_fee + ambassador_address).
 
       **!!! Check _tests/examples/06.depositCallNoAmbassador_ for an example.**
 

@@ -184,6 +184,15 @@ test("Refund with wrong signature", async () => {
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -192,23 +201,12 @@ test("Refund with wrong signature", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -231,7 +229,7 @@ test("Refund with wrong signature", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
   }
 
@@ -307,6 +305,16 @@ test("Refund by non owner", async () => {
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
+
     const {
       address,
       whitelistSignature,
@@ -315,23 +323,12 @@ test("Refund by non owner", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -354,7 +351,7 @@ test("Refund by non owner", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
   }
 
@@ -435,6 +432,15 @@ test("Refund with too much delay", async () => {
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -443,23 +449,12 @@ test("Refund with too much delay", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -482,7 +477,7 @@ test("Refund with too much delay", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
   }
 
@@ -562,6 +557,16 @@ test("Refund while refunds not enabled", async () => {
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
+
     const {
       address,
       whitelistSignature,
@@ -570,23 +575,12 @@ test("Refund while refunds not enabled", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -609,7 +603,7 @@ test("Refund while refunds not enabled", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
   }
 
@@ -685,6 +679,15 @@ test("Refund while refunds not open", async () => {
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -693,23 +696,12 @@ test("Refund while refunds not open", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -732,7 +724,7 @@ test("Refund while refunds not open", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
   }
 
@@ -808,6 +800,15 @@ test("Refund after soft cap exceeded", async () => {
   const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -816,23 +817,12 @@ test("Refund after soft cap exceeded", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -855,7 +845,7 @@ test("Refund after soft cap exceeded", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
   }
 
@@ -938,6 +928,16 @@ test("Refund with not enough gas", async () => {
   var depositedAmounts: bigint[] = [];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
+
     const {
       address,
       whitelistSignature,
@@ -946,23 +946,12 @@ test("Refund with not enough gas", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -985,11 +974,11 @@ test("Refund with not enough gas", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
 
     wallets.push(genericWallet);
-    depositedAmounts.push(depositAmountInCurrency);
+    depositedAmounts.push(depositAmount);
     currencies.push(currency);
   }
 
@@ -1072,6 +1061,15 @@ test("Refund in 1 call, deploy with ambassador", async () => {
   var depositedAmounts: bigint[] = [];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -1080,23 +1078,12 @@ test("Refund in 1 call, deploy with ambassador", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -1119,11 +1106,11 @@ test("Refund in 1 call, deploy with ambassador", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
 
     wallets.push(genericWallet);
-    depositedAmounts.push(depositAmountInCurrency);
+    depositedAmounts.push(depositAmount);
     currencies.push(currency);
 
     /*
@@ -1261,6 +1248,15 @@ test("Refund in 2 calls, deploy with ambassador", async () => {
   var depositedAmounts: bigint[] = [];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -1269,23 +1265,12 @@ test("Refund in 2 calls, deploy with ambassador", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(1);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(1, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -1308,11 +1293,11 @@ test("Refund in 2 calls, deploy with ambassador", async () => {
         e.U(ambassadorFee),
         e.Addr(ambassadorAddress),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
 
     wallets.push(genericWallet);
-    depositedAmounts.push(depositAmountInCurrency);
+    depositedAmounts.push(depositAmount);
     currencies.push(currency);
 
     /*
@@ -1459,6 +1444,15 @@ test("Refund in 1 call, deploy without ambassador", async () => {
   var depositedAmounts: bigint[] = [];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -1467,23 +1461,12 @@ test("Refund in 1 call, deploy without ambassador", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(0);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(0, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -1504,11 +1487,11 @@ test("Refund in 1 call, deploy without ambassador", async () => {
         e.U(groupFee),
         e.Str(DEPOSIT_ID),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
 
     wallets.push(genericWallet);
-    depositedAmounts.push(depositAmountInCurrency);
+    depositedAmounts.push(depositAmount);
     currencies.push(currency);
 
     /*
@@ -1646,6 +1629,15 @@ test("Refund in 2 calls, deploy without ambassador", async () => {
   var depositedAmounts: bigint[] = [];
 
   for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
     const {
       address,
       whitelistSignature,
@@ -1654,23 +1646,12 @@ test("Refund in 2 calls, deploy without ambassador", async () => {
       groupFee,
       ambassadorFee,
       ambassadorAddress,
-    } = generateDataAndSignature(0);
-
-    const currencyRand = getRandomInt(0, 2);
-    const currency = currenciesArray[currencyRand];
-    const decimals = currenciesDecimals[currencyRand];
-    const depositAmount = getRandomDeposit(
-      MIN_DEPOSIT,
-      MAX_DEPOSIT,
-      DEPOSIT_INCREMENTS,
-    );
-    const depositAmountInCurrency =
-      BigInt(depositAmount) * BigInt(10 ** decimals);
+    } = generateDataAndSignature(0, depositAmount);
 
     genericWallet = await world.createWallet({
       address: address,
       balance: 100_000,
-      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmountInCurrency }])],
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
     });
 
     await genericWallet.callContract({
@@ -1691,11 +1672,11 @@ test("Refund in 2 calls, deploy without ambassador", async () => {
         e.U(groupFee),
         e.Str(DEPOSIT_ID),
       ],
-      esdts: [{ id: currency, amount: depositAmountInCurrency }],
+      esdts: [{ id: currency, amount: depositAmount }],
     });
 
     wallets.push(genericWallet);
-    depositedAmounts.push(depositAmountInCurrency);
+    depositedAmounts.push(depositAmount);
     currencies.push(currency);
 
     /*

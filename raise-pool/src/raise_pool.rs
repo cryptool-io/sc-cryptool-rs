@@ -76,8 +76,8 @@ pub trait RaisePool:
         &self,
         timestamp: u64,
         signature: ManagedBuffer,
-        platform_fee_percentage: BigUint,
-        group_fee_percentage: BigUint,
+        platform_fee: BigUint,
+        group_fee: BigUint,
         deposit_id: ManagedBuffer,
         ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>,
     ) {
@@ -88,8 +88,8 @@ pub trait RaisePool:
             timestamp,
             &self.pool_id().get(),
             &caller,
-            &platform_fee_percentage,
-            &group_fee_percentage,
+            &platform_fee,
+            &group_fee,
             signer,
             signature,
             ambassador.clone(),
@@ -98,43 +98,29 @@ pub trait RaisePool:
         require!(self.is_registered(&caller), "Wallet not registered");
         let payment = self.call_value().single_esdt();
         self.validate_deposit(&payment, &timestamp);
+
         self.increase_general(&caller, &payment);
-
-        let payment_denomination =
-            self.denominate_payment(&payment.token_identifier, &payment.amount);
-
         self.increase_totals(&payment.token_identifier, &payment.amount);
+        self.increase_platform_fee(&caller, &payment.token_identifier, &platform_fee);
+        self.increase_group_fee(&caller, &payment.token_identifier, &group_fee);
 
-        let mut total_fees = BigUint::from(0u64);
-
-        total_fees += self.increase_platform_fee(
-            &caller,
-            &payment,
-            &payment_denomination,
-            &platform_fee_percentage,
-        );
-
-        total_fees += self.increase_group_fee(
-            &caller,
-            &payment,
-            &payment_denomination,
-            &group_fee_percentage,
-        );
+        let mut total_fees = platform_fee + group_fee;
 
         if let Some(ambassador) = ambassador.into_option() {
-            let (ambassador_percentage, ambassador_wallet) = ambassador.into_tuple();
+            let (ambassador_amount, ambassador_wallet) = ambassador.into_tuple();
             if !self.address_to_ambassador(&caller).is_empty() {
                 require!(
                     self.address_to_ambassador(&caller).get() == ambassador_wallet,
                     "Ambassador wallet mismatch"
                 );
             }
-            total_fees += self.increase_ambassador_fee(
+            self.increase_ambassador_fee(
                 &caller,
-                &payment,
-                ambassador_percentage,
+                &payment.token_identifier,
+                &ambassador_amount,
                 ambassador_wallet,
             );
+            total_fees += &ambassador_amount;
         }
 
         require!(
