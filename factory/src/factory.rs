@@ -141,25 +141,6 @@ pub trait Factory:
         );
     }
 
-    #[endpoint(enableRaisePool)]
-    fn enable_raise_pool(
-        &self,
-        timestamp: u64,
-        pool_id: ManagedBuffer,
-        signature: ManagedBuffer,
-        value: bool,
-    ) {
-        require!(
-            !self.pool_id_to_address(&pool_id).is_empty(),
-            "Pool not deployed"
-        );
-        let caller = self.blockchain().get_caller();
-        self.validate_signature(timestamp, &pool_id, &caller, signature);
-        self.raise_pool_address_proxy(self.pool_id_to_address(&pool_id).get())
-            .enable_raise_pool(value)
-            .execute_on_dest_context::<()>();
-    }
-
     fn validate_signature(
         &self,
         timestamp: u64,
@@ -180,10 +161,4 @@ pub trait Factory:
 
     #[proxy]
     fn raise_pool_proxy(&self) -> raise_pool::Proxy<Self::Api>;
-
-    #[proxy]
-    fn raise_pool_address_proxy(
-        &self,
-        callee_sc_address: ManagedAddress,
-    ) -> raise_pool::Proxy<Self::Api>;
 }

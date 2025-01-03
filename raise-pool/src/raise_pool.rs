@@ -192,7 +192,7 @@ pub trait RaisePool:
         overcommited: MultiValueEncoded<ManagedAddress>,
     ) -> OperationCompletionStatus {
         self.validate_owner_call(timestamp, signature);
-        self.enable_raise_pool(false);
+        self.raise_pool_enabled().set(false);
         let overcommited_len = overcommited.len();
         loop {
             match self.release_state().get() {
@@ -303,9 +303,9 @@ pub trait RaisePool:
         self.platform_fee_wallet().set(wallet);
     }
 
-    #[only_owner]
     #[endpoint(enableRaisePool)]
-    fn enable_raise_pool(&self, value: bool) {
+    fn enable_raise_pool(&self, value: bool, timestamp: u64, signature: ManagedBuffer) {
+        self.validate_owner_call(timestamp, signature);
         if value {
             require!(
                 self.release_state().get() == ReleaseState::None,
