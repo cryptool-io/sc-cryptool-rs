@@ -65,7 +65,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         getTotalAmbassadorFee => total_ambassador_fee
         getAmbassadorCurrencies => ambassador_currencies
         getReferralAmbassadorFee => referral_ambassador_fee
-        getAddressToAmbassador => address_to_ambassador
+        getAddressToAmbassador => address_to_ambassadors
         getOvercommitedIndex => overcommited_index
         getReleaseState => release_state
         raisePoolEnabled => raise_pool_enabled

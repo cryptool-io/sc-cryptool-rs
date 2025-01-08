@@ -179,8 +179,11 @@ pub trait StorageModule {
     ) -> SingleValueMapper<BigUint>;
 
     #[view(getAddressToAmbassador)]
-    #[storage_mapper("address_to_ambassador")]
-    fn address_to_ambassador(&self, address: &ManagedAddress) -> SingleValueMapper<ManagedAddress>;
+    #[storage_mapper("address_to_ambassadors")]
+    fn address_to_ambassadors(
+        &self,
+        address: &ManagedAddress,
+    ) -> UnorderedSetMapper<ManagedAddress>;
 
     #[view(getOvercommitedIndex)]
     #[storage_mapper("overcommited_index")]

@@ -162,18 +162,6 @@ test("Release with wrong signature", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -281,18 +269,6 @@ test("Release by non owner", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -409,18 +385,6 @@ test("Release with too much delay", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -535,18 +499,6 @@ test("Enable pool after release", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -680,19 +632,18 @@ test("Enable pool after release", async () => {
 
   await deployer
     .callContract({
-      callee: factoryContract,
+      callee: raisePoolContract,
       gasLimit: 50_000_000,
       funcName: "enableRaisePool",
       funcArgs: [
-        e.U64(TIMESTAMP),
-        e.Str(POOL_ID),
-        e.TopBuffer(SIGNATURE_DEPLOYER),
         e.Bool(true),
+        e.U64(TIMESTAMP_AFTER),
+        e.TopBuffer(SIGNATURE_AFTER),
       ],
     })
     .assertFail({
-      code: 10,
-      message: "error signalled by smartcontract",
+      code: 4,
+      message: "Release in progress or already completed, cannot enable pool",
     });
 }, 200000);
 
@@ -739,18 +690,6 @@ test("Release in 1 call no overcommitment", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -982,18 +921,6 @@ test("Release in 2 calls no overcommitment", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -1237,18 +1164,6 @@ test("Release in 1 call with N overcommitment", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -1481,18 +1396,6 @@ test("Release in 2 calls with N overcommitment", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({

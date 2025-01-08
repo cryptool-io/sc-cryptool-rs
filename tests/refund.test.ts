@@ -164,18 +164,6 @@ test("Refund with wrong signature", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -283,18 +271,6 @@ test("Refund by non owner", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -412,18 +388,6 @@ test("Refund with too much delay", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -537,18 +501,6 @@ test("Refund while refunds not enabled", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -659,18 +611,6 @@ test("Refund while refunds not open", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -778,18 +718,6 @@ test("Refund after soft cap exceeded", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -903,18 +831,6 @@ test("Refund with not enough gas", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -1036,18 +952,6 @@ test("Refund in 1 call, deploy with ambassador", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -1223,18 +1127,6 @@ test("Refund in 2 calls, deploy with ambassador", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -1421,18 +1313,6 @@ test("Refund in 1 call, deploy without ambassador", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -1604,18 +1484,6 @@ test("Refund in 2 calls, deploy without ambassador", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({

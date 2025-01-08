@@ -143,3 +143,56 @@ export function generateDataAndSignatureDeployerAmbassador(
     ambassadorFee,
   };
 }
+
+export function generateDataAndSignature2Ambassadors(depositAmount: bigint): {
+  address: Buffer;
+  whitelistSignature: Buffer;
+  depositSignature: Buffer;
+  platformFee: bigint;
+  groupFee: bigint;
+  ambassadorFee1: bigint;
+  ambassadorAddress1: Uint8Array;
+  ambassadorFee2: bigint;
+} {
+  const platformFee =
+    (BigInt(getRandomInt(0, 100)) * depositAmount) / MAX_PERCENTAGE;
+  const groupFee =
+    (BigInt(getRandomInt(101, 200)) * depositAmount) / MAX_PERCENTAGE;
+  const address = generateAddress();
+
+  var whitelist_data = Buffer.concat([
+    codec.encodeNested(new U64Value(TIMESTAMP)),
+    address,
+  ]);
+
+  const ambassadorFee1 =
+    (BigInt(getRandomInt(201, 300)) * depositAmount) / MAX_PERCENTAGE;
+  const ambassadorAddress1 = generateAddress();
+  const ambassadorFee2 =
+    (BigInt(getRandomInt(201, 300)) * depositAmount) / MAX_PERCENTAGE;
+
+  var deploy_data = Buffer.concat([
+    codec.encodeNested(new U64Value(TIMESTAMP)),
+    codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
+    address,
+    codec.encodeNested(new BigUIntValue(platformFee)),
+    codec.encodeNested(new BigUIntValue(groupFee)),
+    codec.encodeNested(new BigUIntValue(ambassadorFee1)),
+    ambassadorAddress1,
+    codec.encodeNested(new BigUIntValue(ambassadorFee2)),
+    deployerAddress,
+  ]);
+  const whitelistSignature = privateKeyDeployer.sign(whitelist_data);
+  const depositSignature = privateKeyDeployer.sign(deploy_data);
+
+  return {
+    address,
+    whitelistSignature,
+    depositSignature,
+    platformFee,
+    groupFee,
+    ambassadorFee1,
+    ambassadorAddress1,
+    ambassadorFee2,
+  };
+}

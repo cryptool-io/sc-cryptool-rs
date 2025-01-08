@@ -79,7 +79,7 @@ pub trait RaisePool:
         platform_fee: BigUint,
         group_fee: BigUint,
         deposit_id: ManagedBuffer,
-        ambassador: OptionalValue<MultiValue2<BigUint, ManagedAddress>>,
+        ambassadors: MultiValueEncoded<MultiValue2<BigUint, ManagedAddress>>,
     ) {
         let caller = self.blockchain().get_caller();
         let signer = self.signer().get();
@@ -92,7 +92,7 @@ pub trait RaisePool:
             &group_fee,
             signer,
             signature,
-            ambassador.clone(),
+            ambassadors.clone(),
         );
 
         require!(self.is_registered(&caller), "Wallet not registered");
@@ -106,14 +106,8 @@ pub trait RaisePool:
 
         let mut total_fees = platform_fee + group_fee;
 
-        if let Some(ambassador) = ambassador.into_option() {
+        for ambassador in ambassadors.into_iter() {
             let (ambassador_amount, ambassador_wallet) = ambassador.into_tuple();
-            if !self.address_to_ambassador(&caller).is_empty() {
-                require!(
-                    self.address_to_ambassador(&caller).get() == ambassador_wallet,
-                    "Ambassador wallet mismatch"
-                );
-            }
             self.increase_ambassador_fee(
                 &caller,
                 &payment.token_identifier,
@@ -306,12 +300,10 @@ pub trait RaisePool:
     #[endpoint(enableRaisePool)]
     fn enable_raise_pool(&self, value: bool, timestamp: u64, signature: ManagedBuffer) {
         self.validate_owner_call(timestamp, signature);
-        if value {
-            require!(
-                self.release_state().get() == ReleaseState::None,
-                "Release in progress or already completed, cannot enable pool"
-            )
-        }
+        require!(
+            self.release_state().get() == ReleaseState::None,
+            "Release in progress or already completed, cannot enable pool"
+        );
         self.raise_pool_enabled().set(value);
     }
 

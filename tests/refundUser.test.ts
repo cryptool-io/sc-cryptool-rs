@@ -193,18 +193,6 @@ test("Refund user while refund not enabled", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -316,18 +304,6 @@ test("Refund user after refund deadline has passed", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -445,18 +421,6 @@ test("Refund user with unregistered wallet", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -579,18 +543,6 @@ test("Refund user with wrong signature", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -700,18 +652,6 @@ test("Refund Bob with Currency1 after deposit Currency1, Currency2 with Bob, Cur
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -889,8 +829,8 @@ test("Refund Bob with Currency1 after deposit Currency1, Currency2 with Bob, Cur
         .Mapper("total_amount_currency", e.Str(CURRENCY3))
         .Value(e.U(CURRENCY3_DEPOSIT_AMOUNT)),
       e.kvs
-        .Mapper("address_to_ambassador", e.Addr(bob))
-        .Value(e.Addr(deployer)),
+        .Mapper("address_to_ambassadors", e.Addr(bob))
+        .UnorderedSet([e.Addr(deployer)]),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(e.U(PLATFORM_FEE1)),
@@ -985,18 +925,6 @@ test("Refund Bob with Currency2 after deposit Currency1, Currency2 with Bob, Cur
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -1173,8 +1101,8 @@ test("Refund Bob with Currency2 after deposit Currency1, Currency2 with Bob, Cur
         .Mapper("total_amount_currency", e.Str(CURRENCY3))
         .Value(e.U(CURRENCY3_DEPOSIT_AMOUNT)),
       e.kvs
-        .Mapper("address_to_ambassador", e.Addr(bob))
-        .Value(e.Addr(deployer)),
+        .Mapper("address_to_ambassadors", e.Addr(bob))
+        .UnorderedSet([e.Addr(deployer)]),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(e.U(PLATFORM_FEE1)),
@@ -1269,18 +1197,6 @@ test("Refund Carol with Currency3 after deposit Currency1, Currency2 with Bob, C
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -1453,8 +1369,8 @@ test("Refund Carol with Currency3 after deposit Currency1, Currency2 with Bob, C
         .Mapper("total_amount_currency", e.Str(CURRENCY3))
         .Value(e.U(PLATFORM_FEE3)),
       e.kvs
-        .Mapper("address_to_ambassador", e.Addr(bob))
-        .Value(e.Addr(deployer)),
+        .Mapper("address_to_ambassadors", e.Addr(bob))
+        .UnorderedSet([e.Addr(deployer)]),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(e.U(PLATFORM_FEE1)),

@@ -81,6 +81,7 @@ import {
   getRandomInt,
   getRandomDeposit,
   generateDataAndSignatureDeployerAmbassador,
+  generateDataAndSignature2Ambassadors,
 } from "./generator.ts";
 import { Kvs } from "xsuite/dist/data/kvs";
 
@@ -748,18 +749,6 @@ test("Deposit amount too high", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -837,18 +826,6 @@ test("Deposit but hard cap threshold would be exceeded", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -1050,18 +1027,6 @@ test("Deposit Currency1 with Bob", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await world.setCurrentBlockInfo({
     timestamp: DEPOSIT_TIMESTAMP,
   });
@@ -1150,8 +1115,8 @@ test("Deposit Currency1 with Bob", async () => {
         .Mapper("address_ambassador_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(e.U(AMBASSADOR_FEE1)),
       e.kvs
-        .Mapper("address_to_ambassador", e.Addr(bob))
-        .Value(e.Addr(deployer)),
+        .Mapper("address_to_ambassadors", e.Addr(bob))
+        .UnorderedSet([e.Addr(deployer)]),
       e.kvs
         .Mapper("ambassador_fee", e.Str(CURRENCY1))
         .Value(e.U(AMBASSADOR_FEE1)),
@@ -1207,18 +1172,6 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -1346,8 +1299,8 @@ test("Deposit Currency1, Currency2 with Bob", async () => {
       e.kvs.Mapper("total_platform_fee").Value(e.U(total_platform_fee)),
       e.kvs.Mapper("total_ambassador_fee").Value(e.U(total_ambassador_fee)),
       e.kvs
-        .Mapper("address_to_ambassador", e.Addr(bob))
-        .Value(e.Addr(deployer)),
+        .Mapper("address_to_ambassadors", e.Addr(bob))
+        .UnorderedSet([e.Addr(deployer)]),
       e.kvs
         .Mapper("address_group_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(e.U(GROUP_FEE1)),
@@ -1433,18 +1386,6 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -1615,8 +1556,8 @@ test("Deposit Currency1, Currency2 with Bob, Currency3 with Carol", async () => 
         .Mapper("total_amount_currency", e.Str(CURRENCY3))
         .Value(e.U(CURRENCY3_DEPOSIT_AMOUNT)),
       e.kvs
-        .Mapper("address_to_ambassador", e.Addr(bob))
-        .Value(e.Addr(deployer)),
+        .Mapper("address_to_ambassadors", e.Addr(bob))
+        .UnorderedSet([e.Addr(deployer)]),
       e.kvs
         .Mapper("address_platform_fee", e.Addr(bob), e.Str(CURRENCY1))
         .Value(e.U(PLATFORM_FEE1)),
@@ -1717,18 +1658,6 @@ test("Deposit automatically with random parameters", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -1911,8 +1840,8 @@ test("Deposit automatically with random parameters", async () => {
 
       walletsKvs.push(
         e.kvs
-          .Mapper("address_to_ambassador", e.Addr(genericWallet))
-          .Value(e.Addr(ambassadorAddress)),
+          .Mapper("address_to_ambassadors", e.Addr(genericWallet))
+          .UnorderedSet([e.Addr(ambassadorAddress)]),
       );
 
       currenciesAmbassadorFees[currencyRand] += ambassadorFee;
@@ -2040,18 +1969,6 @@ test("Deposit automatically with deployer as ambassador", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await world.setCurrentBlockInfo({
@@ -2216,8 +2133,8 @@ test("Deposit automatically with deployer as ambassador", async () => {
 
     walletsKvs.push(
       e.kvs
-        .Mapper("address_to_ambassador", e.Addr(genericWallet))
-        .Value(e.Addr(deployer)),
+        .Mapper("address_to_ambassadors", e.Addr(genericWallet))
+        .UnorderedSet([e.Addr(deployer)]),
     );
 
     currenciesAmbassadorFees[currencyRand] += ambassadorFee;
@@ -2316,3 +2233,327 @@ test("Deposit automatically with deployer as ambassador", async () => {
     kvs: [...baseKvs, ...walletsKvs, ...amountsKvs],
   });
 }, 60000);
+
+test("Deposit automatically with random user ambassador and deployer address as group ambassador", async () => {
+  const numberOfDeposits = 150;
+
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(SOFT_CAP),
+      e.U64(HIGH_HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+      e.Str(CURRENCY3),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await world.setCurrentBlockInfo({
+    timestamp: DEPOSIT_TIMESTAMP,
+  });
+
+  const baseKvs = [
+    e.kvs.Mapper("soft_cap").Value(e.I(SOFT_CAP)),
+    e.kvs.Mapper("hard_cap").Value(e.I(HIGH_HARD_CAP)),
+    e.kvs.Mapper("min_deposit").Value(e.I(MIN_DEPOSIT)),
+    e.kvs.Mapper("max_deposit").Value(e.I(MAX_DEPOSIT)),
+    e.kvs.Mapper("deposit_increments").Value(e.I(DEPOSIT_INCREMENTS)),
+    e.kvs.Mapper("start_date").Value(e.U64(START_DATE)),
+    e.kvs.Mapper("end_date").Value(e.U64(END_DATE)),
+    e.kvs.Mapper("refund_enabled").Value(e.Bool(Boolean(REFUND_ENABLED))),
+    e.kvs.Mapper("refund_deadline").Value(e.U64(END_DATE)),
+    e.kvs.Mapper("platform_fee_wallet").Value(e.Addr(deployer)),
+    e.kvs.Mapper("group_fee_wallet").Value(e.Addr(deployer)),
+    e.kvs
+      .Mapper("payment_currencies")
+      .UnorderedSet([e.Str(CURRENCY1), e.Str(CURRENCY2), e.Str(CURRENCY3)]),
+    e.kvs.Mapper("currency_decimals", e.Str(CURRENCY1)).Value(e.U32(DECIMALS1)),
+    e.kvs.Mapper("currency_decimals", e.Str(CURRENCY2)).Value(e.U32(DECIMALS2)),
+    e.kvs.Mapper("currency_decimals", e.Str(CURRENCY3)).Value(e.U32(DECIMALS3)),
+    e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(false)),
+    e.kvs.Mapper("signer").Value(e.Addr(deployer)),
+    e.kvs.Mapper("pool_id").Value(e.Str(POOL_ID)),
+    e.kvs.Mapper("release_state").Value(e.Usize(0)),
+    e.kvs.Mapper("raise_pool_enabled").Value(e.Bool(true)),
+    e.kvs.Mapper("owner").Value(e.Addr(deployer)),
+    e.kvs
+      .Mapper("wallet_database_address")
+      .Value(e.Addr(walletDababaseContract)),
+  ];
+
+  type TripleBigIntArray = [bigint, bigint, bigint];
+  var walletsKvs: Kvs[] = [];
+  var addresses: Encodable[] = [];
+  var totalAmount: bigint = BigInt(0);
+  var totalPlatformFee: bigint = BigInt(0);
+  var totalGroupFee: bigint = BigInt(0);
+  var ambassadors: Encodable[] = [];
+  var ambassadorsRefferalFees: TripleBigIntArray[] = [];
+  var deployerRefferalFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var totalAmbassadorsAmount: bigint = BigInt(0);
+
+  const currenciesArray = [CURRENCY1, CURRENCY2, CURRENCY3];
+  const currenciesDecimals = [DECIMALS1, DECIMALS2, DECIMALS3];
+  var currenciesTotal = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesPlatformFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesGroupFees = [BigInt(0), BigInt(0), BigInt(0)];
+  var currenciesAmbassadorFees = [BigInt(0), BigInt(0), BigInt(0)];
+  const deployerCurrenciesSet: Set<string> = new Set<string>();
+  var ambIdx = 0;
+
+  for (let i = 0; i < numberOfDeposits; i++) {
+    const currencyRand = getRandomInt(0, 2);
+    const currency = currenciesArray[currencyRand];
+    const decimals = currenciesDecimals[currencyRand];
+    const depositAmount = getRandomDeposit(
+      MIN_DEPOSIT,
+      MAX_DEPOSIT,
+      DEPOSIT_INCREMENTS,
+      decimals,
+    );
+    const {
+      address,
+      whitelistSignature,
+      depositSignature,
+      platformFee,
+      groupFee,
+      ambassadorFee1,
+      ambassadorAddress1,
+      ambassadorFee2,
+    } = generateDataAndSignature2Ambassadors(depositAmount);
+
+    const depositAmountDenominated =
+      BigInt(depositAmount) * BigInt(10 ** (18 - decimals));
+    const platformFeeDenominated = platformFee * BigInt(10 ** (18 - decimals));
+    const groupFeeDenominated = groupFee * BigInt(10 ** (18 - decimals));
+    const ambassadorFee1Denominated =
+      ambassadorFee1 * BigInt(10 ** (18 - decimals));
+    const ambassadorFee2Denominated =
+      ambassadorFee2 * BigInt(10 ** (18 - decimals));
+
+    genericWallet = await world.createWallet({
+      address: address,
+      balance: 100_000,
+      kvs: [e.kvs.Esdts([{ id: currency, amount: depositAmount }])],
+    });
+
+    await genericWallet.callContract({
+      callee: walletDababaseContract,
+      gasLimit: 50_000_000,
+      funcName: "registerWallet",
+      funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(whitelistSignature)],
+    });
+
+    await genericWallet.callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "deposit",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.TopBuffer(depositSignature),
+        e.U(platformFee),
+        e.U(groupFee),
+        e.Str(DEPOSIT_ID),
+        e.U(ambassadorFee1),
+        e.Addr(ambassadorAddress1),
+        e.U(ambassadorFee2),
+        e.Addr(deployerAddress),
+      ],
+      esdts: [{ id: currency, amount: depositAmount }],
+    });
+
+    /*
+    console.log(
+      `Id: ${String(i + 1).padStart(2, " ")} | Deposit ${String(
+        depositAmount,
+      ).padStart(3, " ")} ${currency.padEnd(3, " ")}, platformFee ${String(
+        platformFee,
+      ).padStart(3, " ")}, groupFee ${String(groupFee).padStart(
+        3,
+        " ",
+      )}, ambassadorFee1 ${String(ambassadorFee1).padStart(3, " ")}, ambassadorFee2 ${String(
+        ambassadorFee2,
+      ).padStart(3, " ")}`,
+    );
+    */
+
+    walletsKvs.push(
+      e.kvs
+        .Mapper("deposited_currencies", e.Addr(genericWallet))
+        .UnorderedSet([e.Str(currency)]),
+    );
+    walletsKvs.push(
+      e.kvs
+        .Mapper("deposited_amount", e.Addr(genericWallet), e.Str(currency))
+        .Value(e.U(depositAmount)),
+    );
+    walletsKvs.push(
+      e.kvs
+        .Mapper("address_platform_fee", e.Addr(genericWallet), e.Str(currency))
+        .Value(e.U(platformFee)),
+    );
+    walletsKvs.push(
+      e.kvs
+        .Mapper("address_group_fee", e.Addr(genericWallet), e.Str(currency))
+        .Value(e.U(groupFee)),
+    );
+    addresses.push(e.Addr(genericWallet));
+
+    totalAmount += depositAmountDenominated;
+    currenciesTotal[currencyRand] += BigInt(depositAmount);
+    currenciesPlatformFees[currencyRand] += platformFee;
+    totalPlatformFee += platformFeeDenominated;
+    currenciesGroupFees[currencyRand] += groupFee;
+    totalGroupFee += groupFeeDenominated;
+
+    totalAmbassadorsAmount += ambassadorFee1Denominated;
+    totalAmbassadorsAmount += ambassadorFee2Denominated;
+
+    walletsKvs.push(
+      e.kvs
+        .Mapper(
+          "address_ambassador_fee",
+          e.Addr(genericWallet),
+          e.Str(currency),
+        )
+        .Value(e.U(ambassadorFee1 + ambassadorFee2)),
+    );
+
+    walletsKvs.push(
+      e.kvs
+        .Mapper("address_to_ambassadors", e.Addr(genericWallet))
+        .UnorderedSet([e.Addr(ambassadorAddress1), e.Addr(deployerAddress)]),
+    );
+
+    currenciesAmbassadorFees[currencyRand] += ambassadorFee1;
+    currenciesAmbassadorFees[currencyRand] += ambassadorFee2;
+    ambassadorsRefferalFees.push([BigInt(0), BigInt(0), BigInt(0)]);
+    ambassadorsRefferalFees[ambIdx][currencyRand] = ambassadorFee1;
+    ambassadors.push(e.Addr(ambassadorAddress1));
+    if (ambIdx == 0) {
+      ambIdx += 1;
+      ambassadorsRefferalFees.push([BigInt(0), BigInt(0), BigInt(0)]);
+      ambassadors.push(e.Addr(deployer));
+    }
+    ambassadorsRefferalFees[1][currencyRand] += ambassadorFee2;
+    deployerCurrenciesSet.add(currenciesArray[currencyRand]);
+    ambIdx += 1;
+  }
+
+  for (let i = 0; i < ambassadorsRefferalFees.length; i++) {
+    const addr = ambassadors[i];
+
+    var ambassadorCurrencies: Encodable[] = [];
+    for (let j = 0; j < 3; j++) {
+      const fees = BigInt(ambassadorsRefferalFees[i][j].toString());
+      walletsKvs.push(
+        e.kvs
+          .Mapper("referral_ambassador_fee", addr, e.Str(currenciesArray[j]))
+          .Value(e.U(fees)),
+      );
+      if (fees != BigInt(0)) {
+        ambassadorCurrencies.push(e.Str(currenciesArray[j]));
+      }
+    }
+    if (i == 1) {
+      var deployerCurrencies: Encodable[] = [];
+      for (const currency of deployerCurrenciesSet) {
+        deployerCurrencies.push(e.Str(currency));
+      }
+      walletsKvs.push(
+        e.kvs
+          .Mapper("ambassador_currencies", deployer)
+          .UnorderedSet(deployerCurrencies),
+      );
+    } else {
+      walletsKvs.push(
+        e.kvs
+          .Mapper("ambassador_currencies", addr)
+          .UnorderedSet(ambassadorCurrencies),
+      );
+    }
+  }
+
+  const amountsKvs = [
+    e.kvs.Mapper("addresses").UnorderedSet(addresses),
+    e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
+    e.kvs
+      .Mapper("platform_fee", e.Str(CURRENCY1))
+      .Value(e.U(currenciesPlatformFees[0])),
+    e.kvs
+      .Mapper("platform_fee", e.Str(CURRENCY2))
+      .Value(e.U(currenciesPlatformFees[1])),
+    e.kvs
+      .Mapper("platform_fee", e.Str(CURRENCY3))
+      .Value(e.U(currenciesPlatformFees[2])),
+    e.kvs.Mapper("total_platform_fee").Value(e.U(totalPlatformFee)),
+    e.kvs
+      .Mapper("group_fee", e.Str(CURRENCY1))
+      .Value(e.U(currenciesGroupFees[0])),
+    e.kvs
+      .Mapper("group_fee", e.Str(CURRENCY2))
+      .Value(e.U(currenciesGroupFees[1])),
+    e.kvs
+      .Mapper("group_fee", e.Str(CURRENCY3))
+      .Value(e.U(currenciesGroupFees[2])),
+    e.kvs.Mapper("total_group_fee").Value(e.U(totalGroupFee)),
+    e.kvs.Mapper("total_ambassador_fee").Value(e.U(totalAmbassadorsAmount)),
+    e.kvs.Mapper("ambassadors").UnorderedSet(ambassadors),
+    e.kvs
+      .Mapper("ambassador_fee", e.Str(CURRENCY1))
+      .Value(e.U(currenciesAmbassadorFees[0])),
+    e.kvs
+      .Mapper("ambassador_fee", e.Str(CURRENCY2))
+      .Value(e.U(currenciesAmbassadorFees[1])),
+    e.kvs
+      .Mapper("ambassador_fee", e.Str(CURRENCY3))
+      .Value(e.U(currenciesAmbassadorFees[2])),
+    e.kvs
+      .Mapper("total_amount_currency", e.Str(CURRENCY1))
+      .Value(e.U(currenciesTotal[0])),
+    e.kvs
+      .Mapper("total_amount_currency", e.Str(CURRENCY2))
+      .Value(e.U(currenciesTotal[1])),
+    e.kvs
+      .Mapper("total_amount_currency", e.Str(CURRENCY3))
+      .Value(e.U(currenciesTotal[2])),
+    e.kvs.Esdts([
+      { id: CURRENCY1, amount: currenciesTotal[0] },
+      { id: CURRENCY2, amount: currenciesTotal[1] },
+      { id: CURRENCY3, amount: currenciesTotal[2] },
+    ]),
+  ];
+
+  assertAccount(await raisePoolContract.getAccount(), {
+    balance: 0n,
+    kvs: [...baseKvs, ...walletsKvs, ...amountsKvs],
+  });
+}, 120000);

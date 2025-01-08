@@ -145,18 +145,6 @@ test("Change to wrong refund date", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await deployer
     .callContract({
       callee: raisePoolContract,
@@ -212,18 +200,6 @@ test("Change to end date before start date", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await deployer
     .callContract({
       callee: raisePoolContract,
@@ -277,18 +253,6 @@ test("Change to wrong refund date", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await deployer.callContract({
@@ -371,18 +335,6 @@ test("Change platform fee wallet", async () => {
   const raisePoolContract = new LSContract({
     address: raisePoolAddress,
     world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
   });
 
   await deployer.callContract({
