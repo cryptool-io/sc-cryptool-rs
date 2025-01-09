@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           50
+// Endpoints:                           49
 // Async Callback (empty):               1
-// Total number of exported functions:  53
+// Total number of exported functions:  52
 
 #![no_std]
 
@@ -23,7 +23,6 @@ multiversx_sc_wasm_adapter::endpoints! {
         deposit => deposit
         refund => refund
         release => release
-        retrieve => retrieve
         userRefund => user_refund
         adminRefund => admin_refund
         setPlatformFeeWallet => set_platform_fee_wallet

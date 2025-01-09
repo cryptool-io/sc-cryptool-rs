@@ -870,7 +870,16 @@ test("Release in 1 call no overcommitment", async () => {
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
     hasKvs: [
-      e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
+      e.kvs.Mapper("total_amount").Value(e.U(0)),
+      e.kvs.Esdts([{ id: CURRENCY1, amount: 0 }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: 0 }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: 0 }]),
+    ],
+  });
+
+  assertAccount(await deployer.getAccount(), {
+    balance: 0n,
+    hasKvs: [
       e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesTotal[0] }]),
       e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesTotal[1] }]),
       e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesTotal[2] }]),
@@ -1110,7 +1119,16 @@ test("Release in 2 calls no overcommitment", async () => {
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
     hasKvs: [
-      e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
+      e.kvs.Mapper("total_amount").Value(e.U(0)),
+      e.kvs.Esdts([{ id: CURRENCY1, amount: 0 }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: 0 }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: 0 }]),
+    ],
+  });
+
+  assertAccount(await deployer.getAccount(), {
+    balance: 0n,
+    hasKvs: [
       e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesTotal[0] }]),
       e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesTotal[1] }]),
       e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesTotal[2] }]),
@@ -1344,7 +1362,16 @@ test("Release in 1 call with N overcommitment", async () => {
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
     hasKvs: [
-      e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
+      e.kvs.Mapper("total_amount").Value(e.U(0)),
+      e.kvs.Esdts([{ id: CURRENCY1, amount: 0 }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: 0 }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: 0 }]),
+    ],
+  });
+
+  assertAccount(await deployer.getAccount(), {
+    balance: 0n,
+    hasKvs: [
       e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesTotal[0] }]),
       e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesTotal[1] }]),
       e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesTotal[2] }]),
@@ -1593,7 +1620,16 @@ test("Release in 2 calls with N overcommitment", async () => {
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
     hasKvs: [
-      e.kvs.Mapper("total_amount").Value(e.U(totalAmount)),
+      e.kvs.Mapper("total_amount").Value(e.U(0)),
+      e.kvs.Esdts([{ id: CURRENCY1, amount: 0 }]),
+      e.kvs.Esdts([{ id: CURRENCY2, amount: 0 }]),
+      e.kvs.Esdts([{ id: CURRENCY3, amount: 0 }]),
+    ],
+  });
+
+  assertAccount(await deployer.getAccount(), {
+    balance: 0n,
+    hasKvs: [
       e.kvs.Esdts([{ id: CURRENCY1, amount: currenciesTotal[0] }]),
       e.kvs.Esdts([{ id: CURRENCY2, amount: currenciesTotal[1] }]),
       e.kvs.Esdts([{ id: CURRENCY3, amount: currenciesTotal[2] }]),

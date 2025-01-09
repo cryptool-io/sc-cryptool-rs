@@ -8,6 +8,7 @@ pub enum ReleaseState {
     PlatformReleased,
     GroupReleased,
     AllReleased,
+    Retrieved,
 }
 
 #[multiversx_sc::module]

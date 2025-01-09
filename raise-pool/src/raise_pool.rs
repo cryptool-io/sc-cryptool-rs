@@ -219,19 +219,16 @@ pub trait RaisePool:
                     }
                     self.release_state().set(ReleaseState::AllReleased);
                 }
-                ReleaseState::AllReleased => return OperationCompletionStatus::Completed,
+                ReleaseState::AllReleased => {
+                    self.retrieve();
+                    self.release_state().set(ReleaseState::Retrieved);
+                }
+                ReleaseState::Retrieved => return OperationCompletionStatus::Completed,
             }
         }
     }
 
-    #[endpoint(retrieve)]
-    fn retrieve(&self, timestamp: u64, signature: ManagedBuffer) {
-        self.validate_owner_call(timestamp, signature);
-        require!(
-            self.release_state().get() == ReleaseState::AllReleased,
-            "Release needs to be called first"
-        );
-
+    fn retrieve(&self) {
         let caller = self.blockchain().get_caller();
         let mut payments = ManagedVec::new();
         for token in self.payment_currencies().iter() {
