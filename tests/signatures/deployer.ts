@@ -1,13 +1,19 @@
 import fs from "fs";
 import path from "path";
 import { UserSecretKey } from "@multiversx/sdk-wallet/out";
-import { BinaryCodec, U64Value, StringValue } from "@multiversx/sdk-core";
+import {
+  BinaryCodec,
+  U32Value,
+  U64Value,
+  StringValue,
+} from "@multiversx/sdk-core";
 
 import {
   TIMESTAMP,
   POOL_ID,
   TIMESTAMP_BEFORE,
   TIMESTAMP_AFTER,
+  BATCH_ID,
 } from "../helpers";
 
 const codec = new BinaryCodec();
@@ -44,3 +50,13 @@ const DATA_AFTER = Buffer.concat([
   deployerAddress,
 ]);
 export const SIGNATURE_AFTER = privateKeyDeployer.sign(DATA_AFTER);
+
+const DATA_DEPLOYER_DISTRUBUTE = Buffer.concat([
+  codec.encodeNested(new U64Value(TIMESTAMP)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
+  codec.encodeNested(new U32Value(BATCH_ID)),
+  deployerAddress,
+]);
+export const SIGNATURE_DATA_DEPLOYER_DISTRUBUTE = privateKeyDeployer.sign(
+  DATA_DEPLOYER_DISTRUBUTE,
+);

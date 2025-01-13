@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           46
+// Endpoints:                           49
 // Async Callback (empty):               1
-// Total number of exported functions:  49
+// Total number of exported functions:  52
 
 #![no_std]
 
@@ -23,12 +23,12 @@ multiversx_sc_wasm_adapter::endpoints! {
         deposit => deposit
         refund => refund
         release => release
-        retrieve => retrieve
-        distribute => distribute
+        userRefund => user_refund
+        adminRefund => admin_refund
         setPlatformFeeWallet => set_platform_fee_wallet
         enableRaisePool => enable_raise_pool
-        setStartTimestamp => set_start_date
-        setEndTimestamp => set_end_date
+        setTimestamps => set_timestamps
+        setRefundEnabled => set_refund_enabled
         getPoolId => pool_id
         getSoftCap => soft_cap
         getHardCap => hard_cap
@@ -38,6 +38,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         getStartDate => start_date
         getEndDate => end_date
         getRefundEnabled => refund_enabled
+        getRefundDeadline => refund_deadline
         getPlatfromFeeWallet => platform_fee_wallet
         getGroupFeeWallet => group_fee_wallet
         getPaymentCurrencies => payment_currencies
@@ -60,8 +61,10 @@ multiversx_sc_wasm_adapter::endpoints! {
         getReleaseAmbassadorIndex => release_ambassador_index
         getAddressAmbassadorFee => address_ambassador_fee
         getAmbassadorFee => ambassador_fee
+        getTotalAmbassadorFee => total_ambassador_fee
         getAmbassadorCurrencies => ambassador_currencies
         getReferralAmbassadorFee => referral_ambassador_fee
+        getAddressToAmbassador => address_to_ambassadors
         getOvercommitedIndex => overcommited_index
         getReleaseState => release_state
         raisePoolEnabled => raise_pool_enabled

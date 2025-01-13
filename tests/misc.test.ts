@@ -26,6 +26,8 @@ import {
   INCORRECT_DECIMALS,
   CURRENCY3,
   TIMESTAMP_AFTER,
+  PAYMENT_NETWORK_ID,
+  DEPOSIT_TIMESTAMP,
 } from "./helpers.ts";
 
 import {
@@ -71,6 +73,7 @@ beforeEach(async () => {
       e.U64(121), // START DATE
       e.U64(122), // END DATE
       e.U64(1), // REFUND ENABLED
+      e.U64(122), // END DATE
       e.Addr(deployer), // PLATFORM FEE WALLET
       e.Addr(deployer), // GROUP FEE WALLET
       e.Addr(deployer), // SIGNATURE DEPLOYER
@@ -103,7 +106,7 @@ afterEach(async () => {
   world.terminate();
 });
 
-test("Change to wrong start date", async () => {
+test("Change to wrong refund date", async () => {
   await deployer.callContract({
     callee: factoryContract,
     gasLimit: 50_000_000,
@@ -118,10 +121,12 @@ test("Change to wrong start date", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(122), // END DATE
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
     ],
@@ -140,96 +145,23 @@ test("Change to wrong start date", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   await deployer
     .callContract({
       callee: raisePoolContract,
       gasLimit: 50_000_000,
-      funcName: "setStartTimestamp",
+      funcName: "setTimestamps",
       funcArgs: [
         e.U64(TIMESTAMP),
         e.TopBuffer(SIGNATURE_DEPLOYER),
-        e.U64(TIMESTAMP_AFTER),
-      ],
-    })
-    .assertFail({ code: 4, message: "Invalid timestamp" });
-});
-
-test("Change to wrong end date", async () => {
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "deployRaisePool",
-    funcArgs: [
-      e.Str(POOL_ID),
-      e.U64(SOFT_CAP),
-      e.U64(HARD_CAP),
-      e.U64(MIN_DEPOSIT),
-      e.U64(MAX_DEPOSIT),
-      e.U64(DEPOSIT_INCREMENTS),
-      e.U64(START_DATE),
-      e.U64(END_DATE),
-      e.U64(REFUND_ENABLED),
-      e.Addr(deployer),
-      e.Addr(deployer),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.U64(TIMESTAMP),
-      e.Str(CURRENCY1),
-      e.Str(CURRENCY2),
-    ],
-  });
-
-  const raisePoolAddressResult = await deployer.query({
-    callee: factoryContract,
-    funcName: "getPoolIdToAddress",
-    funcArgs: [e.Str(POOL_ID)],
-  });
-
-  const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
-  const raisePoolContract = new LSContract({
-    address: raisePoolAddress,
-    world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
-  await deployer
-    .callContract({
-      callee: raisePoolContract,
-      gasLimit: 50_000_000,
-      funcName: "setEndTimestamp",
-      funcArgs: [
-        e.U64(TIMESTAMP),
-        e.TopBuffer(SIGNATURE_DEPLOYER),
+        e.U64(START_DATE),
+        e.U64(END_DATE),
         e.U64(TIMESTAMP_BEFORE),
       ],
     })
-    .assertFail({ code: 4, message: "Invalid timestamp" });
+    .assertFail({ code: 4, message: "Invalid timestamps" });
 });
 
-test("Change start date", async () => {
+test("Change to end date before start date", async () => {
   await deployer.callContract({
     callee: factoryContract,
     gasLimit: 50_000_000,
@@ -244,10 +176,67 @@ test("Change start date", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(122), // END DATE
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await deployer
+    .callContract({
+      callee: raisePoolContract,
+      gasLimit: 50_000_000,
+      funcName: "setTimestamps",
+      funcArgs: [
+        e.U64(TIMESTAMP),
+        e.TopBuffer(SIGNATURE_DEPLOYER),
+        e.U64(END_DATE),
+        e.U64(START_DATE),
+        e.U64(TIMESTAMP),
+      ],
+    })
+    .assertFail({ code: 4, message: "Invalid timestamps" });
+});
+
+test("Change to wrong refund date", async () => {
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(SOFT_CAP),
+      e.U64(HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.U64(122), // END DATE
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
     ],
@@ -267,86 +256,15 @@ test("Change start date", async () => {
   });
 
   await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
-  await deployer.callContract({
     callee: raisePoolContract,
     gasLimit: 50_000_000,
-    funcName: "setStartTimestamp",
+    funcName: "setTimestamps",
     funcArgs: [
       e.U64(TIMESTAMP),
       e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.U64(TIMESTAMP_BEFORE),
-    ],
-  });
-});
-
-test("Change end date", async () => {
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "deployRaisePool",
-    funcArgs: [
-      e.Str(POOL_ID),
-      e.U64(SOFT_CAP),
-      e.U64(HARD_CAP),
-      e.U64(MIN_DEPOSIT),
-      e.U64(MAX_DEPOSIT),
-      e.U64(DEPOSIT_INCREMENTS),
       e.U64(START_DATE),
       e.U64(END_DATE),
-      e.U64(REFUND_ENABLED),
-      e.Addr(deployer),
-      e.Addr(deployer),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.U64(TIMESTAMP),
-      e.Str(CURRENCY1),
-      e.Str(CURRENCY2),
-    ],
-  });
-
-  const raisePoolAddressResult = await deployer.query({
-    callee: factoryContract,
-    funcName: "getPoolIdToAddress",
-    funcArgs: [e.Str(POOL_ID)],
-  });
-
-  const raisePoolAddress = raisePoolAddressResult.returnData[0];
-
-  const raisePoolContract = new LSContract({
-    address: raisePoolAddress,
-    world,
-  });
-
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
-  await deployer.callContract({
-    callee: raisePoolContract,
-    gasLimit: 50_000_000,
-    funcName: "setEndTimestamp",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.U64(TIMESTAMP_AFTER),
+      e.U64(DEPOSIT_TIMESTAMP),
     ],
   });
 });
@@ -366,10 +284,12 @@ test("Change platform fee wallet", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
     ],
@@ -418,18 +338,6 @@ test("Change platform fee wallet", async () => {
   });
 
   await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
-  await deployer.callContract({
     callee: raisePoolContract,
     gasLimit: 50_000_000,
     funcName: "setPlatformFeeWallet",
@@ -451,6 +359,7 @@ test("Change platform fee wallet", async () => {
       e.kvs.Mapper("start_date").Value(e.U64(START_DATE)),
       e.kvs.Mapper("end_date").Value(e.U64(END_DATE)),
       e.kvs.Mapper("refund_enabled").Value(e.Bool(Boolean(REFUND_ENABLED))),
+      e.kvs.Mapper("refund_deadline").Value(e.U64(END_DATE)),
       e.kvs.Mapper("platform_fee_wallet").Value(e.Addr(alice)),
       e.kvs.Mapper("group_fee_wallet").Value(e.Addr(deployer)),
       e.kvs

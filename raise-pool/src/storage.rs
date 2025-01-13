@@ -4,10 +4,11 @@ multiversx_sc::derive_imports!();
 #[derive(TopEncode, TopDecode, PartialEq, TypeAbi, Clone, Copy, Debug)]
 pub enum ReleaseState {
     None,
+    OvercommitersReleased,
     PlatformReleased,
     GroupReleased,
-    AmbassadorsReleased,
     AllReleased,
+    Retrieved,
 }
 
 #[multiversx_sc::module]
@@ -48,6 +49,10 @@ pub trait StorageModule {
     #[storage_mapper("refund_enabled")]
     fn refund_enabled(&self) -> SingleValueMapper<bool>;
 
+    #[view(getRefundDeadline)]
+    #[storage_mapper("refund_deadline")]
+    fn refund_deadline(&self) -> SingleValueMapper<u64>;
+
     #[view(getPlatfromFeeWallet)]
     #[storage_mapper("platform_fee_wallet")]
     fn platform_fee_wallet(&self) -> SingleValueMapper<ManagedAddress>;
@@ -76,7 +81,7 @@ pub trait StorageModule {
 
     #[view(getAddresses)]
     #[storage_mapper("addresses")]
-    fn addresses(&self) -> SetMapper<ManagedAddress>;
+    fn addresses(&self) -> UnorderedSetMapper<ManagedAddress>;
 
     #[view(getRefundIndex)]
     #[storage_mapper("refund_index")]
@@ -137,7 +142,7 @@ pub trait StorageModule {
 
     #[view(getAmbassadors)]
     #[storage_mapper("ambassadors")]
-    fn ambassadors(&self) -> SetMapper<ManagedAddress>;
+    fn ambassadors(&self) -> UnorderedSetMapper<ManagedAddress>;
 
     #[view(getReleaseAmbassadorIndex)]
     #[storage_mapper("release_ambassador_index")]
@@ -155,6 +160,10 @@ pub trait StorageModule {
     #[storage_mapper("ambassador_fee")]
     fn ambassador_fee(&self, token: &TokenIdentifier) -> SingleValueMapper<BigUint>;
 
+    #[view(getTotalAmbassadorFee)]
+    #[storage_mapper("total_ambassador_fee")]
+    fn total_ambassador_fee(&self) -> SingleValueMapper<BigUint>;
+
     #[view(getAmbassadorCurrencies)]
     #[storage_mapper("ambassador_currencies")]
     fn ambassador_currencies(
@@ -169,6 +178,13 @@ pub trait StorageModule {
         ambassador: &ManagedAddress,
         token: &TokenIdentifier,
     ) -> SingleValueMapper<BigUint>;
+
+    #[view(getAddressToAmbassador)]
+    #[storage_mapper("address_to_ambassadors")]
+    fn address_to_ambassadors(
+        &self,
+        address: &ManagedAddress,
+    ) -> UnorderedSetMapper<ManagedAddress>;
 
     #[view(getOvercommitedIndex)]
     #[storage_mapper("overcommited_index")]

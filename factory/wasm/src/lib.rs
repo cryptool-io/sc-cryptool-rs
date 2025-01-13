@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           20
+// Endpoints:                           19
 // Async Callback (empty):               1
-// Total number of exported functions:  23
+// Total number of exported functions:  22
 
 #![no_std]
 
@@ -21,7 +21,6 @@ multiversx_sc_wasm_adapter::endpoints! {
         init => init
         upgrade => upgrade
         deployRaisePool => deploy_raise_pool
-        enableRaisePool => enable_raise_pool
         addAdmin => add_admin_endpoint
         removeAdmin => remove_admin_endpoint
         updateOwnerOrAdmin => update_owner_or_admin_endpoint

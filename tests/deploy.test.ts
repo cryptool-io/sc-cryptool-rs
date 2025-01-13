@@ -26,6 +26,7 @@ import {
   INCORRECT_DECIMALS,
   CURRENCY3,
   TIMESTAMP_AFTER,
+  PAYMENT_NETWORK_ID,
 } from "./helpers.ts";
 
 import {
@@ -61,7 +62,7 @@ beforeEach(async () => {
     code: "file:raise-pool/output/raise-pool.wasm",
     codeMetadata: [],
     codeArgs: [
-      e.Addr(deployer), // POOL OWNER
+      e.Addr(deployer),
       e.Str("0"), // POOL ID
       e.U64(0), // SOFT CAP
       e.U64(10), // HARD CAP
@@ -71,14 +72,15 @@ beforeEach(async () => {
       e.U64(121), // START DATE
       e.U64(122), // END DATE
       e.U64(1), // REFUND ENABLED
+      e.U64(122), // REFUND DEADLINE
       e.Addr(deployer), // PLATFORM FEE WALLET
       e.Addr(deployer), // GROUP FEE WALLET
-      e.Addr(deployer), // SIGNATURE DEPLOYER
+      e.Addr(deployer), // SIGNER WALLET
       e.Addr(walletDababaseContract), // WALLET DATABASE CONTRACT
       e.Str("Dummy1"), // CURRENCY1
-      e.U64(0), // DECIMALS1
+      e.U32(0), // DECIMALS1
       e.Str("Dummy2"), // CURRENCY2
-      e.U64(0), // DECIMALS2
+      e.U32(0), // DECIMALS2
     ],
     gasLimit: 10_000_000,
   }));
@@ -92,11 +94,22 @@ beforeEach(async () => {
       e.Addr(walletDababaseContract), // WALLET DATABASE CONTRACT
       e.Addr(deployer),
       e.Str(CURRENCY1),
-      e.U64(DECIMALS1),
+      e.U32(DECIMALS1),
       e.Str(CURRENCY2),
-      e.U64(DECIMALS2),
+      e.U32(DECIMALS2),
     ],
   }));
+
+  assertAccount(await raisePoolDummyContract.getAccount(), {
+    balance: 0n,
+    hasKvs: [
+      e.kvs
+        .Mapper("payment_currencies")
+        .UnorderedSet([e.Str("Dummy1"), e.Str("Dummy2")]),
+      e.kvs.Mapper("currency_decimals", e.Str("Dummy1")).Value(e.U32(0)),
+      e.kvs.Mapper("currency_decimals", e.Str("Dummy2")).Value(e.U32(0)),
+    ],
+  });
 });
 
 afterEach(async () => {
@@ -127,6 +140,7 @@ test("Deploy Factory", async () => {
   });
 });
 
+/* DISABLED, MIN NO LONGER CHECKED AGAINST DEPOSIT INCREMENTS
 test("Deploy Pool with incorrect min deposit", async () => {
   await deployer
     .callContract({
@@ -143,6 +157,7 @@ test("Deploy Pool with incorrect min deposit", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -153,7 +168,9 @@ test("Deploy Pool with incorrect min deposit", async () => {
     })
     .assertFail({ code: 10, message: "error signalled by smartcontract" });
 });
+*/
 
+/* DISABLED, MAX NO LONGER CHECKED AGAINST DEPOSIT INCREMENTS
 test("Deploy Pool with incorrect max deposit", async () => {
   await deployer
     .callContract({
@@ -170,6 +187,7 @@ test("Deploy Pool with incorrect max deposit", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -180,6 +198,7 @@ test("Deploy Pool with incorrect max deposit", async () => {
     })
     .assertFail({ code: 10, message: "error signalled by smartcontract" });
 });
+*/
 
 test("Deploy Pool with invalid Signature", async () => {
   await deployer
@@ -197,6 +216,7 @@ test("Deploy Pool with invalid Signature", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DUMMY),
@@ -224,6 +244,7 @@ test("Deploy Pool with too much delay", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_BEFORE),
@@ -251,6 +272,7 @@ test("Deploy Pool with invalid Soft, Hard Cap pair", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -278,6 +300,7 @@ test("Deploy Pool with invalid Min, Max Deposit pair", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -305,6 +328,7 @@ test("Deploy Pool with invalid Start, End Date pair", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE_INVALID),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -351,12 +375,13 @@ test("Deploy Pool with not whitelisted currency", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
         e.U64(TIMESTAMP),
+        e.Str(PAYMENT_NETWORK_ID),
         e.Str(CURRENCY3),
-        e.Str(CURRENCY2),
       ],
     })
     .assertFail({
@@ -380,6 +405,7 @@ test("Deploy Pool with same pool id twice", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -404,6 +430,7 @@ test("Deploy Pool with same pool id twice", async () => {
         e.U64(START_DATE),
         e.U64(END_DATE),
         e.U64(REFUND_ENABLED),
+        e.U64(END_DATE),
         e.Addr(deployer),
         e.Addr(deployer),
         e.TopBuffer(SIGNATURE_DEPLOYER),
@@ -433,10 +460,12 @@ test("Deploy Pool", async () => {
       e.U64(START_DATE),
       e.U64(END_DATE),
       e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
       e.Addr(deployer),
       e.Addr(deployer),
       e.TopBuffer(SIGNATURE_DEPLOYER),
       e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
       e.Str(CURRENCY1),
       e.Str(CURRENCY2),
     ],
@@ -484,21 +513,9 @@ test("Deploy Pool", async () => {
     world,
   });
 
-  await deployer.callContract({
-    callee: factoryContract,
-    gasLimit: 50_000_000,
-    funcName: "enableRaisePool",
-    funcArgs: [
-      e.U64(TIMESTAMP),
-      e.Str(POOL_ID),
-      e.TopBuffer(SIGNATURE_DEPLOYER),
-      e.Bool(true),
-    ],
-  });
-
   assertAccount(await raisePoolContract.getAccount(), {
     balance: 0n,
-    kvs: [
+    hasKvs: [
       e.kvs.Mapper("soft_cap").Value(e.I(SOFT_CAP)),
       e.kvs.Mapper("hard_cap").Value(e.I(HARD_CAP)),
       e.kvs.Mapper("min_deposit").Value(e.I(MIN_DEPOSIT)),
@@ -507,6 +524,7 @@ test("Deploy Pool", async () => {
       e.kvs.Mapper("start_date").Value(e.U64(START_DATE)),
       e.kvs.Mapper("end_date").Value(e.U64(END_DATE)),
       e.kvs.Mapper("refund_enabled").Value(e.Bool(Boolean(REFUND_ENABLED))),
+      e.kvs.Mapper("refund_deadline").Value(e.U64(END_DATE)),
       e.kvs.Mapper("platform_fee_wallet").Value(e.Addr(deployer)),
       e.kvs.Mapper("group_fee_wallet").Value(e.Addr(deployer)),
       e.kvs

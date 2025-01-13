@@ -11,9 +11,9 @@ import {
 import {
   TIMESTAMP,
   POOL_ID,
-  PLATFORM_FEE2,
-  GROUP_FEE2,
-  AMBASSADOR_FEE,
+  PLATFORM_FEE3,
+  GROUP_FEE3,
+  CURRENCY3,
 } from "../helpers";
 
 import { deployerAddress, privateKeyDeployer } from "./deployer";
@@ -32,25 +32,11 @@ const DATA_CAROL_WITHOUT_AMBASSADOR = Buffer.concat([
   codec.encodeNested(new U64Value(TIMESTAMP)),
   codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
   carolAddress,
-  codec.encodeNested(new BigUIntValue(PLATFORM_FEE2)),
-  codec.encodeNested(new BigUIntValue(GROUP_FEE2)),
+  codec.encodeNested(new BigUIntValue(PLATFORM_FEE3)),
+  codec.encodeNested(new BigUIntValue(GROUP_FEE3)),
 ]);
 export const SIGNATURE_CAROL_WITHOUT_AMBASSADOR = privateKeyDeployer.sign(
   DATA_CAROL_WITHOUT_AMBASSADOR,
-);
-
-const DATA_CAROL_WITH_AMBASSADOR = Buffer.concat([
-  codec.encodeNested(new U64Value(TIMESTAMP)),
-  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
-  carolAddress,
-  codec.encodeNested(new BigUIntValue(PLATFORM_FEE2)),
-  codec.encodeNested(new BigUIntValue(GROUP_FEE2)),
-  codec.encodeNested(new BigUIntValue(AMBASSADOR_FEE)),
-  deployerAddress,
-]);
-
-export const SIGNATURE_CAROL_WITH_AMBASSADOR = privateKeyDeployer.sign(
-  DATA_CAROL_WITH_AMBASSADOR,
 );
 
 const DATA_WALLET = Buffer.concat([
@@ -58,3 +44,12 @@ const DATA_WALLET = Buffer.concat([
   carolAddress,
 ]);
 export const SIGNATURE_CAROL_WALLET = privateKeyDeployer.sign(DATA_WALLET);
+
+const DATA_CAROL_USER_REFUND_CURRENCY3 = Buffer.concat([
+  codec.encodeNested(new U64Value(TIMESTAMP)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
+  carolAddress,
+  codec.encodeNested(StringValue.fromUTF8(CURRENCY3)),
+]);
+export const SIGNATURE_DATA_CAROL_USER_REFUND_CURRENCY3 =
+  privateKeyDeployer.sign(DATA_CAROL_USER_REFUND_CURRENCY3);

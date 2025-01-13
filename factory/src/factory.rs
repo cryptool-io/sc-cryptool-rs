@@ -57,10 +57,12 @@ pub trait Factory:
         start_date: u64,
         end_date: u64,
         refund_enabled: bool,
+        refund_deadline: u64,
         platform_fee_wallet: ManagedAddress,
         group_fee_wallet: ManagedAddress,
         signature: ManagedBuffer,
         timestamp: u64,
+        payment_network_id: ManagedBuffer,
         currencies: MultiValueEncoded<TokenIdentifier>,
     ) {
         let caller = self.blockchain().get_caller();
@@ -104,6 +106,7 @@ pub trait Factory:
                 start_date,
                 end_date,
                 refund_enabled,
+                refund_deadline,
                 &platform_fee_wallet,
                 &group_fee_wallet,
                 signer,
@@ -133,28 +136,9 @@ pub trait Factory:
             platform_fee_wallet,
             group_fee_wallet,
             timestamp,
+            payment_network_id,
             raise_pool_currencies,
         );
-    }
-
-    #[endpoint(enableRaisePool)]
-    fn enable_raise_pool(
-        &self,
-        timestamp: u64,
-        pool_id: ManagedBuffer,
-        signature: ManagedBuffer,
-        value: bool,
-    ) {
-        require!(
-            !self.pool_id_to_address(&pool_id).is_empty(),
-            "Pool not deployed"
-        );
-        self.require_caller_has_owner_permissions();
-        let caller = self.blockchain().get_caller();
-        self.validate_signature(timestamp, &pool_id, &caller, signature);
-        self.raise_pool_address_proxy(self.pool_id_to_address(&pool_id).get())
-            .enable_raise_pool(value)
-            .execute_on_dest_context::<()>();
     }
 
     fn validate_signature(
@@ -170,17 +154,11 @@ pub trait Factory:
         require!(result.is_ok(), "Could not encode");
         let result = pool_id.dep_encode(&mut buffer);
         require!(result.is_ok(), "Could not encode");
-        buffer.append(&caller.as_managed_buffer());
+        buffer.append(caller.as_managed_buffer());
         self.crypto()
             .verify_ed25519(signer.as_managed_buffer(), &buffer, &signature);
     }
 
     #[proxy]
     fn raise_pool_proxy(&self) -> raise_pool::Proxy<Self::Api>;
-
-    #[proxy]
-    fn raise_pool_address_proxy(
-        &self,
-        callee_sc_address: ManagedAddress,
-    ) -> raise_pool::Proxy<Self::Api>;
 }

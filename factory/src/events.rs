@@ -18,6 +18,7 @@ pub trait EventsModule {
         #[indexed] platform_fee_wallet: ManagedAddress,
         #[indexed] group_fee_wallet: ManagedAddress,
         #[indexed] timestamp: u64,
+        #[indexed] payment_network_id: ManagedBuffer,
         #[indexed] payment_currencies: MultiValueEncoded<MultiValue2<TokenIdentifier, u32>>,
     );
 }
