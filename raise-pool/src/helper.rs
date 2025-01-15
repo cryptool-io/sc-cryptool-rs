@@ -275,7 +275,7 @@ pub trait HelperModule: crate::storage::StorageModule {
         address: &ManagedAddress,
         token: &TokenIdentifier,
         ambassador_amount: &BigUint,
-        ambassador_wallet: ManagedAddress,
+        ambassador_wallet: &ManagedAddress,
     ) {
         self.ambassadors().insert(ambassador_wallet.clone());
         let denominated_ambassador_fee = self.denominate_payment(token, ambassador_amount);
@@ -285,9 +285,9 @@ pub trait HelperModule: crate::storage::StorageModule {
             .update(|current| *current += ambassador_amount);
         self.ambassador_fee(token)
             .update(|current| *current += ambassador_amount);
-        self.referral_ambassador_fee(&ambassador_wallet, token)
+        self.referral_ambassador_fee(ambassador_wallet, token)
             .update(|current| *current += ambassador_amount);
-        self.ambassador_currencies(&ambassador_wallet)
+        self.ambassador_currencies(ambassador_wallet)
             .insert(token.clone());
         self.address_to_ambassadors(address)
             .insert(ambassador_wallet.clone());

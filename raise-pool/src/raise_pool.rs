@@ -96,6 +96,11 @@ pub trait RaisePool:
         );
 
         require!(self.is_registered(&caller), "Wallet not registered");
+        require!(
+            ambassadors.len() <= 2,
+            "Cannot have more than 2 ambassadors"
+        );
+
         let payment = self.call_value().single_esdt();
         self.validate_deposit(&payment, &timestamp);
 
@@ -104,17 +109,29 @@ pub trait RaisePool:
         self.increase_platform_fee(&caller, &payment.token_identifier, &platform_fee);
         self.increase_group_fee(&caller, &payment.token_identifier, &group_fee);
 
-        let mut total_fees = platform_fee + group_fee;
+        let mut total_fees = platform_fee.clone() + group_fee.clone();
 
-        for ambassador in ambassadors.into_iter() {
+        let mut user_ambassador_fee: Option<BigUint> = None;
+        let mut user_ambassador: Option<ManagedAddress> = None;
+        let mut group_ambassador_fee: Option<BigUint> = None;
+        let mut group_ambassador: Option<ManagedAddress> = None;
+
+        for (index, ambassador) in ambassadors.into_iter().enumerate() {
             let (ambassador_amount, ambassador_wallet) = ambassador.into_tuple();
             self.increase_ambassador_fee(
                 &caller,
                 &payment.token_identifier,
                 &ambassador_amount,
-                ambassador_wallet,
+                &ambassador_wallet,
             );
             total_fees += &ambassador_amount;
+            if index == 0 {
+                user_ambassador_fee = Some(ambassador_amount);
+                user_ambassador = Some(ambassador_wallet);
+            } else if index == 1 {
+                group_ambassador_fee = Some(ambassador_amount);
+                group_ambassador = Some(ambassador_wallet);
+            }
         }
 
         require!(
@@ -128,11 +145,23 @@ pub trait RaisePool:
 
         let max_deposit_denominated = self.match_denomination(self.max_deposit().get(), &payment);
         require!(
-            payment.amount - total_fees <= max_deposit_denominated,
+            payment.amount.clone() - total_fees <= max_deposit_denominated,
             "Payment amount too high"
         );
 
-        self.deposited_event(self.pool_id().get(), deposit_id);
+        self.deposited_event(
+            self.pool_id().get(),
+            deposit_id,
+            caller,
+            payment.token_identifier,
+            payment.amount,
+            platform_fee,
+            group_fee,
+            user_ambassador_fee,
+            user_ambassador,
+            group_ambassador_fee,
+            group_ambassador,
+        );
     }
 
     #[endpoint(refund)]

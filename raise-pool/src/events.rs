@@ -8,6 +8,15 @@ pub trait EventsModule {
         self,
         #[indexed] pool_id: ManagedBuffer,
         #[indexed] deposit_id: ManagedBuffer,
+        #[indexed] caller: ManagedAddress,
+        #[indexed] token: TokenIdentifier,
+        #[indexed] amount: BigUint,
+        #[indexed] platform_fee: BigUint,
+        #[indexed] group_fee: BigUint,
+        #[indexed] user_ambassador_fee: Option<BigUint>,
+        #[indexed] user_ambassador: Option<ManagedAddress>,
+        #[indexed] group_ambassador_fee: Option<BigUint>,
+        #[indexed] group_ambassador: Option<ManagedAddress>,
     );
 
     #[event("changeTimestampEvent")]
