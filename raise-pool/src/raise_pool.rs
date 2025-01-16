@@ -372,8 +372,10 @@ pub trait RaisePool:
                 payments.push(EsdtTokenPayment::new(token, 0, fee));
             }
         }
-        self.send()
-            .direct_multi(&self.platform_fee_wallet().get(), &payments);
+        if !payments.is_empty() {
+            self.send()
+                .direct_multi(&self.platform_fee_wallet().get(), &payments);
+        }
         for payment in &payments {
             self.decrease_totals(&payment.token_identifier, &payment.amount);
         }
@@ -387,8 +389,10 @@ pub trait RaisePool:
                 payments.push(EsdtTokenPayment::new(token.clone(), 0, fee));
             }
         }
-        self.send()
-            .direct_multi(&self.group_fee_wallet().get(), &payments);
+        if !payments.is_empty() {
+            self.send()
+                .direct_multi(&self.group_fee_wallet().get(), &payments);
+        }
         for payment in &payments {
             self.decrease_totals(&payment.token_identifier, &payment.amount);
         }
@@ -416,13 +420,17 @@ pub trait RaisePool:
                 let amount = self
                     .referral_ambassador_fee(&ambassador, &token_identifier)
                     .get();
-                payments.push(EsdtTokenPayment::new(
-                    token_identifier.clone(),
-                    0,
-                    amount.clone(),
-                ));
+                if amount > 0 {
+                    payments.push(EsdtTokenPayment::new(
+                        token_identifier.clone(),
+                        0,
+                        amount.clone(),
+                    ));
+                }
             }
-            self.send().direct_multi(&ambassador, &payments);
+            if !payments.is_empty() {
+                self.send().direct_multi(&ambassador, &payments);
+            }
             for payment in &payments {
                 self.decrease_totals(&payment.token_identifier, &payment.amount);
             }
@@ -455,10 +463,14 @@ pub trait RaisePool:
             let address = overcommited_iter.next().unwrap();
             for token in self.deposited_currencies(&address).iter() {
                 let payment = self.release_token_admin(&address, &token);
-                payments.push(payment);
+                if payment.amount > 0 {
+                    payments.push(payment);
+                }
             }
             self.addresses().swap_remove(&address);
-            self.send().direct_multi(&address, &payments);
+            if !payments.is_empty() {
+                self.send().direct_multi(&address, &payments);
+            }
             overcommited_index += 1;
             tx_index += 1;
         }
