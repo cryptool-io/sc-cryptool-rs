@@ -64,3 +64,14 @@ const DATA_CAROL_NO_FEES = Buffer.concat([
 export const SIGNATURE_CAROL_NO_FEES = privateKeyDeployer.sign(
   DATA_CAROL_NO_FEES,
 );
+
+const DATA_CAROL_ZERO_GROUP_FEE = Buffer.concat([
+  codec.encodeNested(new U64Value(TIMESTAMP)),
+  codec.encodeNested(StringValue.fromUTF8(POOL_ID)),
+  carolAddress,
+  codec.encodeNested(new BigUIntValue(1)),
+  codec.encodeNested(new BigUIntValue(0)),
+]);
+export const SIGNATURE_CAROL_ZERO_GROUP_FEE = privateKeyDeployer.sign(
+  DATA_CAROL_ZERO_GROUP_FEE,
+);
