@@ -55,7 +55,7 @@ export function generateDataAndSignature(
   ambassadorAddress: Uint8Array;
 } {
   const platformFee =
-    (BigInt(getRandomInt(0, 100)) * depositAmount) / MAX_PERCENTAGE;
+    (BigInt(getRandomInt(1, 100)) * depositAmount) / MAX_PERCENTAGE;
   const groupFee =
     (BigInt(getRandomInt(101, 200)) * depositAmount) / MAX_PERCENTAGE;
   const address = generateAddress();
@@ -109,7 +109,7 @@ export function generateDataAndSignatureDeployerAmbassador(
   ambassadorFee: bigint;
 } {
   const platformFee =
-    (BigInt(getRandomInt(0, 100)) * depositAmount) / MAX_PERCENTAGE;
+    (BigInt(getRandomInt(1, 100)) * depositAmount) / MAX_PERCENTAGE;
   const groupFee =
     (BigInt(getRandomInt(101, 200)) * depositAmount) / MAX_PERCENTAGE;
   const address = generateAddress();
@@ -155,7 +155,7 @@ export function generateDataAndSignature2Ambassadors(depositAmount: bigint): {
   ambassadorFee2: bigint;
 } {
   const platformFee =
-    (BigInt(getRandomInt(0, 100)) * depositAmount) / MAX_PERCENTAGE;
+    (BigInt(getRandomInt(1, 100)) * depositAmount) / MAX_PERCENTAGE;
   const groupFee =
     (BigInt(getRandomInt(101, 200)) * depositAmount) / MAX_PERCENTAGE;
   const address = generateAddress();

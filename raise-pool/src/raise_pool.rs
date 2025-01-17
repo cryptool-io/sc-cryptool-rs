@@ -100,6 +100,8 @@ pub trait RaisePool:
             ambassadors.len() <= 2,
             "Cannot have more than 2 ambassadors"
         );
+        require!(platform_fee > 0, "Platform fee cannot be zero");
+        require!(group_fee > 0, "Group fee cannot be zero");
 
         let payment = self.call_value().single_esdt();
         self.validate_deposit(&payment, &timestamp);
@@ -344,7 +346,7 @@ pub trait RaisePool:
     ) {
         self.validate_owner_call_on_enabled_pool(timestamp, signature);
         require!(
-            new_start_date <= new_refund_deadline && new_refund_deadline < new_end_date,
+            new_start_date < new_refund_deadline && new_refund_deadline < new_end_date,
             "Invalid timestamps"
         );
         self.start_date().set(new_start_date);
@@ -372,8 +374,7 @@ pub trait RaisePool:
                 payments.push(EsdtTokenPayment::new(token, 0, fee));
             }
         }
-        self.send()
-            .direct_multi(&self.platform_fee_wallet().get(), &payments);
+        self.send_multi_if_not_empty(&self.platform_fee_wallet().get(), &payments);
         for payment in &payments {
             self.decrease_totals(&payment.token_identifier, &payment.amount);
         }
@@ -387,8 +388,7 @@ pub trait RaisePool:
                 payments.push(EsdtTokenPayment::new(token.clone(), 0, fee));
             }
         }
-        self.send()
-            .direct_multi(&self.group_fee_wallet().get(), &payments);
+        self.send_multi_if_not_empty(&self.group_fee_wallet().get(), &payments);
         for payment in &payments {
             self.decrease_totals(&payment.token_identifier, &payment.amount);
         }
@@ -416,13 +416,15 @@ pub trait RaisePool:
                 let amount = self
                     .referral_ambassador_fee(&ambassador, &token_identifier)
                     .get();
-                payments.push(EsdtTokenPayment::new(
-                    token_identifier.clone(),
-                    0,
-                    amount.clone(),
-                ));
+                if amount > 0 {
+                    payments.push(EsdtTokenPayment::new(
+                        token_identifier.clone(),
+                        0,
+                        amount.clone(),
+                    ));
+                }
             }
-            self.send().direct_multi(&ambassador, &payments);
+            self.send_multi_if_not_empty(&ambassador, &payments);
             for payment in &payments {
                 self.decrease_totals(&payment.token_identifier, &payment.amount);
             }
@@ -455,10 +457,12 @@ pub trait RaisePool:
             let address = overcommited_iter.next().unwrap();
             for token in self.deposited_currencies(&address).iter() {
                 let payment = self.release_token_admin(&address, &token);
-                payments.push(payment);
+                if payment.amount > 0 {
+                    payments.push(payment);
+                }
             }
             self.addresses().swap_remove(&address);
-            self.send().direct_multi(&address, &payments);
+            self.send_multi_if_not_empty(&address, &payments);
             overcommited_index += 1;
             tx_index += 1;
         }

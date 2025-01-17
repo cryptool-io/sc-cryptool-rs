@@ -355,6 +355,16 @@ pub trait HelperModule: crate::storage::StorageModule {
             .execute_on_dest_context::<bool>()
     }
 
+    fn send_multi_if_not_empty(
+        &self,
+        address: &ManagedAddress,
+        payments: &ManagedVec<EsdtTokenPayment>,
+    ) {
+        if !payments.is_empty() {
+            self.send().direct_multi(address, payments);
+        }
+    }
+
     #[proxy]
     fn wallet_database_proxy(
         &self,

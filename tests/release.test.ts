@@ -8,6 +8,7 @@ import {
   POOL_ID,
   TIMESTAMP,
   SOFT_CAP,
+  HARD_CAP,
   CURRENCY1,
   DECIMALS1,
   CURRENCY2,
@@ -29,6 +30,7 @@ import {
   HIGH_SOFT_CAP,
   PAYMENT_NETWORK_ID,
   DEPOSIT_ID,
+  CURRENCY3_DEPOSIT_AMOUNT,
 } from "./helpers.ts";
 
 import {
@@ -41,6 +43,13 @@ import {
 import { bobAddress, SIGNATURE_BOB_REFUND } from "./signatures/bob.ts";
 
 import {
+  carolAddress,
+  SIGNATURE_CAROL_WALLET,
+  SIGNATURE_CAROL_NO_FEES,
+  SIGNATURE_CAROL_ZERO_GROUP_FEE
+} from "./signatures/carol.ts";
+
+import {
   generateDataAndSignature,
   getRandomInt,
   getRandomDeposit,
@@ -49,6 +58,7 @@ import {
 let world: LSWorld;
 let deployer: LSWallet;
 let bob: LSWallet;
+let carol: LSWallet;
 let genericWallet: LSWallet;
 let platformWallet: LSWallet;
 let groupWallet: LSWallet;
@@ -1636,3 +1646,153 @@ test("Release in 2 calls with N overcommitment", async () => {
     ],
   });
 }, 200000);
+
+test("Release with zero platform fee", async () => {
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(SOFT_CAP),
+      e.U64(HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+      e.Str(CURRENCY3),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await world.setCurrentBlockInfo({
+    timestamp: DEPOSIT_TIMESTAMP,
+  });
+
+  carol = await world.createWallet({
+    address: carolAddress,
+    balance: 100_000,
+    kvs: [e.kvs.Esdts([{ id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT }])],
+  });
+
+  await carol.callContract({
+    callee: walletDababaseContract,
+    gasLimit: 50_000_000,
+    funcName: "registerWallet",
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_CAROL_WALLET)],
+  });
+
+  await carol.callContract({
+    callee: raisePoolContract,
+    gasLimit: 50_000_000,
+    funcName: "deposit",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.TopBuffer(SIGNATURE_CAROL_NO_FEES),
+      e.U(0),
+      e.U(0),
+      e.Str(DEPOSIT_ID),
+    ],
+    esdts: [{ id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT }],
+  }).assertFail({
+    code: 4,
+    message: "Platform fee cannot be zero",
+  });
+});
+
+test("Release with zero group fee", async () => {
+  await deployer.callContract({
+    callee: factoryContract,
+    gasLimit: 50_000_000,
+    funcName: "deployRaisePool",
+    funcArgs: [
+      e.Str(POOL_ID),
+      e.U64(SOFT_CAP),
+      e.U64(HARD_CAP),
+      e.U64(MIN_DEPOSIT),
+      e.U64(MAX_DEPOSIT),
+      e.U64(DEPOSIT_INCREMENTS),
+      e.U64(START_DATE),
+      e.U64(END_DATE),
+      e.U64(REFUND_ENABLED),
+      e.U64(END_DATE),
+      e.Addr(deployer),
+      e.Addr(deployer),
+      e.TopBuffer(SIGNATURE_DEPLOYER),
+      e.U64(TIMESTAMP),
+      e.Str(PAYMENT_NETWORK_ID),
+      e.Str(CURRENCY1),
+      e.Str(CURRENCY2),
+      e.Str(CURRENCY3),
+    ],
+  });
+
+  const raisePoolAddressResult = await deployer.query({
+    callee: factoryContract,
+    funcName: "getPoolIdToAddress",
+    funcArgs: [e.Str(POOL_ID)],
+  });
+
+  const raisePoolAddress = raisePoolAddressResult.returnData[0];
+
+  const raisePoolContract = new LSContract({
+    address: raisePoolAddress,
+    world,
+  });
+
+  await world.setCurrentBlockInfo({
+    timestamp: DEPOSIT_TIMESTAMP,
+  });
+
+  carol = await world.createWallet({
+    address: carolAddress,
+    balance: 100_000,
+    kvs: [e.kvs.Esdts([{ id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT }])],
+  });
+
+  await carol.callContract({
+    callee: walletDababaseContract,
+    gasLimit: 50_000_000,
+    funcName: "registerWallet",
+    funcArgs: [e.U64(TIMESTAMP), e.TopBuffer(SIGNATURE_CAROL_WALLET)],
+  });
+
+  await carol.callContract({
+    callee: raisePoolContract,
+    gasLimit: 50_000_000,
+    funcName: "deposit",
+    funcArgs: [
+      e.U64(TIMESTAMP),
+      e.TopBuffer(SIGNATURE_CAROL_ZERO_GROUP_FEE),
+      e.U(1),
+      e.U(0),
+      e.Str(DEPOSIT_ID),
+    ],
+    esdts: [{ id: CURRENCY3, amount: CURRENCY3_DEPOSIT_AMOUNT }],
+  }).assertFail({
+    code: 4,
+    message: "Group fee cannot be zero",
+  });
+});
